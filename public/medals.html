@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medal Standings - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            border-bottom: 2px solid #e94560;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-logo { font-size: 28px; font-weight: 700; color: #fff; }
+        .header-logo span { color: #e94560; }
+        .header-subtitle { font-size: 14px; color: #999; }
+        .header-right { display: flex; gap: 15px; flex-wrap: wrap; }
+        .header-btn {
+            padding: 10px 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .header-btn:hover { background: #e94560; border-color: #e94560; }
+        .header-btn.active { background: #e94560; border-color: #e94560; }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .section-title span { color: #e94560; }
+
+        .medal-table {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .medal-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .medal-table th {
+            background: #2a2a4e;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #ccc;
+            font-size: 14px;
+        }
+        .medal-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #2a2a4e;
+        }
+        .medal-table tr:hover td { background: #222244; }
+
+        .rank-col { width: 50px; text-align: center; font-weight: 700; color: #999; }
+        .country-col { font-weight: 600; }
+        .medal-col { text-align: center; font-weight: 700; }
+        .gold { color: #FFD700; }
+        .silver { color: #C0C0C0; }
+        .bronze { color: #CD7F32; }
+        .total-col { text-align: center; font-weight: 700; color: #fff; }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+        }
+
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #666;
+            z-index: 999;
+        }
+        .admin-badge a { color: #e94560; text-decoration: none; }
+        .admin-badge a:hover { text-decoration: underline; }
+
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid #2a2a4e;
+            margin-top: 40px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .refresh-btn {
+            padding: 8px 20px;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .refresh-btn:hover { background: #c73e54; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; }
+            .medal-table { font-size: 13px; }
+            .medal-table th, .medal-table td { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="header-logo">🏃 <span>Para</span> Athletics</div>
+            <div class="header-subtitle" id="meetName">Loading...</div>
+        </div>
+        <div class="header-right">
+            <a href="/" class="header-btn">📋 Schedule</a>
+            <a href="/live.html" class="header-btn">📺 Live Results</a>
+            <a href="/medals.html" class="header-btn active">🏅 Medals</a>
+            <a href="/athletes-public.html" class="header-btn">👤 Athletes</a>
+            <a href="/mobile.html" class="header-btn">📱 Mobile</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="section-title">🏅 <span>Medal</span> Standings</div>
+
+        <div class="controls">
+            <button class="refresh-btn" onclick="loadMedals()">🔄 Refresh</button>
+            <span style="color: #666; font-size: 13px;" id="updateTime">Updated: Just now</span>
+        </div>
+
+        <div id="medalContent">
+            <div class="no-data">Loading medal standings...</div>
+        </div>
+    </div>
+
+    <div class="admin-badge">
+        🔐 <a href="/login.html">Admin</a>
+    </div>
+
+    <footer class="footer">
+        <p>🏃 Para Athletics Competition Management System</p>
+    </footer>
+
+    <script>
+        let refreshInterval = null;
+
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadMedals() {
+            try {
+                // Get all events
+                const events = await fetchAPI('/api/events');
+                
+                // Only show OFFICIAL events
+                const completedEvents = events.filter(e => e.status === 'official');
+
+                if (completedEvents.length === 0) {
+                    document.getElementById('medalContent').innerHTML = `
+                        <div class="medal-table">
+                            <div class="no-data">
+                                <div style="font-size: 48px; margin-bottom: 10px;">🏅</div>
+                                <p>No completed events yet.</p>
+                                <p style="font-size: 13px; color: #555; margin-top: 5px;">Medals appear when events are marked as OFFICIAL.</p>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('updateTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+                    return;
+                }
+
+                // Collect medal winners from all completed events
+                const medalWinners = {};
+
+                for (const event of completedEvents) {
+                    try {
+                        const data = await fetchAPI(`/api/events/${event.id}/results`);
+                        const results = data.results || [];
+
+                        // Filter: rank exists, not DNS/DNF/DQ/NM
+                        const validResults = results.filter(r => 
+                            r.rank !== '-' && 
+                            !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark)
+                        );
+                        
+                        // Get top 3
+                        const top3 = validResults.slice(0, 3);
+
+                        top3.forEach((r, index) => {
+                            const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+                            const country = r.club || 'Unknown';
+
+                            if (!medalWinners[country]) {
+                                medalWinners[country] = { gold: 0, silver: 0, bronze: 0, total: 0 };
+                            }
+                            medalWinners[country][medal]++;
+                            medalWinners[country].total++;
+                        });
+                    } catch (error) {
+                        console.error('Error loading event results for', event.name, error);
+                    }
+                }
+
+                // Sort: gold first, then silver, then bronze
+                const sorted = Object.entries(medalWinners)
+                    .sort((a, b) => {
+                        if (a[1].gold !== b[1].gold) return b[1].gold - a[1].gold;
+                        if (a[1].silver !== b[1].silver) return b[1].silver - a[1].silver;
+                        return b[1].bronze - a[1].bronze;
+                    });
+
+                if (sorted.length === 0) {
+                    document.getElementById('medalContent').innerHTML = `
+                        <div class="medal-table">
+                            <div class="no-data">
+                                <div style="font-size: 48px; margin-bottom: 10px;">🏅</div>
+                                <p>No medal winners yet.</p>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('updateTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+                    return;
+                }
+
+                let html = `
+                    <div class="medal-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="rank-col">Rank</th>
+                                    <th class="country-col">Country / Club</th>
+                                    <th class="medal-col">🥇 Gold</th>
+                                    <th class="medal-col">🥈 Silver</th>
+                                    <th class="medal-col">🥉 Bronze</th>
+                                    <th class="total-col">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                sorted.forEach(([country, medals], index) => {
+                    html += `
+                        <tr>
+                            <td class="rank-col">${index + 1}</td>
+                            <td class="country-col">${country}</td>
+                            <td class="medal-col gold">${medals.gold}</td>
+                            <td class="medal-col silver">${medals.silver}</td>
+                            <td class="medal-col bronze">${medals.bronze}</td>
+                            <td class="total-col">${medals.total}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 15px; color: #666; font-size: 13px; text-align: center;">
+                        Based on ${completedEvents.length} completed events
+                    </div>
+                `;
+
+                document.getElementById('medalContent').innerHTML = html;
+                document.getElementById('updateTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+
+            } catch (error) {
+                console.error('Error loading medals:', error);
+                document.getElementById('medalContent').innerHTML = `
+                    <div class="medal-table">
+                        <div class="no-data">Error loading medal standings: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(loadMedals, 30000);
+        }
+
+        loadMeetInfo();
+        loadMedals();
+        startAutoRefresh();
+    </script>
+</body>
+</html>

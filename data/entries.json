@@ -1,0 +1,68 @@
+[
+  {
+    "id": "mspv2kinna0n2",
+    "eventId": "mspuzp17fmq2y",
+    "athleteId": "mspv0znkhm7mo",
+    "createdAt": "2026-08-12T09:02:37.919Z"
+  },
+  {
+    "id": "mspv2opl3ae7n",
+    "eventId": "mspuzp17fmq2y",
+    "athleteId": "mspv0znq6cwke",
+    "createdAt": "2026-08-12T09:02:43.353Z"
+  },
+  {
+    "id": "mspv2rt4ajbuo",
+    "eventId": "mspuzp17fmq2y",
+    "athleteId": "mspv0znvrc2mr",
+    "createdAt": "2026-08-12T09:02:47.368Z"
+  },
+  {
+    "id": "mspv2vggvqu2g",
+    "eventId": "mspuzp17fmq2y",
+    "athleteId": "mspv0zo1s2pvf",
+    "createdAt": "2026-08-12T09:02:52.096Z"
+  },
+  {
+    "id": "msq05z8ux4ubl",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv15zoyavuy",
+    "createdAt": "2026-08-12T11:25:15.054Z"
+  },
+  {
+    "id": "msq061fwv47x4",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv15zsgquoc",
+    "createdAt": "2026-08-12T11:25:17.900Z"
+  },
+  {
+    "id": "msq064dt6k53e",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv15zvsfx4j",
+    "createdAt": "2026-08-12T11:25:21.713Z"
+  },
+  {
+    "id": "msq06795zton6",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv15zy9rik0",
+    "createdAt": "2026-08-12T11:25:25.433Z"
+  },
+  {
+    "id": "msq069s2u51am",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv1601t70fj",
+    "createdAt": "2026-08-12T11:25:28.706Z"
+  },
+  {
+    "id": "msq06den23mnd",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv1605e8rj3",
+    "createdAt": "2026-08-12T11:25:33.407Z"
+  },
+  {
+    "id": "msq06h1u230be",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv1608ahv8b",
+    "createdAt": "2026-08-12T11:25:38.130Z"
+  }
+]

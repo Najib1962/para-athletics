@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referee - Start & Result List</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1300px; margin: 0 auto; }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 30px;
+            border-radius: 12px;
+            border: 2px solid #e94560;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .header h1 span { color: #e94560; }
+        .header .subtitle { color: #999; font-size: 14px; }
+        .header .role-badge {
+            background: #4CAF50;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover { border-color: #e94560; background: #2a2a4e; }
+        .nav-links a.active { border-color: #e94560; background: #e94560; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 15px 20px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+            margin-bottom: 20px;
+        }
+        .controls select {
+            padding: 10px 16px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            min-width: 200px;
+            flex: 1;
+        }
+        .controls select:focus { outline: none; border-color: #e94560; }
+        .controls button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .controls button.refresh-btn { background: #e94560; }
+        .controls button.refresh-btn:hover { background: #c73e54; }
+        .controls button.save-btn { background: #4CAF50; }
+        .controls button.save-btn:hover { background: #45a049; }
+        .controls button.official-btn { background: #2196F3; }
+        .controls button.official-btn:hover { background: #1976D2; }
+        .controls button.print-btn { background: #FF9800; }
+        .controls button.print-btn:hover { background: #e68900; }
+
+        .event-info-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .event-info-card .title { font-size: 20px; font-weight: 700; }
+        .event-info-card .meta {
+            color: #999;
+            font-size: 14px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .event-info-card .meta .label { color: #666; }
+        .event-info-card .meta .status-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #FF9800; color: #fff; }
+        .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        .status-official { background: #4CAF50; color: #fff; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .table-container {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            overflow: hidden;
+            overflow-x: auto;
+        }
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .table-container th {
+            background: #2a2a4e;
+            padding: 10px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #ccc;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid #e94560;
+        }
+        .table-container td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #2a2a4e;
+            vertical-align: middle;
+        }
+        .table-container tr:last-child td { border-bottom: none; }
+        .table-container tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .table-container input[type="text"],
+        .table-container input[type="number"] {
+            width: 100%;
+            padding: 4px 6px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 12px;
+            min-width: 45px;
+            transition: border-color 0.3s;
+        }
+        .table-container input[type="text"]:focus,
+        .table-container input[type="number"]:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .table-container input[type="text"].saved,
+        .table-container input[type="number"].saved { border-color: #4CAF50; }
+        .table-container input[type="text"].error,
+        .table-container input[type="number"].error { border-color: #dc3545; }
+
+        .readonly { color: #FFD700; font-weight: 600; }
+        .readonly-rank { font-weight: 700; text-align: center; }
+        .rank-1 { color: #FFD700; }
+        .rank-2 { color: #C0C0C0; }
+        .rank-3 { color: #CD7F32; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 30px;
+        }
+        .status-lane { background: #2196F3; color: #fff; }
+        .status-order { background: #FF9800; color: #fff; }
+
+        .no-data { text-align: center; color: #666; padding: 40px 20px; }
+        .no-data .icon { font-size: 48px; margin-bottom: 10px; }
+
+        .table-footer {
+            padding: 10px 15px;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #2a2a4e;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 13px;
+            border-top: 1px solid #2a2a4e;
+            margin-top: 20px;
+        }
+
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #666;
+            z-index: 999;
+        }
+        .admin-badge a { color: #e94560; text-decoration: none; }
+        .admin-badge a:hover { text-decoration: underline; }
+
+        @media print {
+            .controls, .nav-links, .no-print { display: none !important; }
+            body { background: white !important; color: black !important; padding: 10px !important; }
+            .header { background: white !important; border: 1px solid #ddd !important; }
+            .header h1 { color: #333 !important; }
+            .header h1 span { color: #e94560 !important; }
+            .header .subtitle { color: #666 !important; }
+            .event-info-card { background: white !important; border: 1px solid #ddd !important; }
+            .event-info-card .title { color: #333 !important; }
+            .event-info-card .meta { color: #666 !important; }
+            .table-container { background: white !important; border: 1px solid #ddd !important; }
+            .table-container th { background: #f5f5f5 !important; color: #333 !important; border-bottom: 2px solid #e94560 !important; }
+            .table-container td { border-bottom: 1px solid #eee !important; }
+            .table-container input[type="text"],
+            .table-container input[type="number"] { border: 1px solid #ccc !important; background: white !important; color: black !important; }
+            .readonly { color: #e94560 !important; }
+            .footer { color: #999 !important; border-top: 1px solid #ddd !important; }
+            .status-badge { color: #fff !important; }
+        }
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; }
+            .header h1 { font-size: 22px; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .table-container table { font-size: 11px; }
+            .table-container th, .table-container td { padding: 4px 6px; }
+            .table-container input[type="text"],
+            .table-container input[type="number"] { font-size: 10px; padding: 2px 4px; min-width: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>📋 <span>Start</span> & Result List</h1>
+                <div class="subtitle" id="meetName">Loading...</div>
+            </div>
+            <div>
+                <span class="role-badge">👨‍⚖️ Referee View</span>
+                <span style="color: #999; font-size: 14px; margin-left: 15px;">Enter results here</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-links no-print">
+            <a href="/admin.html">📊 Admin</a>
+            <a href="/athletes.html">👤 Athletes</a>
+            <a href="/entries.html">📋 Entries</a>
+            <a href="/startlist-referee.html" class="active">📋 Referee</a>
+            <a href="/startlist-public.html">📋 Public View</a>
+            <a href="/live.html">📺 Live</a>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls no-print">
+            <select id="eventSelect" onchange="loadEventData()">
+                <option value="">-- Select an event --</option>
+            </select>
+            <button class="refresh-btn" onclick="loadEventData()">🔄 Refresh</button>
+            <button class="save-btn" onclick="saveAllResults()">💾 Save Results</button>
+            <button class="official-btn" onclick="markOfficial()">✅ Publish</button>
+            <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+        </div>
+
+        <!-- Event Info -->
+        <div class="event-info-card" id="eventInfo" style="display:none;">
+            <div class="title" id="eventTitle">Event Name</div>
+            <div class="meta">
+                <span><span class="label">Event No:</span> <span id="eventNo">-</span></span>
+                <span><span class="label">Venue:</span> <span id="eventVenue">Stadium</span></span>
+                <span><span class="label">Date:</span> <span id="eventDate">-</span></span>
+                <span><span class="label">Class:</span> <span id="eventClass">-</span></span>
+                <span><span class="label">Gender:</span> <span id="eventSex">-</span></span>
+                <span><span class="label">Athletes:</span> <span id="eventAthletes">0</span></span>
+                <span><span class="label">Status:</span> <span id="eventStatus">-</span></span>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="table-container" id="tableContainer">
+            <div class="no-data">
+                <div class="icon">📋</div>
+                <p>Select an event to enter results</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span>📋 Referee Results Entry &bull; Para Athletics Competition Management System</span>
+            <span style="margin-left: 20px;" id="footerTime">Updated: Just now</span>
+        </div>
+
+    </div>
+
+    <div class="admin-badge">
+        🔐 <a href="/login.html">Admin</a>
+    </div>
+
+    <script>
+        let allEvents = [];
+        let allAthletes = [];
+        let allEntries = [];
+        let allMarks = [];
+        let currentEvent = null;
+        let currentAthletes = [];
+
+        async function fetchAPI(url, options = {}) {
+            const password = 'admin123';
+            const separator = url.includes('?') ? '&' : '?';
+            const finalUrl = `${url}${separator}password=${password}`;
+            const response = await fetch(finalUrl, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+                document.getElementById('eventVenue').textContent = meet.venue || 'Stadium';
+                document.getElementById('eventDate').textContent = meet.date || '-';
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const [events, athletes, entries, marks] = await Promise.all([
+                    fetchAPI('/api/events'),
+                    fetchAPI('/api/athletes'),
+                    fetchAPI('/api/entries'),
+                    fetchAPI('/api/marks')
+                ]);
+                allEvents = events;
+                allAthletes = athletes;
+                allEntries = entries;
+                allMarks = marks;
+                populateEventDropdown();
+                document.getElementById('footerTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function populateEventDropdown() {
+            const select = document.getElementById('eventSelect');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Select an event --</option>';
+            if (allEvents.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No events found';
+                opt.disabled = true;
+                select.appendChild(opt);
+                return;
+            }
+            const sortedEvents = [...allEvents].sort((a, b) => (a.day || 0) - (b.day || 0));
+            sortedEvents.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                const classes = e.classes ? e.classes.join(', ') : e.class || 'Single';
+                opt.textContent = `${e.name} (${e.discipline}) - ${classes}`;
+                select.appendChild(opt);
+            });
+            if (currentVal) select.value = currentVal;
+        }
+
+        function getEventAthletes(eventId) {
+            const entries = allEntries.filter(e => e.eventId === eventId);
+            return entries.map(entry => {
+                const athlete = allAthletes.find(a => a.id === entry.athleteId);
+                const mark = allMarks.find(m => m.athleteId === entry.athleteId);
+                return { ...entry, athlete: athlete || null, mark: mark || null };
+            }).filter(s => s.athlete);
+        }
+
+        function isTrackEvent(discipline) {
+            const track = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon', '4x100m Relay', '4x400m Relay'];
+            return track.includes(discipline);
+        }
+
+        function isFieldEvent(discipline) {
+            const field = ['Long Jump', 'Triple Jump', 'High Jump', 'Pole Vault', 'Shot Put', 'Discus', 'Javelin', 'Club Throw'];
+            return field.includes(discipline);
+        }
+
+        function calculateRazaPoints(classCode, discipline, performance, sex) {
+            // [Full WORLD_RECORDS array - same as before]
+            const WORLD_RECORDS = {
+                'T11': { '100m': 10.92, '200m': 22.56, '400m': 50.62, '800m': 112.0, '1500m': 235.0 },
+                'T12': { '100m': 10.44, '200m': 21.44, '400m': 48.50, '800m': 112.0, '1500m': 228.0 },
+                'T13': { '100m': 10.30, '200m': 21.00, '400m': 47.50, '800m': 110.0, '1500m': 225.0 },
+                'T20': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
+                'T34': { '100m': 15.00, '200m': 28.50, '400m': 58.00, '800m': 130.0, '1500m': 270.0 },
+                'T35': { '100m': 12.50, '200m': 25.00, '400m': 55.00, '800m': 125.0, '1500m': 260.0 },
+                'T36': { '100m': 11.85, '200m': 24.00, '400m': 53.00, '800m': 120.0, '1500m': 250.0 },
+                'T37': { '100m': 11.45, '200m': 23.00, '400m': 51.00, '800m': 118.0, '1500m': 245.0 },
+                'T38': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
+                'T44': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
+                'T46': { '100m': 10.70, '200m': 21.80, '400m': 49.00, '800m': 112.0, '1500m': 228.0 },
+                'T47': { '100m': 10.50, '200m': 21.30, '400m': 48.00, '800m': 110.0, '1500m': 225.0 },
+                'T51': { '100m': 20.00, '200m': 40.00, '400m': 85.00, '800m': 180.0, '1500m': 360.0 },
+                'T52': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
+                'T53': { '100m': 14.50, '200m': 28.00, '400m': 60.00, '800m': 130.0, '1500m': 270.0 },
+                'T54': { '100m': 13.50, '200m': 25.50, '400m': 55.00, '800m': 120.0, '1500m': 250.0 },
+                'F11': { '100m': 12.00, '200m': 24.45, '400m': 55.00, '800m': 130.0, '1500m': 270.0 },
+                'F12': { '100m': 11.55, '200m': 23.75, '400m': 53.00, '800m': 125.0, '1500m': 260.0 },
+                'F13': { '100m': 11.30, '200m': 23.00, '400m': 52.00, '800m': 122.0, '1500m': 255.0 },
+                'F20': { '100m': 11.85, '200m': 24.00, '400m': 54.00, '800m': 128.0, '1500m': 265.0 },
+                'F34': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
+                'F35': { '100m': 13.50, '200m': 27.00, '400m': 58.00, '800m': 135.0, '1500m': 280.0 },
+                'F36': { '100m': 12.85, '200m': 26.00, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
+                'F37': { '100m': 12.45, '200m': 25.00, '400m': 54.00, '800m': 128.0, '1500m': 265.0 },
+                'F38': { '100m': 11.85, '200m': 24.00, '400m': 52.50, '800m': 125.0, '1500m': 260.0 },
+                'F44': { '100m': 11.85, '200m': 24.00, '400m': 52.50, '800m': 125.0, '1500m': 260.0 },
+                'F46': { '100m': 11.70, '200m': 23.80, '400m': 52.00, '800m': 123.0, '1500m': 258.0 },
+                'F47': { '100m': 11.50, '200m': 23.30, '400m': 51.00, '800m': 120.0, '1500m': 255.0 },
+                'F51': { '100m': 22.00, '200m': 44.00, '400m': 90.00, '800m': 190.0, '1500m': 390.0 },
+                'F52': { '100m': 18.50, '200m': 37.00, '400m': 75.00, '800m': 160.0, '1500m': 330.0 },
+                'F53': { '100m': 16.50, '200m': 33.00, '400m': 68.00, '800m': 150.0, '1500m': 300.0 },
+                'F54': { '100m': 15.50, '200m': 30.00, '400m': 62.00, '800m': 140.0, '1500m': 285.0 },
+                'F11': { 'Long Jump': 6.73, 'Triple Jump': 14.00, 'High Jump': 1.80, 'Shot Put': 15.50, 'Discus': 45.00, 'Javelin': 50.00, 'Club Throw': 40.00 },
+                'F12': { 'Long Jump': 7.03, 'Triple Jump': 14.50, 'High Jump': 1.85, 'Shot Put': 17.00, 'Discus': 48.00, 'Javelin': 55.00, 'Club Throw': 42.00 },
+                'F13': { 'Long Jump': 7.20, 'Triple Jump': 15.00, 'High Jump': 1.90, 'Shot Put': 18.00, 'Discus': 50.00, 'Javelin': 58.00, 'Club Throw': 44.00 },
+                'F20': { 'Long Jump': 6.80, 'Triple Jump': 14.20, 'High Jump': 1.82, 'Shot Put': 16.00, 'Discus': 46.00, 'Javelin': 52.00, 'Club Throw': 38.00 },
+                'F31': { 'Club Throw': 35.00 },
+                'F32': { 'Club Throw': 35.00 },
+                'F33': { 'Shot Put': 11.00, 'Discus': 32.00, 'Javelin': 38.00, 'Club Throw': 38.00 },
+                'F34': { 'Shot Put': 12.00, 'Discus': 34.00, 'Javelin': 40.00, 'Club Throw': 40.00 },
+                'F35': { 'Shot Put': 13.00, 'Discus': 42.00, 'Javelin': 45.00 },
+                'F36': { 'Shot Put': 14.00, 'Discus': 44.00, 'Javelin': 48.00 },
+                'F37': { 'Shot Put': 15.00, 'Discus': 46.00, 'Javelin': 50.00 },
+                'F38': { 'Shot Put': 16.00, 'Discus': 48.00, 'Javelin': 52.00 },
+                'F40': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
+                'F41': { 'Shot Put': 11.00, 'Discus': 38.00, 'Javelin': 40.00 },
+                'F42': { 'Shot Put': 14.00, 'Discus': 45.00, 'Javelin': 48.00 },
+                'F43': { 'Shot Put': 16.00, 'Discus': 50.00, 'Javelin': 55.00 },
+                'F44': { 'Shot Put': 17.00, 'Discus': 52.00, 'Javelin': 58.00 },
+                'F46': { 'Shot Put': 15.00, 'Discus': 48.00, 'Javelin': 52.00 },
+                'F51': { 'Club Throw': 30.00 },
+                'F52': { 'Club Throw': 32.00 },
+                'F53': { 'Shot Put': 8.00, 'Discus': 28.00, 'Javelin': 32.00, 'Club Throw': 34.00 },
+                'F54': { 'Shot Put': 9.00, 'Discus': 30.00, 'Javelin': 34.00, 'Club Throw': 36.00 },
+                'F55': { 'Shot Put': 10.00, 'Discus': 32.00, 'Javelin': 36.00, 'Club Throw': 38.00 },
+                'F56': { 'Shot Put': 11.00, 'Discus': 34.00, 'Javelin': 38.00, 'Club Throw': 40.00 },
+                'F57': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00, 'Club Throw': 42.00 },
+                'F11': { 'Long Jump': 5.30, 'Triple Jump': 11.50, 'High Jump': 1.50, 'Shot Put': 12.50, 'Discus': 38.00, 'Javelin': 42.00, 'Club Throw': 32.00 },
+                'F12': { 'Long Jump': 5.80, 'Triple Jump': 12.00, 'High Jump': 1.55, 'Shot Put': 14.00, 'Discus': 40.00, 'Javelin': 45.00, 'Club Throw': 34.00 },
+                'F13': { 'Long Jump': 6.00, 'Triple Jump': 12.50, 'High Jump': 1.60, 'Shot Put': 15.00, 'Discus': 42.00, 'Javelin': 48.00, 'Club Throw': 36.00 },
+                'F20': { 'Long Jump': 5.60, 'Triple Jump': 11.80, 'High Jump': 1.52, 'Shot Put': 13.00, 'Discus': 39.00, 'Javelin': 43.00, 'Club Throw': 30.00 },
+                'F31': { 'Club Throw': 25.00 },
+                'F32': { 'Club Throw': 25.00 },
+                'F33': { 'Shot Put': 8.00, 'Discus': 24.00, 'Javelin': 28.00, 'Club Throw': 28.00 },
+                'F34': { 'Shot Put': 9.00, 'Discus': 26.00, 'Javelin': 30.00, 'Club Throw': 30.00 },
+                'F35': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
+                'F36': { 'Shot Put': 11.00, 'Discus': 37.00, 'Javelin': 40.00 },
+                'F37': { 'Shot Put': 12.00, 'Discus': 39.00, 'Javelin': 42.00 },
+                'F38': { 'Shot Put': 13.00, 'Discus': 41.00, 'Javelin': 44.00 },
+                'F40': { 'Shot Put': 7.00, 'Discus': 28.00, 'Javelin': 30.00 },
+                'F41': { 'Shot Put': 8.00, 'Discus': 30.00, 'Javelin': 32.00 },
+                'F42': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
+                'F43': { 'Shot Put': 12.00, 'Discus': 40.00, 'Javelin': 42.00 },
+                'F44': { 'Shot Put': 13.00, 'Discus': 42.00, 'Javelin': 45.00 },
+                'F46': { 'Shot Put': 12.00, 'Discus': 38.00, 'Javelin': 40.00 },
+                'F51': { 'Club Throw': 20.00 },
+                'F52': { 'Club Throw': 22.00 },
+                'F53': { 'Shot Put': 6.00, 'Discus': 22.00, 'Javelin': 25.00, 'Club Throw': 24.00 },
+                'F54': { 'Shot Put': 7.00, 'Discus': 24.00, 'Javelin': 28.00, 'Club Throw': 26.00 },
+                'F55': { 'Shot Put': 8.00, 'Discus': 26.00, 'Javelin': 30.00, 'Club Throw': 28.00 },
+                'F56': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00, 'Club Throw': 30.00 },
+                'F57': { 'Shot Put': 10.00, 'Discus': 30.00, 'Javelin': 34.00, 'Club Throw': 32.00 }
+            };
+            const records = WORLD_RECORDS[classCode];
+            if (!records) return null;
+            const worldRecord = records[discipline];
+            if (!worldRecord) return null;
+            if (!performance || performance <= 0) return null;
+            const isTrack = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon'].includes(discipline);
+            let points;
+            if (isTrack) {
+                points = 1000 * Math.pow((worldRecord / performance), 2);
+            } else {
+                points = 1000 * Math.pow((performance / worldRecord), 2);
+            }
+            return Math.round(points);
+        }
+
+        async function loadEventData() {
+            const eventId = document.getElementById('eventSelect').value;
+            if (!eventId) {
+                document.getElementById('tableContainer').innerHTML = `<div class="no-data"><div class="icon">📋</div><p>Select an event to enter results</p></div>`;
+                document.getElementById('eventInfo').style.display = 'none';
+                return;
+            }
+
+            try {
+                const event = allEvents.find(e => e.id === eventId);
+                if (!event) throw new Error('Event not found');
+                currentEvent = event;
+
+                const athletes = getEventAthletes(eventId);
+                currentAthletes = athletes;
+
+                const isTrack = isTrackEvent(event.discipline);
+                const isField = isFieldEvent(event.discipline);
+
+                document.getElementById('eventInfo').style.display = 'block';
+                document.getElementById('eventTitle').textContent = event.name;
+                document.getElementById('eventNo').textContent = allEvents.indexOf(event) + 1;
+                const classes = event.classes ? event.classes.join(', ') : event.class || 'Single';
+                document.getElementById('eventClass').textContent = classes;
+                document.getElementById('eventSex').textContent = event.sex === 'M' ? 'Men' : event.sex === 'F' ? 'Women' : 'Mixed';
+                document.getElementById('eventAthletes').textContent = athletes.length;
+
+                const statusClass = event.status === 'official' ? 'status-official' :
+                                   event.status === 'live' ? 'status-live' : 'status-pending';
+                const statusLabel = event.status === 'official' ? '✅ Official' :
+                                   event.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+                document.getElementById('eventStatus').innerHTML = `<span class="status-badge ${statusClass}">${statusLabel}</span>`;
+
+                if (athletes.length === 0) {
+                    document.getElementById('tableContainer').innerHTML = `<div class="no-data"><div class="icon">👤</div><p>No athletes entered for this event yet.</p></div>`;
+                    return;
+                }
+
+                if (isTrack) {
+                    renderTrackTable(event, athletes);
+                } else if (isField) {
+                    renderFieldTable(event, athletes);
+                } else {
+                    renderGenericTable(event, athletes);
+                }
+
+            } catch (error) {
+                document.getElementById('tableContainer').innerHTML = `<div class="no-data"><div class="icon">⚠️</div><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        function renderTrackTable(event, athletes) {
+            const container = document.getElementById('tableContainer');
+            const sorted = athletes.map((a, i) => ({ ...a, lane: i + 1 }));
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">No</th>
+                            <th style="width:50px;">Lane</th>
+                            <th>Name</th>
+                            <th style="width:65px;">Bib</th>
+                            <th>Club</th>
+                            <th style="width:70px;">Class</th>
+                            <th style="width:100px;">Time</th>
+                            <th style="width:80px;">Points</th>
+                            <th style="width:60px;">Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sorted.forEach((entry, idx) => {
+                const athlete = entry.athlete;
+                const mark = entry.mark;
+                const time = mark && mark.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(mark.mark) ? mark.mark : '';
+
+                html += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><span class="status-badge status-lane">${entry.lane}</span></td>
+                        <td><strong>${athlete.name}</strong></td>
+                        <td>${athlete.bib || '-'}</td>
+                        <td>${athlete.club || '-'}</td>
+                        <td>${athlete.class}</td>
+                        <td>
+                            <input type="text" class="result-input" 
+                                   data-athleteid="${athlete.id}" 
+                                   data-class="${athlete.class}" 
+                                   data-discipline="${event.discipline}" 
+                                   data-sex="${athlete.sex}"
+                                   value="${time}" 
+                                   placeholder="e.g. 11.2"
+                                   onchange="autoCalculateTrack(this)"
+                                   onkeyup="autoCalculateTrack(this)">
+                        </td>
+                        <td class="readonly" id="points-${athlete.id}">${mark && mark.points ? mark.points : '-'}</td>
+                        <td class="readonly-rank" id="rank-${athlete.id}">${mark && mark.rank ? mark.rank : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="table-footer">
+                    <span>Total Athletes: ${athletes.length} &bull; Track Event</span>
+                    <span class="hint">💡 Enter time in seconds (e.g. 11.2, 12.34)</span>
+                </div>
+            `;
+            container.innerHTML = html;
+            setTimeout(calculateTrackRankings, 200);
+        }
+
+        function renderFieldTable(event, athletes) {
+            const container = document.getElementById('tableContainer');
+            const sorted = athletes.map((a, i) => ({ ...a, order: i + 1 }));
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">No</th>
+                            <th style="width:50px;">Order</th>
+                            <th>Name</th>
+                            <th style="width:65px;">Bib</th>
+                            <th>Club</th>
+                            <th style="width:70px;">Class</th>
+                            <th style="width:70px;">Att 1</th>
+                            <th style="width:70px;">Att 2</th>
+                            <th style="width:70px;">Att 3</th>
+                            <th style="width:70px;">Att 4</th>
+                            <th style="width:70px;">Att 5</th>
+                            <th style="width:70px;">Att 6</th>
+                            <th style="width:70px;">Best</th>
+                            <th style="width:80px;">Points</th>
+                            <th style="width:60px;">Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sorted.forEach((entry, idx) => {
+                const athlete = entry.athlete;
+                const mark = entry.mark;
+                const best = mark && mark.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(mark.mark) ? mark.mark : '';
+
+                html += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><span class="status-badge status-order">${entry.order}</span></td>
+                        <td><strong>${athlete.name}</strong></td>
+                        <td>${athlete.bib || '-'}</td>
+                        <td>${athlete.club || '-'}</td>
+                        <td>${athlete.class}</td>
+                        <td><input type="text" class="attempt-input" data-attempt="1" data-athleteid="${athlete.id}" data-class="${athlete.class}" data-discipline="${event.discipline}" data-sex="${athlete.sex}" placeholder="-" onchange="autoCalculateField(this)" onkeyup="autoCalculateField(this)"></td>
+                        <td><input type="text" class="attempt-input" data-attempt="2" data-athleteid="${athlete.id}" data-class="${athlete.class}" data-discipline="${event.discipline}" data-sex="${athlete.sex}" placeholder="-" onchange="autoCalculateField(this)" onkeyup="autoCalculateField(this)"></td>
+                        <td><input type="text" class="attempt-input" data-attempt="3" data-athleteid="${athlete.id}" data-class="${athlete.class}" data-discipline="${event.discipline}" data-sex="${athlete.sex}" placeholder="-" onchange="autoCalculateField(this)" onkeyup="autoCalculateField(this)"></td>
+                        <td><input type="text" class="attempt-input" data-attempt="4" data-athleteid="${athlete.id}" data-class="${athlete.class}" data-discipline="${event.discipline}" data-sex="${athlete.sex}" placeholder="-" onchange="autoCalculateField(this)" onkeyup="autoCalculateField(this)"></td>
+                        <td><input type="text" class="attempt-input" data-attempt="5" data-athleteid="${athlete.id}" data-class="${athlete.class}" data-discipline="${event.discipline}" data-sex="${athlete.sex}" placeholder="-" onchange="autoCalculateField(this)" onkeyup="autoCalculateField(this)"></td>
+                        <td><input type="text" class="attempt-input" data-attempt="6" data-athleteid="${athlete.id}" data-class="${athlete.class}" data-discipline="${event.discipline}" data-sex="${athlete.sex}" placeholder="-" onchange="autoCalculateField(this)" onkeyup="autoCalculateField(this)"></td>
+                        <td class="readonly" id="best-${athlete.id}">${best}</td>
+                        <td class="readonly" id="points-${athlete.id}">${mark && mark.points ? mark.points : '-'}</td>
+                        <td class="readonly-rank" id="rank-${athlete.id}">${mark && mark.rank ? mark.rank : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="table-footer">
+                    <span>Total Athletes: ${athletes.length} &bull; Field Event</span>
+                    <span class="hint">💡 Enter each attempt, best will auto-calculate</span>
+                </div>
+            `;
+            container.innerHTML = html;
+            setTimeout(calculateFieldRankings, 200);
+        }
+
+        function renderGenericTable(event, athletes) {
+            const container = document.getElementById('tableContainer');
+            const sorted = athletes.map((a, i) => ({ ...a, order: i + 1 }));
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">No</th>
+                            <th style="width:50px;">#</th>
+                            <th>Name</th>
+                            <th style="width:65px;">Bib</th>
+                            <th>Club</th>
+                            <th style="width:70px;">Class</th>
+                            <th style="width:100px;">Result</th>
+                            <th style="width:80px;">Points</th>
+                            <th style="width:60px;">Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sorted.forEach((entry, idx) => {
+                const athlete = entry.athlete;
+                const mark = entry.mark;
+                const result = mark && mark.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(mark.mark) ? mark.mark : '';
+
+                html += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${entry.order}</td>
+                        <td><strong>${athlete.name}</strong></td>
+                        <td>${athlete.bib || '-'}</td>
+                        <td>${athlete.club || '-'}</td>
+                        <td>${athlete.class}</td>
+                        <td>
+                            <input type="text" class="result-input" 
+                                   data-athleteid="${athlete.id}" 
+                                   data-class="${athlete.class}" 
+                                   data-discipline="${event.discipline}" 
+                                   data-sex="${athlete.sex}"
+                                   value="${result}" 
+                                   placeholder="Enter result"
+                                   onchange="autoCalculateTrack(this)"
+                                   onkeyup="autoCalculateTrack(this)">
+                        </td>
+                        <td class="readonly" id="points-${athlete.id}">${mark && mark.points ? mark.points : '-'}</td>
+                        <td class="readonly-rank" id="rank-${athlete.id}">${mark && mark.rank ? mark.rank : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="table-footer">
+                    <span>Total Athletes: ${athletes.length}</span>
+                </div>
+            `;
+            container.innerHTML = html;
+            setTimeout(calculateTrackRankings, 200);
+        }
+
+        function autoCalculateTrack(input) {
+            const athleteId = input.dataset.athleteid;
+            const classCode = input.dataset.class;
+            const discipline = input.dataset.discipline;
+            const sex = input.dataset.sex;
+            const value = parseFloat(input.value);
+
+            const pointsEl = document.getElementById(`points-${athleteId}`);
+            if (pointsEl && value > 0) {
+                const points = calculateRazaPoints(classCode, discipline, value, sex);
+                pointsEl.textContent = points || '-';
+            } else if (pointsEl) {
+                pointsEl.textContent = '-';
+            }
+            setTimeout(calculateTrackRankings, 300);
+        }
+
+        function autoCalculateField(input) {
+            const athleteId = input.dataset.athleteid;
+            const inputs = document.querySelectorAll(`.attempt-input[data-athleteid="${athleteId}"]`);
+            let best = 0;
+            let hasValue = false;
+            let classCode = '', discipline = '', sex = '';
+
+            inputs.forEach(inp => {
+                const val = parseFloat(inp.value);
+                if (!isNaN(val) && val > 0) {
+                    hasValue = true;
+                    if (val > best) best = val;
+                }
+                if (!classCode) classCode = inp.dataset.class;
+                if (!discipline) discipline = inp.dataset.discipline;
+                if (!sex) sex = inp.dataset.sex;
+            });
+
+            const bestEl = document.getElementById(`best-${athleteId}`);
+            const pointsEl = document.getElementById(`points-${athleteId}`);
+            if (bestEl && hasValue) {
+                bestEl.textContent = best.toFixed(2);
+                if (pointsEl) {
+                    const points = calculateRazaPoints(classCode, discipline, best, sex);
+                    pointsEl.textContent = points || '-';
+                }
+            } else if (bestEl) {
+                bestEl.textContent = '-';
+                if (pointsEl) pointsEl.textContent = '-';
+            }
+            setTimeout(calculateFieldRankings, 300);
+        }
+
+        function calculateTrackRankings() {
+            const inputs = document.querySelectorAll('.result-input');
+            const results = [];
+            inputs.forEach(inp => {
+                const athleteId = inp.dataset.athleteid;
+                const value = parseFloat(inp.value);
+                const rankEl = document.getElementById(`rank-${athleteId}`);
+                if (rankEl) {
+                    if (!isNaN(value) && value > 0) {
+                        results.push({ athleteId, value, rankEl });
+                    } else {
+                        rankEl.textContent = '-';
+                        rankEl.className = 'readonly-rank';
+                    }
+                }
+            });
+            results.sort((a, b) => a.value - b.value);
+            let rank = 1;
+            results.forEach((r, index) => {
+                if (index > 0 && results[index-1].value === r.value) {
+                    r.rankEl.textContent = results[index-1].rankEl.textContent;
+                } else {
+                    r.rankEl.textContent = rank;
+                }
+                if (rank === 1) r.rankEl.className = 'readonly-rank rank-1';
+                else if (rank === 2) r.rankEl.className = 'readonly-rank rank-2';
+                else if (rank === 3) r.rankEl.className = 'readonly-rank rank-3';
+                else r.rankEl.className = 'readonly-rank';
+                rank++;
+            });
+        }
+
+        function calculateFieldRankings() {
+            const bestEls = document.querySelectorAll('[id^="best-"]');
+            const results = [];
+            bestEls.forEach(el => {
+                const athleteId = el.id.replace('best-', '');
+                const value = parseFloat(el.textContent);
+                const rankEl = document.getElementById(`rank-${athleteId}`);
+                if (rankEl) {
+                    if (!isNaN(value) && value > 0) {
+                        results.push({ athleteId, value, rankEl });
+                    } else {
+                        rankEl.textContent = '-';
+                        rankEl.className = 'readonly-rank';
+                    }
+                }
+            });
+            results.sort((a, b) => b.value - a.value);
+            let rank = 1;
+            results.forEach((r, index) => {
+                if (index > 0 && results[index-1].value === r.value) {
+                    r.rankEl.textContent = results[index-1].rankEl.textContent;
+                } else {
+                    r.rankEl.textContent = rank;
+                }
+                if (rank === 1) r.rankEl.className = 'readonly-rank rank-1';
+                else if (rank === 2) r.rankEl.className = 'readonly-rank rank-2';
+                else if (rank === 3) r.rankEl.className = 'readonly-rank rank-3';
+                else r.rankEl.className = 'readonly-rank';
+                rank++;
+            });
+        }
+
+        async function saveMark(athleteId, mark) {
+            try {
+                await fetchAPI('/api/marks', {
+                    method: 'POST',
+                    body: JSON.stringify({ eventId: currentEvent.id, athleteId: athleteId, mark: mark })
+                });
+                return true;
+            } catch (error) {
+                console.error('Error saving mark:', error);
+                return false;
+            }
+        }
+
+        async function saveAllResults() {
+            if (!currentEvent) {
+                alert('Please select an event first.');
+                return;
+            }
+
+            const inputs = document.querySelectorAll('.result-input, .attempt-input');
+            let saved = 0;
+            let errors = 0;
+
+            for (const input of inputs) {
+                const athleteId = input.dataset.athleteid;
+                const isAttempt = input.classList.contains('attempt-input');
+                let finalMark = input.value.trim() || 'DNS';
+
+                if (isAttempt) {
+                    const allAttempts = document.querySelectorAll(`.attempt-input[data-athleteid="${athleteId}"]`);
+                    let best = 0;
+                    allAttempts.forEach(inp => {
+                        const val = parseFloat(inp.value);
+                        if (!isNaN(val) && val > 0 && val > best) best = val;
+                    });
+                    finalMark = best > 0 ? best.toString() : 'DNS';
+                }
+
+                const success = await saveMark(athleteId, finalMark);
+                if (success) saved++; else errors++;
+            }
+
+            alert(`✅ ${saved} results saved!\n${errors > 0 ? `⚠️ ${errors} errors.` : ''}`);
+            await loadData();
+            await loadEventData();
+        }
+
+        async function markOfficial() {
+            if (!currentEvent) {
+                alert('Please select an event first.');
+                return;
+            }
+
+            if (!confirm(`📢 Publish "${currentEvent.name}"?`)) return;
+
+            try {
+                const athletes = getEventAthletes(currentEvent.id);
+                const marks = allMarks.filter(m => m.eventId === currentEvent.id);
+                const athletesWithoutMark = athletes.filter(a => {
+                    const mark = marks.find(m => m.athleteId === a.athleteId);
+                    return !mark || !mark.mark || mark.mark === 'DNS' || mark.mark === '';
+                });
+
+                if (athletesWithoutMark.length > 0) {
+                    const names = athletesWithoutMark.map(a => a.athlete.name).join(', ');
+                    if (!confirm(`⚠️ These athletes have no mark: ${names}\n\nContinue and mark them as DNS?`)) {
+                        return;
+                    }
+                    for (const a of athletesWithoutMark) {
+                        await saveMark(a.athleteId, 'DNS');
+                    }
+                }
+
+                await fetchAPI(`/api/events/${currentEvent.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: 'official' })
+                });
+
+                alert(`✅ Event PUBLISHED successfully!`);
+
+                await loadData();
+                await loadEventData();
+
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        loadMeetInfo();
+        loadData();
+        setInterval(() => { loadData(); }, 30000);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') loadEventData();
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveAllResults(); }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Data - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 { color: #e94560; margin-bottom: 10px; }
+        p { color: #999; margin-bottom: 20px; font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #fff;
+        }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button.success { background: #4CAF50; }
+        button.success:hover { background: #45a049; }
+        button.secondary { background: #2a2a4e; }
+        button.secondary:hover { background: #3a3a5e; }
+        button.info { background: #2196F3; }
+        button.info:hover { background: #1976D2; }
+        .status { margin-top: 15px; padding: 10px; border-radius: 8px; display: none; }
+        .status.success { background: rgba(76, 175, 80, 0.2); color: #4CAF50; display: block; }
+        .status.error { background: rgba(220, 53, 69, 0.2); color: #dc3545; display: block; }
+        .status.info { background: rgba(33, 150, 243, 0.2); color: #2196F3; display: block; }
+        .back-link {
+            display: block;
+            margin-top: 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .back-link:hover { color: #e94560; }
+        .log-box {
+            margin-top: 15px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            color: #999;
+            text-align: left;
+            font-family: monospace;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Data Management</h1>
+        <p>Reset, load samples, or check data status.</p>
+
+        <div class="btn-group">
+            <button class="danger" onclick="resetAll()">🗑️ Reset All</button>
+            <button class="success" onclick="loadAllSamples()">📥 Load Samples</button>
+            <button class="info" onclick="checkData()">🔍 Check Data</button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="logBox" class="log-box"></div>
+        <a href="/admin.html" class="back-link">← Back to Admin</a>
+    </div>
+
+    <script>
+        const password = 'admin123';
+        let logMessages = [];
+
+        function log(msg, type = 'info') {
+            logMessages.push(`${new Date().toLocaleTimeString()}: ${msg}`);
+            const logBox = document.getElementById('logBox');
+            logBox.style.display = 'block';
+            logBox.innerHTML = logMessages.join('\n');
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        async function fetchAPI(url, options = {}) {
+            const separator = url.includes('?') ? '&' : '?';
+            const finalUrl = `${url}${separator}password=${password}`;
+            const response = await fetch(finalUrl, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function checkData() {
+            const status = document.getElementById('status');
+            status.className = 'status info';
+            status.textContent = 'Checking data...';
+            log('🔍 Checking data...');
+
+            try {
+                const events = await fetchAPI('/api/events');
+                const athletes = await fetchAPI('/api/athletes');
+                const entries = await fetchAPI('/api/entries');
+                const marks = await fetchAPI('/api/marks');
+
+                log(`📊 Events: ${events.length}`);
+                log(`👤 Athletes: ${athletes.length}`);
+                log(`📋 Entries: ${entries.length}`);
+                log(`📈 Marks: ${marks.length}`);
+
+                if (events.length > 0) {
+                    log(`📅 Events: ${events.map(e => e.name).join(', ')}`);
+                }
+
+                status.textContent = `✅ Data found: ${events.length} events, ${athletes.length} athletes, ${entries.length} entries, ${marks.length} marks`;
+                status.className = 'status success';
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                status.textContent = `❌ Error checking data: ${error.message}`;
+                status.className = 'status error';
+            }
+        }
+
+        async function resetAll() {
+            if (!confirm('⚠️ Delete ALL data? This cannot be undone!')) return;
+
+            const status = document.getElementById('status');
+            status.className = 'status info';
+            status.textContent = 'Resetting data...';
+            log('🗑️ Resetting all data...');
+
+            try {
+                await fetchAPI('/api/events/all', { method: 'DELETE' });
+                await fetchAPI('/api/athletes/all', { method: 'DELETE' });
+                log('✅ All data cleared');
+
+                status.textContent = '✅ All data cleared! Click "Load Samples" to add sample data.';
+                status.className = 'status success';
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                status.textContent = '❌ Error: ' + error.message;
+                status.className = 'status error';
+            }
+        }
+
+        async function loadAllSamples() {
+            const status = document.getElementById('status');
+            status.className = 'status info';
+            status.textContent = 'Loading samples...';
+            log('📥 Loading samples...');
+
+            try {
+                // 1. Load Athletes
+                const sampleAthletes = [
+                    { name: "John Smith", class: "T11", sex: "M", bib: "101", club: "USA" },
+                    { name: "Mike Johnson", class: "T11", sex: "M", bib: "102", club: "GBR" },
+                    { name: "Carlos Rodriguez", class: "T11", sex: "M", bib: "103", club: "ESP" },
+                    { name: "Thomas Muller", class: "T11", sex: "M", bib: "107", club: "GER" },
+                    { name: "Sarah Williams", class: "F11", sex: "F", bib: "201", club: "USA" },
+                    { name: "Emma Brown", class: "F11", sex: "F", bib: "202", club: "GBR" },
+                    { name: "David Lee", class: "T12", sex: "M", bib: "104", club: "KOR" },
+                    { name: "Maria Garcia", class: "F12", sex: "F", bib: "203", club: "ESP" },
+                    { name: "James Wilson", class: "T20", sex: "M", bib: "105", club: "AUS" },
+                    { name: "Lisa Chen", class: "T34", sex: "F", bib: "204", club: "CHN" },
+                    { name: "Robert Kim", class: "T53", sex: "M", bib: "106", club: "KOR" },
+                    { name: "Patricia Davis", class: "F11", sex: "F", bib: "205", club: "CAN" },
+                    { name: "Anna Svensson", class: "F34", sex: "F", bib: "206", club: "SWE" },
+                    { name: "Peter Jones", class: "T12", sex: "M", bib: "108", club: "GBR" },
+                    { name: "Marta Diaz", class: "F12", sex: "F", bib: "207", club: "ESP" },
+                    { name: "Daniel Ng", class: "T20", sex: "M", bib: "109", club: "SIN" }
+                ];
+
+                for (const athlete of sampleAthletes) {
+                    await fetchAPI('/api/athletes', {
+                        method: 'POST',
+                        body: JSON.stringify(athlete)
+                    });
+                }
+                log(`✅ ${sampleAthletes.length} athletes loaded`);
+
+                // 2. Load Events
+                const sampleEvents = [
+                    { name: "Men's 100m T11", discipline: "100m", sex: "M", classes: ["T11"], class: "T11", day: 1, status: "pending", round: "Final", isCombined: false },
+                    { name: "Men's 100m T12", discipline: "100m", sex: "M", classes: ["T12"], class: "T12", day: 1, status: "pending", round: "Final", isCombined: false },
+                    { name: "Women's 100m T11", discipline: "100m", sex: "F", classes: ["T11"], class: "T11", day: 1, status: "pending", round: "Final", isCombined: false },
+                    { name: "Men's Long Jump T20", discipline: "Long Jump", sex: "M", classes: ["T20"], class: "T20", day: 2, status: "pending", round: "Final", isCombined: false },
+                    { name: "Men's Shot Put F32", discipline: "Shot Put", sex: "M", classes: ["F32"], class: "F32", day: 2, status: "pending", round: "Final", isCombined: false },
+                    { name: "Women's 200m T34", discipline: "200m", sex: "F", classes: ["T34"], class: "T34", day: 2, status: "pending", round: "Final", isCombined: false },
+                    { name: "Men's 400m T53", discipline: "400m", sex: "M", classes: ["T53"], class: "T53", day: 3, status: "pending", round: "Final", isCombined: false },
+                    { name: "Women's Long Jump F11", discipline: "Long Jump", sex: "F", classes: ["F11"], class: "F11", day: 3, status: "pending", round: "Final", isCombined: false }
+                ];
+
+                for (const event of sampleEvents) {
+                    await fetchAPI('/api/events', {
+                        method: 'POST',
+                        body: JSON.stringify(event)
+                    });
+                }
+                log(`✅ ${sampleEvents.length} events loaded`);
+
+                status.textContent = `✅ Samples loaded! ${sampleAthletes.length} athletes, ${sampleEvents.length} events.`;
+                status.className = 'status success';
+                
+                // Check data
+                await checkData();
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                status.textContent = '❌ Error: ' + error.message;
+                status.className = 'status error';
+            }
+        }
+
+        // Auto-check on load
+        window.onload = function() {
+            setTimeout(checkData, 500);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #0a0a1a; color: #fff; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #e94560; margin-bottom: 20px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2a4e; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #ccc; }
+        label { display: block; margin-bottom: 5px; color: #999; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; background: #0a0a1a; border: 1px solid #2a2a4e; border-radius: 6px; color: #fff; margin-bottom: 12px; font-size: 14px; }
+        select[multiple] { height: 120px; }
+        optgroup { color: #fff; background: #1a1a2e; }
+        optgroup option { padding: 4px 8px; }
+        button { padding: 10px 20px; background: #e94560; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+        button:hover { background: #c73e54; }
+        button.secondary { background: #2a2a4e; }
+        button.secondary:hover { background: #3a3a5e; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button.success { background: #4CAF50; }
+        button.success:hover { background: #45a049; }
+        button.display-btn { background: #6c5ce7; }
+        button.display-btn:hover { background: #5a4bd1; }
+        button.startlist-btn { background: #FF9800; }
+        button.startlist-btn:hover { background: #e68900; }
+        .success { color: #4CAF50; margin-top: 10px; }
+        .event-list { margin-top: 10px; }
+        .event-item { display: flex; justify-content: space-between; padding: 10px; background: #0a0a1a; border-radius: 6px; margin-bottom: 5px; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .event-item .name { font-weight: 500; }
+        .event-item .detail { color: #999; font-size: 13px; }
+        .event-item .classes { color: #FFD700; font-size: 12px; }
+        .delete-btn { background: #dc3545; color: #fff; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .delete-btn:hover { background: #c82333; }
+
+        /* Navigation Grid */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 10px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 12px;
+        }
+        .nav-item:hover {
+            border-color: #e94560;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.15);
+        }
+        .nav-item .icon {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .nav-item .label {
+            font-size: 11px;
+            color: #999;
+        }
+        .nav-item.active {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+        .nav-item.display {
+            border-color: #6c5ce7;
+        }
+        .nav-item.display:hover {
+            border-color: #6c5ce7;
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.2);
+        }
+        .nav-item.booklet {
+            border-color: #9C27B0;
+        }
+        .nav-item.booklet:hover {
+            border-color: #9C27B0;
+            box-shadow: 0 8px 25px rgba(156, 39, 176, 0.2);
+        }
+        .nav-item.startlist {
+            border-color: #FF9800;
+        }
+        .nav-item.startlist:hover {
+            border-color: #FF9800;
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.2);
+        }
+        .nav-item.resultlist {
+            border-color: #4CAF50;
+        }
+        .nav-item.resultlist:hover {
+            border-color: #4CAF50;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
+        }
+        .nav-item.referee {
+            border-color: #e94560;
+        }
+        .nav-item.referee:hover {
+            border-color: #e94560;
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.2);
+        }
+
+        .nav-section-title {
+            color: #999;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 15px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #2a2a4e;
+        }
+
+        .nav-links { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px; }
+        .nav-links a { color: #e94560; text-decoration: none; padding: 8px 16px; background: #1a1a2e; border-radius: 6px; border: 1px solid #2a2a4e; }
+        .nav-links a:hover { background: #2a2a4e; }
+        .hint { color: #666; font-size: 12px; margin-top: -8px; margin-bottom: 12px; }
+
+        /* Quick Access Buttons */
+        .quick-access-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+        .quick-btn {
+            padding: 12px 10px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .quick-btn:hover {
+            border-color: #e94560;
+            transform: translateY(-2px);
+        }
+        .quick-btn .icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        .quick-btn.booklet { border-color: #9C27B0; }
+        .quick-btn.booklet:hover { border-color: #9C27B0; box-shadow: 0 8px 25px rgba(156, 39, 176, 0.2); }
+        .quick-btn.startlist { border-color: #FF9800; }
+        .quick-btn.startlist:hover { border-color: #FF9800; box-shadow: 0 8px 25px rgba(255, 152, 0, 0.2); }
+        .quick-btn.resultlist { border-color: #4CAF50; }
+        .quick-btn.resultlist:hover { border-color: #4CAF50; box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2); }
+        .quick-btn.referee { border-color: #e94560; }
+        .quick-btn.referee:hover { border-color: #e94560; box-shadow: 0 8px 25px rgba(233, 69, 96, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏃 Para Athletics - Admin</h1>
+
+        <!-- Navigation Grid -->
+        <div class="card">
+            <h2>📋 Navigation</h2>
+
+            <div class="nav-section-title">🔧 Management</div>
+            <div class="nav-grid">
+                <a href="/admin.html" class="nav-item active">
+                    <span class="icon">📊</span>
+                    <span class="label">Admin</span>
+                </a>
+                <a href="/athletes.html" class="nav-item">
+                    <span class="icon">👤</span>
+                    <span class="label">Athletes</span>
+                </a>
+                <a href="/entries.html" class="nav-item">
+                    <span class="icon">📋</span>
+                    <span class="label">Entries</span>
+                </a>
+                <a href="/startlists-export.html" class="nav-item startlist">
+                    <span class="icon">📋</span>
+                    <span class="label">Start Lists Export</span>
+                </a>
+                <a href="/startlists-results.html" class="nav-item startlist">
+                    <span class="icon">📋</span>
+                    <span class="label">Results Entry</span>
+                </a>
+            </div>
+
+            <div class="nav-section-title">📋 Start & Result Lists</div>
+            <div class="nav-grid">
+                <a href="/startlist-view.html" class="nav-item startlist">
+                    <span class="icon">📋</span>
+                    <span class="label">Start Lists</span>
+                </a>
+                <a href="/resultlist-view.html" class="nav-item resultlist">
+                    <span class="icon">📊</span>
+                    <span class="label">Result Lists</span>
+                </a>
+                <a href="/startlist-referee.html" class="nav-item referee">
+                    <span class="icon">✏️</span>
+                    <span class="label">Referee Entry</span>
+                </a>
+            </div>
+
+            <div class="nav-section-title">📺 Public Displays</div>
+            <div class="nav-grid">
+                <a href="/display.html" class="nav-item display" target="_blank">
+                    <span class="icon">📺</span>
+                    <span class="label">Live Results</span>
+                </a>
+                <a href="/display-rotation.html" class="nav-item display" target="_blank">
+                    <span class="icon">🔄</span>
+                    <span class="label">Results Rotation</span>
+                </a>
+                <a href="/display-startlists.html" class="nav-item display" target="_blank">
+                    <span class="icon">📋</span>
+                    <span class="label">Start Lists</span>
+                </a>
+                <a href="/display-participants.html" class="nav-item display" target="_blank">
+                    <span class="icon">👥</span>
+                    <span class="label">Participants</span>
+                </a>
+                <a href="/display-medals.html" class="nav-item display" target="_blank">
+                    <span class="icon">🏅</span>
+                    <span class="label">Medal Standings</span>
+                </a>
+                <a href="/result-booklet.html" class="nav-item booklet" target="_blank">
+                    <span class="icon">📖</span>
+                    <span class="label">Result Booklet</span>
+                </a>
+            </div>
+
+            <div class="nav-section-title">📱 Public Access</div>
+            <div class="nav-grid">
+                <a href="/" class="nav-item" target="_blank">
+                    <span class="icon">🏠</span>
+                    <span class="label">Home</span>
+                </a>
+                <a href="/live.html" class="nav-item" target="_blank">
+                    <span class="icon">📺</span>
+                    <span class="label">Live Results</span>
+                </a>
+                <a href="/medals.html" class="nav-item" target="_blank">
+                    <span class="icon">🏅</span>
+                    <span class="label">Medals</span>
+                </a>
+                <a href="/athletes-public.html" class="nav-item" target="_blank">
+                    <span class="icon">👤</span>
+                    <span class="label">Athletes</span>
+                </a>
+                <a href="/mobile.html" class="nav-item" target="_blank">
+                    <span class="icon">📱</span>
+                    <span class="label">Mobile</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Add Event -->
+        <div class="card">
+            <h2>➕ Add Event</h2>
+            <label>Event Name</label>
+            <input type="text" id="eventName" placeholder="e.g., Men's 100m Combined">
+
+            <label>Discipline</label>
+            <select id="discipline">
+                <optgroup label="🏃 Track Events">
+                    <option value="100m">100m</option>
+                    <option value="200m">200m</option>
+                    <option value="400m">400m</option>
+                    <option value="800m">800m</option>
+                    <option value="1500m">1500m</option>
+                    <option value="5000m">5000m</option>
+                    <option value="10000m">10000m</option>
+                    <option value="Marathon">Marathon</option>
+                </optgroup>
+                <optgroup label="🏃 Relay Events">
+                    <option value="4x100m Relay">4x100m Relay</option>
+                    <option value="4x400m Relay">4x400m Relay</option>
+                </optgroup>
+                <optgroup label="🎯 Field Events">
+                    <option value="Long Jump">Long Jump</option>
+                    <option value="Triple Jump">Triple Jump</option>
+                    <option value="High Jump">High Jump</option>
+                    <option value="Pole Vault">Pole Vault</option>
+                    <option value="Shot Put">Shot Put</option>
+                    <option value="Discus">Discus</option>
+                    <option value="Javelin">Javelin</option>
+                    <option value="Club Throw">Club Throw</option>
+                </optgroup>
+                <optgroup label="🏅 Combined Events">
+                    <option value="Pentathlon">Pentathlon</option>
+                </optgroup>
+            </select>
+
+            <label>Sex</label>
+            <select id="sex">
+                <option value="M">Men</option>
+                <option value="F">Women</option>
+                <option value="X">Mixed</option>
+            </select>
+
+            <label>Classes (hold Ctrl/Cmd to select multiple)</label>
+            <select id="classSelect" multiple>
+                <optgroup label="T Classes (Track)">
+                    <option value="T11">T11</option>
+                    <option value="T12">T12</option>
+                    <option value="T13">T13</option>
+                    <option value="T20">T20</option>
+                    <option value="T32">T32</option>
+                    <option value="T33">T33</option>
+                    <option value="T34">T34</option>
+                    <option value="T35">T35</option>
+                    <option value="T36">T36</option>
+                    <option value="T37">T37</option>
+                    <option value="T38">T38</option>
+                    <option value="T40">T40</option>
+                    <option value="T41">T41</option>
+                    <option value="T42">T42</option>
+                    <option value="T43">T43</option>
+                    <option value="T44">T44</option>
+                    <option value="T45">T45</option>
+                    <option value="T46">T46</option>
+                    <option value="T47">T47</option>
+                    <option value="T51">T51</option>
+                    <option value="T52">T52</option>
+                    <option value="T53">T53</option>
+                    <option value="T54">T54</option>
+                    <option value="T61">T61</option>
+                    <option value="T62">T62</option>
+                    <option value="T63">T63</option>
+                    <option value="T64">T64</option>
+                    <option value="T72">T72</option>
+                </optgroup>
+                <optgroup label="F Classes (Field)">
+                    <option value="F11">F11</option>
+                    <option value="F12">F12</option>
+                    <option value="F13">F13</option>
+                    <option value="F20">F20</option>
+                    <option value="F31">F31</option>
+                    <option value="F32">F32</option>
+                    <option value="F33">F33</option>
+                    <option value="F34">F34</option>
+                    <option value="F35">F35</option>
+                    <option value="F36">F36</option>
+                    <option value="F37">F37</option>
+                    <option value="F38">F38</option>
+                    <option value="F40">F40</option>
+                    <option value="F41">F41</option>
+                    <option value="F42">F42</option>
+                    <option value="F43">F43</option>
+                    <option value="F44">F44</option>
+                    <option value="F45">F45</option>
+                    <option value="F46">F46</option>
+                    <option value="F51">F51</option>
+                    <option value="F52">F52</option>
+                    <option value="F53">F53</option>
+                    <option value="F54">F54</option>
+                    <option value="F55">F55</option>
+                    <option value="F56">F56</option>
+                    <option value="F57">F57</option>
+                    <option value="F61">F61</option>
+                    <option value="F62">F62</option>
+                    <option value="F63">F63</option>
+                    <option value="F64">F64</option>
+                </optgroup>
+            </select>
+            <div class="hint">Hold Ctrl (Windows) or Cmd (Mac) to select multiple classes</div>
+
+            <label>Day</label>
+            <input type="number" id="day" value="1" min="1" max="7">
+
+            <button onclick="addEvent()">Add Event</button>
+            <div id="addMessage"></div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Current Events</h2>
+            <div id="eventList" class="event-list">
+                <p style="color: #666;">No events yet. Add one above!</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Actions</h2>
+            <button class="danger" onclick="deleteAllEvents()">🗑️ Delete All Events</button>
+            <button class="secondary" onclick="loadSampleData()">📥 Load Sample Data</button>
+            <button class="success" onclick="loadCombinedSample()">📥 Load Combined Class Sample</button>
+            <button class="success" onclick="loadClubThrowSample()" style="background: #FF9800;">📥 Load Club Throw Sample</button>
+            <button class="success" onclick="loadJumpSample()" style="background: #9C27B0;">📥 Load Jump Events Sample</button>
+        </div>
+
+        <!-- Quick Access to Displays -->
+        <div class="card">
+            <h2>📺 Quick Display Access</h2>
+            <div class="quick-access-grid">
+                <a href="/display.html" class="quick-btn" target="_blank">
+                    <span class="icon">📺</span>
+                    Live Results
+                </a>
+                <a href="/display-rotation.html" class="quick-btn" target="_blank">
+                    <span class="icon">🔄</span>
+                    Rotation
+                </a>
+                <a href="/display-startlists.html" class="quick-btn" target="_blank">
+                    <span class="icon">📋</span>
+                    Start Lists
+                </a>
+                <a href="/display-participants.html" class="quick-btn" target="_blank">
+                    <span class="icon">👥</span>
+                    Participants
+                </a>
+                <a href="/display-medals.html" class="quick-btn" target="_blank">
+                    <span class="icon">🏅</span>
+                    Medals
+                </a>
+                <a href="/result-booklet.html" class="quick-btn booklet" target="_blank">
+                    <span class="icon">📖</span>
+                    Result Booklet
+                </a>
+                <a href="/startlists-export.html" class="quick-btn startlist" target="_blank">
+                    <span class="icon">📋</span>
+                    Start Lists Export
+                </a>
+                <a href="/startlists-results.html" class="quick-btn startlist" target="_blank">
+                    <span class="icon">📋</span>
+                    Results Entry
+                </a>
+                <a href="/startlist-view.html" class="quick-btn startlist" target="_blank">
+                    <span class="icon">📋</span>
+                    Start Lists View
+                </a>
+                <a href="/resultlist-view.html" class="quick-btn resultlist" target="_blank">
+                    <span class="icon">📊</span>
+                    Result Lists View
+                </a>
+                <a href="/startlist-referee.html" class="quick-btn referee" target="_blank">
+                    <span class="icon">✏️</span>
+                    Referee Entry
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchAPI(url, options = {}) {
+            const password = 'admin123';
+            const separator = url.includes('?') ? '&' : '?';
+            const finalUrl = `${url}${separator}password=${password}`;
+
+            const response = await fetch(finalUrl, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            });
+            return response.json();
+        }
+
+        async function loadEvents() {
+            const events = await fetchAPI('/api/events');
+            const container = document.getElementById('eventList');
+
+            if (events.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No events yet. Add one above!</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(e => {
+                const classes = e.classes ? e.classes.join(', ') : e.class || 'Single';
+                const isCombined = e.classes && e.classes.length > 1;
+                const isRelay = e.discipline && e.discipline.includes('Relay');
+                return `
+                    <div class="event-item">
+                        <div>
+                            <div class="name">${e.name} ${isRelay ? '🏃' : ''}</div>
+                            <div class="detail">${e.discipline} • ${e.sex} • Day ${e.day || 1}</div>
+                            <div class="classes">${isCombined ? '🔄 Combined: ' : ''}${classes}</div>
+                        </div>
+                        <div>
+                            <span style="color: #999; font-size: 12px; margin-right: 10px;">${e.status || 'pending'}</span>
+                            <button class="delete-btn" onclick="deleteEvent('${e.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function addEvent() {
+            const name = document.getElementById('eventName').value.trim();
+            const discipline = document.getElementById('discipline').value;
+            const sex = document.getElementById('sex').value;
+            const classSelect = document.getElementById('classSelect');
+            const selectedClasses = Array.from(classSelect.selectedOptions).map(opt => opt.value);
+            const day = parseInt(document.getElementById('day').value);
+
+            if (!name) {
+                document.getElementById('addMessage').innerHTML = '<span style="color: #ff6b6b;">Please enter an event name</span>';
+                return;
+            }
+
+            if (selectedClasses.length === 0) {
+                document.getElementById('addMessage').innerHTML = '<span style="color: #ff6b6b;">Please select at least one class</span>';
+                return;
+            }
+
+            const event = {
+                name,
+                discipline,
+                sex,
+                classes: selectedClasses,
+                class: selectedClasses[0],
+                day,
+                status: 'pending',
+                round: 'Final',
+                isCombined: selectedClasses.length > 1
+            };
+
+            await fetchAPI('/api/events', {
+                method: 'POST',
+                body: JSON.stringify(event)
+            });
+
+            document.getElementById('addMessage').innerHTML = `<span class="success">✅ Event added with ${selectedClasses.length} classes!</span>`;
+            document.getElementById('eventName').value = '';
+            loadEvents();
+        }
+
+        async function deleteEvent(id) {
+            if (confirm('Delete this event?')) {
+                await fetchAPI(`/api/events/${id}`, { method: 'DELETE' });
+                loadEvents();
+            }
+        }
+
+        async function deleteAllEvents() {
+            if (confirm('Delete ALL events? This cannot be undone!')) {
+                await fetchAPI('/api/events/all', { method: 'DELETE' });
+                loadEvents();
+            }
+        }
+
+        async function loadSampleData() {
+            const sampleEvents = [
+                { name: "Men's 100m T11", discipline: "100m", sex: "M", classes: ["T11"], class: "T11", day: 1, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's 100m T12", discipline: "100m", sex: "M", classes: ["T12"], class: "T12", day: 1, status: "pending", round: "Final", isCombined: false },
+                { name: "Women's 100m T11", discipline: "100m", sex: "F", classes: ["T11"], class: "T11", day: 1, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's Long Jump T20", discipline: "Long Jump", sex: "M", classes: ["T20"], class: "T20", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's Shot Put F32", discipline: "Shot Put", sex: "M", classes: ["F32"], class: "F32", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Women's 200m T34", discipline: "200m", sex: "F", classes: ["T34"], class: "T34", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's 400m T53", discipline: "400m", sex: "M", classes: ["T53"], class: "T53", day: 3, status: "pending", round: "Final", isCombined: false },
+                { name: "Women's Long Jump F11", discipline: "Long Jump", sex: "F", classes: ["F11"], class: "F11", day: 3, status: "pending", round: "Final", isCombined: false }
+            ];
+
+            for (const event of sampleEvents) {
+                await fetchAPI('/api/events', {
+                    method: 'POST',
+                    body: JSON.stringify(event)
+                });
+            }
+
+            loadEvents();
+            alert('✅ Sample events loaded!');
+        }
+
+        async function loadCombinedSample() {
+            const combinedEvents = [
+                { name: "Men's 100m Combined (T11-T13)", discipline: "100m", sex: "M", classes: ["T11", "T12", "T13"], class: "T11", day: 1, status: "pending", round: "Final", isCombined: true },
+                { name: "Women's 100m Combined (T11-T13)", discipline: "100m", sex: "F", classes: ["F11", "F12", "F13"], class: "F11", day: 1, status: "pending", round: "Final", isCombined: true },
+                { name: "Men's Long Jump Combined (T11-T13)", discipline: "Long Jump", sex: "M", classes: ["T11", "T12", "T13"], class: "T11", day: 2, status: "pending", round: "Final", isCombined: true },
+                { name: "Men's Shot Put Combined (F32-F34)", discipline: "Shot Put", sex: "M", classes: ["F32", "F33", "F34"], class: "F32", day: 2, status: "pending", round: "Final", isCombined: true },
+                { name: "Men's 400m Combined (T53-T54)", discipline: "400m", sex: "M", classes: ["T53", "T54"], class: "T53", day: 3, status: "pending", round: "Final", isCombined: true }
+            ];
+
+            for (const event of combinedEvents) {
+                await fetchAPI('/api/events', {
+                    method: 'POST',
+                    body: JSON.stringify(event)
+                });
+            }
+
+            loadEvents();
+            alert('✅ Combined class sample events loaded!');
+        }
+
+        async function loadClubThrowSample() {
+            const clubThrowEvents = [
+                { name: "Men's Club Throw F31", discipline: "Club Throw", sex: "M", classes: ["F31"], class: "F31", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's Club Throw F32", discipline: "Club Throw", sex: "M", classes: ["F32"], class: "F32", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's Club Throw F51", discipline: "Club Throw", sex: "M", classes: ["F51"], class: "F51", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's Club Throw Combined (F31-F32-F51)", discipline: "Club Throw", sex: "M", classes: ["F31", "F32", "F51"], class: "F31", day: 2, status: "pending", round: "Final", isCombined: true }
+            ];
+
+            for (const event of clubThrowEvents) {
+                await fetchAPI('/api/events', {
+                    method: 'POST',
+                    body: JSON.stringify(event)
+                });
+            }
+
+            loadEvents();
+            alert('✅ Club Throw sample events loaded!');
+        }
+
+        async function loadJumpSample() {
+            const jumpEvents = [
+                { name: "Men's High Jump F11", discipline: "High Jump", sex: "M", classes: ["F11"], class: "F11", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's High Jump F12", discipline: "High Jump", sex: "M", classes: ["F12"], class: "F12", day: 2, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's High Jump Combined (F11-F12)", discipline: "High Jump", sex: "M", classes: ["F11", "F12"], class: "F11", day: 2, status: "pending", round: "Final", isCombined: true },
+                { name: "Men's Triple Jump F11", discipline: "Triple Jump", sex: "M", classes: ["F11"], class: "F11", day: 3, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's Triple Jump F12", discipline: "Triple Jump", sex: "M", classes: ["F12"], class: "F12", day: 3, status: "pending", round: "Final", isCombined: false },
+                { name: "Men's Triple Jump Combined (F11-F12)", discipline: "Triple Jump", sex: "M", classes: ["F11", "F12"], class: "F11", day: 3, status: "pending", round: "Final", isCombined: true }
+            ];
+
+            for (const event of jumpEvents) {
+                await fetchAPI('/api/events', {
+                    method: 'POST',
+                    body: JSON.stringify(event)
+                });
+            }
+
+            loadEvents();
+            alert('✅ Jump events sample loaded!');
+        }
+
+        loadEvents();
+    </script>
+</body>
+</html>

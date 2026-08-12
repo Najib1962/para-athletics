@@ -1,0 +1,5 @@
+http://localhost:3000/display-startlists.html   - Start Lists
+http://localhost:3000/display-participants.html - Participants
+http://localhost:3000/display-medals.html       - Medal Standings
+http://localhost:3000/display-rotation.html     - Results Rotation
+http://localhost:3000/display.html              - Single Event

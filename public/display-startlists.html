@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Lists - Rotation Display</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+            z-index: 10;
+        }
+        .top-bar .meet-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e94560;
+        }
+        .top-bar .meet-venue { font-size: 14px; color: #999; }
+        .top-bar .status {
+            font-size: 14px;
+            color: #4CAF50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+        .controls button {
+            padding: 10px 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .controls button:hover { background: #2a2a4e; border-color: #e94560; }
+        .controls button.active { background: #e94560; border-color: #e94560; }
+        .controls button.danger { border-color: #dc3545; }
+        .controls button.danger:hover { background: #dc3545; }
+        .controls .info { color: #999; font-size: 14px; margin-left: 10px; }
+
+        .display-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a2e;
+            border-radius: 16px;
+            border: 2px solid #2a2a4e;
+            padding: 30px;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            animation: slideIn 0.6s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .event-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2a2a4e;
+            margin-bottom: 20px;
+        }
+        .event-header h1 { font-size: 36px; font-weight: 700; }
+        .event-header .meta {
+            font-size: 18px;
+            color: #999;
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .event-header .status-badge {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .status-upcoming { background: #FF9800; color: #fff; }
+        .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        .status-completed { background: #4CAF50; color: #fff; }
+
+        .results-table {
+            flex: 1;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 24px;
+        }
+        .results-table th {
+            background: #2a2a4e;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #ccc;
+            font-size: 18px;
+        }
+        .results-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #2a2a4e;
+            font-size: 26px;
+        }
+        .results-table tr:last-child td { border-bottom: none; }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+            font-size: 24px;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+            padding: 10px;
+            border-top: 1px solid #2a2a4e;
+        }
+        .progress-indicator .highlight { color: #fff; font-weight: 600; }
+        .progress-indicator .dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .progress-indicator .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #2a2a4e;
+            transition: all 0.3s;
+        }
+        .progress-indicator .dot.active { background: #e94560; transform: scale(1.2); }
+        .progress-indicator .dot.completed { background: #4CAF50; }
+
+        .footer {
+            text-align: center;
+            padding: 15px 20px;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+            border-top: 1px solid #2a2a4e;
+        }
+
+        @media (min-width: 1200px) {
+            .results-table { font-size: 32px; }
+            .results-table td { font-size: 34px; padding: 20px 25px; }
+            .results-table th { font-size: 24px; padding: 20px 25px; }
+            .event-header h1 { font-size: 48px; }
+            .event-header .meta { font-size: 24px; }
+        }
+        @media (max-width: 768px) {
+            .display-container { padding: 15px; }
+            .results-table { font-size: 16px; }
+            .results-table td { font-size: 18px; padding: 10px 12px; }
+            .results-table th { font-size: 14px; padding: 10px 12px; }
+            .event-header h1 { font-size: 24px; }
+            .event-header .meta { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div>
+            <div class="meet-name" id="meetName">🏃 Para Athletics</div>
+            <div class="meet-venue" id="meetVenue">Loading...</div>
+        </div>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span>START LISTS ROTATION</span>
+            <span style="margin-left: 15px; color: #666;" id="updateTime">Loading...</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="toggleRotation()" id="toggleBtn" class="active">⏸ Pause</button>
+        <button onclick="prevEvent()">◀ Prev</button>
+        <button onclick="nextEvent()">Next ▶</button>
+        <button onclick="goFullscreen()">⛶ Fullscreen</button>
+        <button onclick="refreshEvents()">🔄 Refresh</button>
+        <span class="info" id="eventCounter">0 / 0 events</span>
+        <span class="info" style="margin-left: 15px;" id="timerDisplay">⏱ 5s</span>
+    </div>
+
+    <div class="display-container" id="displayContainer">
+        <div class="no-results">Loading start lists...</div>
+    </div>
+
+    <div class="footer">
+        <span>🏃 Start Lists • Rotation Mode</span>
+        <span style="margin-left: 20px;" id="autoStatus">Auto-cycling every 5 seconds</span>
+    </div>
+
+    <script>
+        let events = [];
+        let currentIndex = 0;
+        let isRotating = true;
+        let rotationInterval = null;
+        const DISPLAY_DURATION = 5000;
+
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = `🏃 ${meet.name || 'Para Athletics'}`;
+                document.getElementById('meetVenue').textContent = `${meet.venue || ''} • ${meet.date || ''}`;
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadEvents() {
+            try {
+                const allEvents = await fetchAPI('/api/events');
+                // Show events that have entries (start lists)
+                events = allEvents.filter(e => e.status === 'pending' || e.status === 'live' || e.status === 'official');
+                events.sort((a, b) => (a.day || 0) - (b.day || 0) || a.name.localeCompare(b.name));
+
+                updateCounter();
+                if (events.length === 0) {
+                    document.getElementById('displayContainer').innerHTML = `
+                        <div class="no-results">No events with start lists available.</div>
+                    `;
+                    return;
+                }
+                if (currentIndex >= events.length) currentIndex = 0;
+                await displayEvent(currentIndex);
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        async function displayEvent(index) {
+            if (events.length === 0 || index >= events.length) return;
+            const event = events[index];
+            document.getElementById('updateTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+
+            try {
+                const data = await fetchAPI(`/api/events/${event.id}/startlist`);
+                renderStartList(data, index);
+            } catch (error) {
+                document.getElementById('displayContainer').innerHTML = `
+                    <div class="no-results">Error loading start list: ${error.message}</div>
+                `;
+            }
+        }
+
+        function renderStartList(data, index) {
+            const container = document.getElementById('displayContainer');
+            const event = data.event;
+            const startList = data.startList || [];
+
+            const statusClass = event.status === 'official' ? 'status-completed' :
+                               event.status === 'live' ? 'status-live' : 'status-upcoming';
+            const statusLabel = event.status === 'official' ? '✓ COMPLETED' :
+                               event.status === 'live' ? '🔴 LIVE' : '⏳ UPCOMING';
+
+            let html = `
+                <div class="slide">
+                    <div class="event-header">
+                        <h1>📋 ${event.name}</h1>
+                        <div class="meta">
+                            <span>${event.discipline}</span>
+                            <span>${event.sex}</span>
+                            <span>${event.round || 'Final'}</span>
+                            <span>Day ${event.day || 1}</span>
+                        </div>
+                        <span class="status-badge ${statusClass}">${statusLabel}</span>
+                    </div>
+            `;
+
+            if (startList.length === 0) {
+                html += `<div class="no-results">No athletes entered yet</div>`;
+            } else {
+                const isTrack = event.discipline.includes('m') || event.discipline.includes('km');
+                const showGuide = startList.some(s => s.athlete && ['T11','T12','F11','F12'].includes(s.athlete.class));
+
+                html += `
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">${isTrack ? 'Lane' : 'Order'}</th>
+                                <th>Name</th>
+                                <th style="width:80px;">Class</th>
+                                ${showGuide ? '<th style="width:70px;">Guide</th>' : ''}
+                                <th style="width:80px;">Bib</th>
+                                <th style="width:120px;">Club</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                startList.forEach((s, i) => {
+                    const athlete = s.athlete;
+                    if (!athlete) return;
+                    const isGuide = ['T11','T12','F11','F12'].includes(athlete.class);
+                    html += `
+                        <tr>
+                            <td style="text-align:center; font-weight:600;">${i + 1}</td>
+                            <td>${athlete.name}</td>
+                            <td>${athlete.class}</td>
+                            ${showGuide ? `<td>${isGuide ? 'Yes' : '-'}</td>` : ''}
+                            <td>${athlete.bib || '-'}</td>
+                            <td>${athlete.club || '-'}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            // Progress dots
+            html += `
+                <div class="progress-indicator">
+                    <span>Event <span class="highlight">${index + 1}</span> of <span class="highlight">${events.length}</span></span>
+                    <div class="dots">
+                        ${events.map((_, i) => `
+                            <div class="dot ${i === index ? 'active' : ''} ${i < index ? 'completed' : ''}"></div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            html += `</div>`;
+            container.innerHTML = html;
+            updateCounter();
+        }
+
+        function updateCounter() {
+            document.getElementById('eventCounter').textContent = `${events.length > 0 ? currentIndex + 1 : 0} / ${events.length} events`;
+        }
+
+        function nextEvent() {
+            if (events.length === 0) return;
+            currentIndex = (currentIndex + 1) % events.length;
+            displayEvent(currentIndex);
+            resetTimer();
+        }
+
+        function prevEvent() {
+            if (events.length === 0) return;
+            currentIndex = (currentIndex - 1 + events.length) % events.length;
+            displayEvent(currentIndex);
+            resetTimer();
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const btn = document.getElementById('toggleBtn');
+            if (isRotating) {
+                btn.textContent = '⏸ Pause';
+                btn.className = 'active';
+                document.getElementById('autoStatus').textContent = 'Auto-cycling every 5 seconds';
+                startRotation();
+            } else {
+                btn.textContent = '▶ Play';
+                btn.className = 'danger';
+                document.getElementById('autoStatus').textContent = '⏸ Paused';
+                stopRotation();
+            }
+        }
+
+        function startRotation() {
+            if (rotationInterval) clearInterval(rotationInterval);
+            rotationInterval = setInterval(() => {
+                if (isRotating && events.length > 0) nextEvent();
+            }, DISPLAY_DURATION);
+            resetTimer();
+        }
+
+        function stopRotation() {
+            if (rotationInterval) { clearInterval(rotationInterval); rotationInterval = null; }
+            document.getElementById('timerDisplay').textContent = '⏱ Paused';
+        }
+
+        function resetTimer() {
+            if (isRotating) {
+                document.getElementById('timerDisplay').textContent = `⏱ ${DISPLAY_DURATION / 1000}s`;
+                let count = DISPLAY_DURATION / 1000;
+                const timerInterval = setInterval(() => {
+                    count--;
+                    if (count <= 0 || !isRotating) { clearInterval(timerInterval); if (isRotating) document.getElementById('timerDisplay').textContent = `⏱ ${DISPLAY_DURATION / 1000}s`; return; }
+                    document.getElementById('timerDisplay').textContent = `⏱ ${count}s`;
+                }, 1000);
+            }
+        }
+
+        function goFullscreen() {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        }
+
+        async function refreshEvents() { await loadEvents(); if (isRotating) startRotation(); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'f' || e.key === 'F') goFullscreen();
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextEvent(); }
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevEvent(); }
+            if (e.key === ' ') { e.preventDefault(); toggleRotation(); }
+            if (e.key === 'r' || e.key === 'R') refreshEvents();
+        });
+
+        loadMeetInfo();
+        loadEvents();
+        setTimeout(() => { if (events.length > 0 && isRotating) startRotation(); }, 2000);
+        setInterval(loadEvents, 60000);
+    </script>
+</body>
+</html>

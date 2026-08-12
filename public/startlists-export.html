@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Lists Export - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 30px;
+            border-radius: 12px;
+            border: 2px solid #e94560;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .header h1 span { color: #e94560; }
+        .header .subtitle { color: #999; font-size: 14px; }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover { border-color: #e94560; background: #2a2a4e; }
+        .nav-links a.active { border-color: #e94560; background: #e94560; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 15px 20px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+            margin-bottom: 20px;
+        }
+        .controls select {
+            padding: 10px 16px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            min-width: 200px;
+            flex: 1;
+        }
+        .controls select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .controls button {
+            padding: 10px 20px;
+            background: #e94560;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .controls button:hover { background: #c73e54; }
+        .controls button.export-btn {
+            background: #4CAF50;
+        }
+        .controls button.export-btn:hover {
+            background: #45a049;
+        }
+        .controls button.print-btn {
+            background: #2196F3;
+        }
+        .controls button.print-btn:hover {
+            background: #1976D2;
+        }
+
+        .event-info-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .event-info-card .title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .event-info-card .meta {
+            color: #999;
+            font-size: 14px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        /* Start List Table */
+        .startlist-container {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            overflow: hidden;
+            overflow-x: auto;
+        }
+        .startlist-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .startlist-container th {
+            background: #2a2a4e;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #ccc;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .startlist-container td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #2a2a4e;
+        }
+        .startlist-container tr:last-child td { border-bottom: none; }
+        .startlist-container tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+        .no-data .icon { font-size: 48px; margin-bottom: 10px; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-lane { background: #2196F3; color: #fff; }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 13px;
+            border-top: 1px solid #2a2a4e;
+            margin-top: 20px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .controls, .nav-links, .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 10px !important;
+            }
+            .header {
+                background: white !important;
+                border: 1px solid #ddd !important;
+            }
+            .header h1 { color: #333 !important; }
+            .header h1 span { color: #e94560 !important; }
+            .header .subtitle { color: #666 !important; }
+            .event-info-card {
+                background: white !important;
+                border: 1px solid #ddd !important;
+            }
+            .event-info-card .title { color: #333 !important; }
+            .event-info-card .meta { color: #666 !important; }
+            .startlist-container {
+                background: white !important;
+                border: 1px solid #ddd !important;
+            }
+            .startlist-container th {
+                background: #f5f5f5 !important;
+                color: #333 !important;
+            }
+            .startlist-container td {
+                border-bottom: 1px solid #eee !important;
+            }
+            .startlist-container tr:hover td { background: transparent !important; }
+            .footer { color: #999 !important; border-top: 1px solid #ddd !important; }
+            .status-lane { background: #2196F3 !important; color: white !important; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; }
+            .header h1 { font-size: 22px; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .startlist-container table { font-size: 12px; }
+            .startlist-container th, .startlist-container td { padding: 6px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>📋 <span>Start Lists</span> Export</h1>
+                <div class="subtitle" id="meetName">Loading...</div>
+            </div>
+            <div>
+                <span style="color: #999; font-size: 14px;">Auto-generated from entries</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-links no-print">
+            <a href="/admin.html">📊 Admin</a>
+            <a href="/athletes.html">👤 Athletes</a>
+            <a href="/entries.html">📋 Entries</a>
+            <a href="/startlists-export.html" class="active">📋 Start Lists</a>
+            <a href="/live.html">📺 Live</a>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls no-print">
+            <select id="eventSelect" onchange="loadStartList()">
+                <option value="">-- Select an event --</option>
+            </select>
+            <button onclick="loadStartList()">🔄 Refresh</button>
+            <button onclick="exportExcel()" class="export-btn">📊 Export Excel</button>
+            <button onclick="window.print()" class="print-btn">🖨️ Print</button>
+        </div>
+
+        <!-- Event Info -->
+        <div class="event-info-card" id="eventInfo" style="display:none;">
+            <div class="title" id="eventTitle">Event Name</div>
+            <div class="meta">
+                <span id="eventDiscipline">Discipline</span>
+                <span id="eventSex">Sex</span>
+                <span id="eventClass">Class</span>
+                <span id="eventDay">Day</span>
+                <span id="eventStatus">Status</span>
+            </div>
+        </div>
+
+        <!-- Start List -->
+        <div class="startlist-container" id="startlistContainer">
+            <div class="no-data">
+                <div class="icon">📋</div>
+                <p>Select an event to view the start list</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span>📋 Start Lists &bull; Para Athletics Competition Management System</span>
+            <span style="margin-left: 20px;" id="footerTime">Updated: Just now</span>
+        </div>
+
+    </div>
+
+    <script>
+        let allEvents = [];
+        let allAthletes = [];
+        let allEntries = [];
+        let allMarks = [];
+
+        // ---------- FIXED: Add password to all API calls ----------
+        async function fetchAPI(url) {
+            const password = 'admin123';
+            const separator = url.includes('?') ? '&' : '?';
+            const finalUrl = `${url}${separator}password=${password}`;
+            
+            const response = await fetch(finalUrl);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const [events, athletes, entries, marks] = await Promise.all([
+                    fetchAPI('/api/events'),
+                    fetchAPI('/api/athletes'),
+                    fetchAPI('/api/entries'),
+                    fetchAPI('/api/marks')
+                ]);
+
+                allEvents = events;
+                allAthletes = athletes;
+                allEntries = entries;
+                allMarks = marks;
+
+                populateEventDropdown();
+                document.getElementById('footerTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('startlistContainer').innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">⚠️</div>
+                        <p>Error loading data: ${error.message}</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">Please make sure you are logged in with admin password.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function populateEventDropdown() {
+            const select = document.getElementById('eventSelect');
+            const currentVal = select.value;
+
+            select.innerHTML = '<option value="">-- Select an event --</option>';
+
+            if (allEvents.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No events found';
+                opt.disabled = true;
+                select.appendChild(opt);
+                return;
+            }
+
+            // Sort events by day
+            const sortedEvents = [...allEvents].sort((a, b) => (a.day || 0) - (b.day || 0));
+
+            sortedEvents.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                const classes = e.classes ? e.classes.join(', ') : e.class || 'Single';
+                opt.textContent = `${e.name} (${e.discipline}) - ${classes}`;
+                select.appendChild(opt);
+            });
+
+            if (currentVal) select.value = currentVal;
+        }
+
+        function getEventAthletes(eventId) {
+            const entries = allEntries.filter(e => e.eventId === eventId);
+            const athletes = entries.map(entry => {
+                const athlete = allAthletes.find(a => a.id === entry.athleteId);
+                const mark = allMarks.find(m => m.athleteId === entry.athleteId);
+                return {
+                    ...entry,
+                    athlete: athlete || null,
+                    mark: mark || null
+                };
+            }).filter(s => s.athlete);
+
+            return athletes;
+        }
+
+        function isTrackEvent(discipline) {
+            const trackDisciplines = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon', '4x100m Relay', '4x400m Relay'];
+            return trackDisciplines.includes(discipline);
+        }
+
+        function isFieldEvent(discipline) {
+            const fieldDisciplines = ['Long Jump', 'Triple Jump', 'High Jump', 'Pole Vault', 'Shot Put', 'Discus', 'Javelin', 'Club Throw'];
+            return fieldDisciplines.includes(discipline);
+        }
+
+        async function loadStartList() {
+            const eventId = document.getElementById('eventSelect').value;
+
+            if (!eventId) {
+                document.getElementById('startlistContainer').innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">📋</div>
+                        <p>Select an event to view the start list</p>
+                    </div>
+                `;
+                document.getElementById('eventInfo').style.display = 'none';
+                return;
+            }
+
+            try {
+                const event = allEvents.find(e => e.id === eventId);
+                if (!event) throw new Error('Event not found');
+
+                // Get athletes for this event
+                const athletes = getEventAthletes(eventId);
+
+                // Check if track or field
+                const isTrack = isTrackEvent(event.discipline);
+                const isField = isFieldEvent(event.discipline);
+
+                // Show event info
+                document.getElementById('eventInfo').style.display = 'block';
+                document.getElementById('eventTitle').textContent = event.name;
+                document.getElementById('eventDiscipline').textContent = `🏃 ${event.discipline}`;
+                document.getElementById('eventSex').textContent = event.sex === 'M' ? 'Men' : event.sex === 'F' ? 'Women' : 'Mixed';
+                document.getElementById('eventClass').textContent = event.classes ? `Classes: ${event.classes.join(', ')}` : `Class: ${event.class}`;
+                document.getElementById('eventDay').textContent = `Day ${event.day || 1}`;
+                document.getElementById('eventStatus').innerHTML = `
+                    <span class="status-badge" style="background: ${event.status === 'official' ? '#4CAF50' : event.status === 'live' ? '#e94560' : '#FF9800'}; color: #fff;">
+                        ${event.status === 'official' ? '✓ Official' : event.status === 'live' ? '🔴 LIVE' : '⏳ Pending'}
+                    </span>
+                `;
+
+                if (athletes.length === 0) {
+                    document.getElementById('startlistContainer').innerHTML = `
+                        <div class="no-data">
+                            <div class="icon">👤</div>
+                            <p>No athletes entered for this event yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort athletes - for track, sort by seed or alphabetically
+                const sortedAthletes = [...athletes];
+                if (isTrack) {
+                    // Sort by seed time if available, otherwise by name
+                    sortedAthletes.sort((a, b) => {
+                        const aSeed = a.athlete.seed ? parseFloat(a.athlete.seed) : 9999;
+                        const bSeed = b.athlete.seed ? parseFloat(b.athlete.seed) : 9999;
+                        if (aSeed !== bSeed) return aSeed - bSeed;
+                        return a.athlete.name.localeCompare(b.athlete.name);
+                    });
+                } else {
+                    sortedAthletes.sort((a, b) => a.athlete.name.localeCompare(b.athlete.name));
+                }
+
+                // Render based on discipline
+                if (isTrack) {
+                    renderTrackStartList(event, sortedAthletes);
+                } else if (isField) {
+                    renderFieldStartList(event, sortedAthletes);
+                } else {
+                    renderGenericStartList(event, sortedAthletes);
+                }
+
+            } catch (error) {
+                document.getElementById('startlistContainer').innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">⚠️</div>
+                        <p>Error loading start list: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderTrackStartList(event, athletes) {
+            const container = document.getElementById('startlistContainer');
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">Lane</th>
+                            <th>Name</th>
+                            <th style="width:70px;">Class</th>
+                            <th style="width:60px;">Bib</th>
+                            <th>Club</th>
+                            <th style="width:80px;">Seed</th>
+                            <th style="width:80px;">Mark</th>
+                            <th style="width:70px;">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            athletes.forEach((entry, index) => {
+                const lane = index + 1;
+                const athlete = entry.athlete;
+                const mark = entry.mark;
+
+                html += `
+                    <tr>
+                        <td><span class="status-badge status-lane">${lane}</span></td>
+                        <td><strong>${athlete.name}</strong></td>
+                        <td>${athlete.class}</td>
+                        <td>${athlete.bib || '-'}</td>
+                        <td>${athlete.club || '-'}</td>
+                        <td>${athlete.seed || '-'}</td>
+                        <td style="font-weight:600;">${mark ? mark.mark : '-'}</td>
+                        <td style="color:#FFD700;">${mark && mark.points ? mark.points : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div style="padding: 10px 15px; color: #666; font-size: 12px; border-top: 1px solid #2a2a4e;">
+                    Total Athletes: ${athletes.length} &bull; Track Event
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function renderFieldStartList(event, athletes) {
+            const container = document.getElementById('startlistContainer');
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">Order</th>
+                            <th>Name</th>
+                            <th style="width:70px;">Class</th>
+                            <th style="width:60px;">Bib</th>
+                            <th>Club</th>
+                            <th style="width:70px;">Attempt 1</th>
+                            <th style="width:70px;">Attempt 2</th>
+                            <th style="width:70px;">Attempt 3</th>
+                            <th style="width:70px;">Best</th>
+                            <th style="width:70px;">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            athletes.forEach((entry, index) => {
+                const order = index + 1;
+                const athlete = entry.athlete;
+                const mark = entry.mark;
+
+                // For field events, we need to store multiple attempts
+                // For now, we show the mark as the best
+                const attempts = ['-', '-', '-'];
+                const best = mark ? mark.mark : '-';
+
+                html += `
+                    <tr>
+                        <td><span class="status-badge" style="background: #FF9800; color: #fff;">${order}</span></td>
+                        <td><strong>${athlete.name}</strong></td>
+                        <td>${athlete.class}</td>
+                        <td>${athlete.bib || '-'}</td>
+                        <td>${athlete.club || '-'}</td>
+                        <td>${attempts[0]}</td>
+                        <td>${attempts[1]}</td>
+                        <td>${attempts[2]}</td>
+                        <td style="font-weight:600; color:#FFD700;">${best}</td>
+                        <td style="color:#FFD700;">${mark && mark.points ? mark.points : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div style="padding: 10px 15px; color: #666; font-size: 12px; border-top: 1px solid #2a2a4e;">
+                    Total Athletes: ${athletes.length} &bull; Field Event
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function renderGenericStartList(event, athletes) {
+            const container = document.getElementById('startlistContainer');
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th>Name</th>
+                            <th style="width:70px;">Class</th>
+                            <th style="width:60px;">Bib</th>
+                            <th>Club</th>
+                            <th style="width:80px;">Mark</th>
+                            <th style="width:70px;">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            athletes.forEach((entry, index) => {
+                const order = index + 1;
+                const athlete = entry.athlete;
+                const mark = entry.mark;
+
+                html += `
+                    <tr>
+                        <td>${order}</td>
+                        <td><strong>${athlete.name}</strong></td>
+                        <td>${athlete.class}</td>
+                        <td>${athlete.bib || '-'}</td>
+                        <td>${athlete.club || '-'}</td>
+                        <td style="font-weight:600;">${mark ? mark.mark : '-'}</td>
+                        <td style="color:#FFD700;">${mark && mark.points ? mark.points : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div style="padding: 10px 15px; color: #666; font-size: 12px; border-top: 1px solid #2a2a4e;">
+                    Total Athletes: ${athletes.length}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Export to Excel (CSV format)
+        function exportExcel() {
+            const eventId = document.getElementById('eventSelect').value;
+            if (!eventId) {
+                alert('Please select an event first.');
+                return;
+            }
+
+            const event = allEvents.find(e => e.id === eventId);
+            if (!event) {
+                alert('Event not found.');
+                return;
+            }
+
+            const athletes = getEventAthletes(eventId);
+            if (athletes.length === 0) {
+                alert('No athletes in this event.');
+                return;
+            }
+
+            const isTrack = isTrackEvent(event.discipline);
+            const isField = isFieldEvent(event.discipline);
+
+            let csv = '';
+            let headers = [];
+
+            // Headers
+            if (isTrack) {
+                headers = ['Lane', 'Name', 'Class', 'Bib', 'Club', 'Seed', 'Mark', 'Points'];
+            } else if (isField) {
+                headers = ['Order', 'Name', 'Class', 'Bib', 'Club', 'Attempt 1', 'Attempt 2', 'Attempt 3', 'Best', 'Points'];
+            } else {
+                headers = ['#', 'Name', 'Class', 'Bib', 'Club', 'Mark', 'Points'];
+            }
+
+            csv = headers.join(',') + '\n';
+
+            // Data rows
+            athletes.forEach((entry, index) => {
+                const athlete = entry.athlete;
+                const mark = entry.mark;
+                let row = [];
+
+                if (isTrack) {
+                    row.push(index + 1);
+                    row.push(`"${athlete.name}"`);
+                    row.push(athlete.class);
+                    row.push(athlete.bib || '');
+                    row.push(`"${athlete.club || ''}"`);
+                    row.push(athlete.seed || '');
+                    row.push(mark ? mark.mark : '');
+                    row.push(mark && mark.points ? mark.points : '');
+                } else if (isField) {
+                    row.push(index + 1);
+                    row.push(`"${athlete.name}"`);
+                    row.push(athlete.class);
+                    row.push(athlete.bib || '');
+                    row.push(`"${athlete.club || ''}"`);
+                    row.push('');
+                    row.push('');
+                    row.push('');
+                    row.push(mark ? mark.mark : '');
+                    row.push(mark && mark.points ? mark.points : '');
+                } else {
+                    row.push(index + 1);
+                    row.push(`"${athlete.name}"`);
+                    row.push(athlete.class);
+                    row.push(athlete.bib || '');
+                    row.push(`"${athlete.club || ''}"`);
+                    row.push(mark ? mark.mark : '');
+                    row.push(mark && mark.points ? mark.points : '');
+                }
+
+                csv += row.join(',') + '\n';
+            });
+
+            // Add event info at the top
+            const eventInfo = `"Event: ${event.name}","Discipline: ${event.discipline}","Sex: ${event.sex}","Class: ${event.classes ? event.classes.join(', ') : event.class}"\n`;
+            csv = eventInfo + csv;
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${event.name}_StartList.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        // Initialize
+        loadMeetInfo();
+        loadData();
+
+        // Auto-refresh every 60 seconds
+        setInterval(loadData, 60000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                loadStartList();
+            }
+            if (e.key === 'p' || e.key === 'P') {
+                window.print();
+            }
+        });
+    </script>
+</body>
+</html>

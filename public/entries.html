@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entries - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #0a0a1a; color: #fff; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #e94560; margin-bottom: 20px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2a4e; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #ccc; }
+        select, input { width: 100%; padding: 10px; background: #0a0a1a; border: 1px solid #2a2a4e; border-radius: 6px; color: #fff; margin-bottom: 12px; font-size: 14px; }
+        button { padding: 10px 20px; background: #e94560; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+        button:hover { background: #c73e54; }
+        button.success { background: #4CAF50; }
+        button.success:hover { background: #45a049; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        .entry-item { display: flex; justify-content: space-between; padding: 10px; background: #0a0a1a; border-radius: 6px; margin-bottom: 5px; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .entry-item .name { font-weight: 500; }
+        .entry-item .detail { color: #999; font-size: 13px; }
+        .entry-item .mark-input { width: 100px; padding: 6px; background: #0a0a1a; border: 1px solid #2a2a4e; border-radius: 4px; color: #fff; font-size: 13px; }
+        .success { color: #4CAF50; margin-top: 10px; }
+        .error { color: #ff6b6b; margin-top: 10px; }
+        .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .flex-wrap { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .mt-10 { margin-top: 10px; }
+        .count-badge { background: #2a2a4e; padding: 2px 10px; border-radius: 10px; font-size: 12px; color: #999; }
+        .debug-box { background: #1a1a2e; padding: 10px; border-radius: 6px; font-size: 12px; color: #999; margin-top: 10px; border: 1px solid #2a2a4e; }
+        .entry-list-container { min-height: 50px; }
+        .points-display { font-size: 14px; font-weight: bold; color: #FFD700; min-width: 60px; text-align: center; }
+        .points-empty { font-size: 12px; color: #666; min-width: 60px; text-align: center; }
+        .class-badge { display: inline-block; background: #2a2a4e; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; }
+        .nav-links { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px; }
+        .nav-links a { color: #e94560; text-decoration: none; padding: 8px 16px; background: #1a1a2e; border-radius: 6px; border: 1px solid #2a2a4e; }
+        .nav-links a:hover { background: #2a2a4e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Entries & Results</h1>
+
+        <div class="card">
+            <h2>📋 Navigation</h2>
+            <div class="nav-links">
+                <a href="/admin.html">📊 Admin</a>
+                <a href="/athletes.html">👤 Athletes</a>
+                <a href="/entries.html">📋 Entries</a>
+                <a href="/live.html">📺 Live Results</a>
+                <a href="/mobile.html">📱 Mobile</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Select Event</h2>
+            <select id="eventSelect" onchange="loadEventData()">
+                <option value="">-- Select an event --</option>
+            </select>
+        </div>
+
+        <div id="eventData" style="display: none;">
+            <div class="card">
+                <h2 id="eventTitle">Event</h2>
+                <div id="eventDetails" style="color: #999; font-size: 14px; margin-bottom: 10px;"></div>
+                
+                <div class="flex-wrap">
+                    <select id="athleteSelect" style="flex: 1; min-width: 200px;">
+                        <option value="">Select athlete...</option>
+                    </select>
+                    <button class="success" onclick="addEntry()">➕ Add Athlete</button>
+                </div>
+                <div id="entryMessage"></div>
+            </div>
+
+            <div class="card">
+                <h2>👥 Entries <span id="entryCount" class="count-badge">0</span></h2>
+                <div id="entryList" class="entry-list-container">
+                    <p style="color: #666;">No athletes entered yet.</p>
+                </div>
+                <div class="flex-wrap mt-10">
+                    <button class="danger" onclick="clearEntries()">🗑️ Clear Entries</button>
+                    <button class="success" onclick="markOfficial()">✅ Mark Official</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Quick Links</h2>
+                <div class="flex-wrap">
+                    <button onclick="viewStartList()" style="background: #2196F3;">📋 Start List</button>
+                    <button onclick="viewResults()" style="background: #4CAF50;">🏆 Results</button>
+                </div>
+            </div>
+
+            <div class="debug-box" id="debugInfo">
+                <strong>Debug Info:</strong>
+                <div id="debugContent">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentEventId = null;
+        let currentEvent = null;
+
+        // ---------- FIXED fetchAPI with password ----------
+        async function fetchAPI(url, options = {}) {
+            const password = 'admin123';
+            const separator = url.includes('?') ? '&' : '?';
+            
+            // Add password for admin endpoints
+            const adminEndpoints = ['/api/entries', '/api/marks', '/api/events', '/api/athletes'];
+            const isAdmin = adminEndpoints.some(endpoint => url.includes(endpoint));
+            
+            const finalUrl = isAdmin ? `${url}${separator}password=${password}` : url;
+            
+            const response = await fetch(finalUrl, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadEvents() {
+            try {
+                const events = await fetchAPI('/api/events');
+                const select = document.getElementById('eventSelect');
+                
+                select.innerHTML = '<option value="">-- Select an event --</option>';
+                events.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = e.id;
+                    const classes = e.classes ? e.classes.join(', ') : e.class || 'Single';
+                    opt.textContent = `${e.name} (${e.discipline}) - ${classes}`;
+                    select.appendChild(opt);
+                });
+                
+                if (events.length > 0) {
+                    select.value = events[0].id;
+                    loadEventData();
+                }
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        async function loadEventData() {
+            const eventId = document.getElementById('eventSelect').value;
+            if (!eventId) {
+                document.getElementById('eventData').style.display = 'none';
+                return;
+            }
+            
+            currentEventId = eventId;
+            document.getElementById('eventData').style.display = 'block';
+            
+            try {
+                currentEvent = await fetchAPI(`/api/events/${eventId}`);
+                document.getElementById('eventTitle').textContent = currentEvent.name;
+                
+                let classInfo = '';
+                if (currentEvent.classes && currentEvent.classes.length > 1) {
+                    classInfo = ` • 🔄 Combined Classes: ${currentEvent.classes.join(', ')}`;
+                } else if (currentEvent.class) {
+                    classInfo = ` • Class: ${currentEvent.class}`;
+                }
+                
+                document.getElementById('eventDetails').textContent = 
+                    `${currentEvent.discipline} • ${currentEvent.sex} • Day ${currentEvent.day || 1}${classInfo}`;
+                
+                document.getElementById('debugContent').innerHTML = `
+                    Event ID: ${currentEvent.id}<br>
+                    Event: ${currentEvent.name}<br>
+                    Classes: ${currentEvent.classes ? currentEvent.classes.join(', ') : currentEvent.class || 'N/A'}<br>
+                    Is Combined: ${currentEvent.isCombined ? 'Yes' : 'No'}
+                `;
+                
+                await loadEntries();
+                await loadAthleteDropdown();
+            } catch (error) {
+                console.error('Error loading event data:', error);
+            }
+        }
+
+        async function loadEntries() {
+            if (!currentEventId) return;
+            
+            try {
+                const [entries, athletes, marks] = await Promise.all([
+                    fetchAPI(`/api/entries?eventId=${currentEventId}`),
+                    fetchAPI('/api/athletes'),
+                    fetchAPI(`/api/marks?eventId=${currentEventId}`)
+                ]);
+                
+                const container = document.getElementById('entryList');
+                const countEl = document.getElementById('entryCount');
+                
+                countEl.textContent = entries.length;
+                
+                document.getElementById('debugContent').innerHTML += `
+                    <br><br>Entries found: ${entries.length}
+                    <br>Athletes in system: ${athletes.length}
+                    <br>Marks found: ${marks.length}
+                `;
+                
+                if (entries.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No athletes entered yet.</p>';
+                    return;
+                }
+                
+                let html = '';
+                let foundCount = 0;
+                
+                for (const entry of entries) {
+                    const athlete = athletes.find(a => a.id === entry.athleteId);
+                    const mark = marks.find(m => m.athleteId === entry.athleteId);
+                    const isGuide = athlete && ['T11','T12','F11','F12'].includes(athlete.class);
+                    
+                    if (athlete) {
+                        foundCount++;
+                        
+                        let pointsDisplay = '';
+                        if (mark && mark.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(mark.mark)) {
+                            pointsDisplay = `<span class="points-display" id="points-${athlete.id}">...</span>`;
+                        } else {
+                            pointsDisplay = `<span class="points-empty">No points</span>`;
+                        }
+                        
+                        html += `
+                            <div class="entry-item" style="border-left: 3px solid #4CAF50; padding-left: 12px;">
+                                <div>
+                                    <div class="name">
+                                        ${athlete.name}
+                                        ${isGuide ? '<span style="background: #2196F3; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px;">👁️ Guide</span>' : ''}
+                                        <span class="class-badge">${athlete.class}</span>
+                                    </div>
+                                    <div class="detail">Bib: ${athlete.bib || 'N/A'} • ${athlete.club || 'No club'}</div>
+                                </div>
+                                <div class="flex" style="gap: 10px; align-items: center;">
+                                    <input class="mark-input" id="mark-${athlete.id}" placeholder="Mark" value="${mark ? mark.mark : ''}" onchange="saveMark('${athlete.id}')">
+                                    ${pointsDisplay}
+                                    <button onclick="removeEntry('${entry.id}')" class="danger" style="padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">✕</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('debugContent').innerHTML += `
+                            <br>⚠️ Athlete not found for entry: ${entry.athleteId}
+                        `;
+                    }
+                }
+                
+                document.getElementById('debugContent').innerHTML += `
+                    <br>Displaying ${foundCount} athletes
+                `;
+                
+                container.innerHTML = html;
+                
+                if (foundCount > 0) {
+                    fetchPointsForEvent();
+                }
+                
+            } catch (error) {
+                console.error('Error loading entries:', error);
+                document.getElementById('entryList').innerHTML = '<p style="color: #ff6b6b;">Error: ' + error.message + '</p>';
+            }
+        }
+        
+        async function fetchPointsForEvent() {
+            try {
+                const results = await fetchAPI(`/api/events/${currentEventId}/results`);
+                if (results && results.results) {
+                    results.results.forEach(r => {
+                        const pointsEl = document.getElementById(`points-${r.athleteId}`);
+                        if (pointsEl && r.points) {
+                            pointsEl.textContent = r.points;
+                            pointsEl.style.color = '#FFD700';
+                        } else if (pointsEl) {
+                            pointsEl.textContent = '-';
+                            pointsEl.style.color = '#666';
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching points:', error);
+            }
+        }
+
+        async function loadAthleteDropdown() {
+            if (!currentEventId || !currentEvent) return;
+            
+            try {
+                const [athletes, entries] = await Promise.all([
+                    fetchAPI('/api/athletes'),
+                    fetchAPI(`/api/entries?eventId=${currentEventId}`)
+                ]);
+                
+                const enteredIds = entries.map(e => e.athleteId);
+                
+                const allowedClasses = currentEvent.classes || [currentEvent.class];
+                
+                const available = athletes.filter(a => 
+                    allowedClasses.includes(a.class) && 
+                    a.sex === currentEvent.sex &&
+                    !enteredIds.includes(a.id)
+                );
+                
+                document.getElementById('debugContent').innerHTML += `
+                    <br>Allowed classes: ${allowedClasses.join(', ')}
+                    <br>Available athletes: ${available.length}
+                    <br>Already entered: ${enteredIds.length}
+                `;
+                
+                const select = document.getElementById('athleteSelect');
+                select.innerHTML = '<option value="">Select athlete...</option>';
+                
+                if (available.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No available athletes';
+                    opt.disabled = true;
+                    select.appendChild(opt);
+                } else {
+                    available.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = `${a.name} (${a.class})`;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading athlete dropdown:', error);
+            }
+        }
+
+        async function addEntry() {
+            const athleteId = document.getElementById('athleteSelect').value;
+            const messageEl = document.getElementById('entryMessage');
+            
+            if (!athleteId) {
+                messageEl.innerHTML = '<span class="error">⚠️ Please select an athlete</span>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/entries?password=admin123`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        eventId: currentEventId, 
+                        athleteId: athleteId 
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to add athlete');
+                
+                messageEl.innerHTML = '<span class="success">✅ Athlete added successfully!</span>';
+                await loadEntries();
+                await loadAthleteDropdown();
+                
+                setTimeout(() => {
+                    messageEl.innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                messageEl.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function removeEntry(entryId) {
+            if (confirm('Remove this athlete from the event?')) {
+                await fetchAPI(`/api/entries/${entryId}?password=admin123`, { method: 'DELETE' });
+                await loadEntries();
+                await loadAthleteDropdown();
+            }
+        }
+
+        async function saveMark(athleteId) {
+            const input = document.querySelector(`#mark-${athleteId}`);
+            if (!input) return;
+            
+            const mark = input.value.trim();
+            
+            try {
+                const response = await fetch(`/api/marks?password=admin123`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        eventId: currentEventId, 
+                        athleteId: athleteId, 
+                        mark: mark || 'DNS' 
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to save mark');
+                
+                input.style.borderColor = '#4CAF50';
+                setTimeout(() => input.style.borderColor = '', 1000);
+                
+                await loadEntries();
+                
+            } catch (error) {
+                console.error('Error saving mark:', error);
+                input.style.borderColor = '#ff6b6b';
+            }
+        }
+
+        async function clearEntries() {
+            if (confirm('Remove ALL athletes from this event?')) {
+                await fetchAPI(`/api/entries/event/${currentEventId}?password=admin123`, { method: 'DELETE' });
+                await loadEntries();
+                await loadAthleteDropdown();
+            }
+        }
+
+        async function markOfficial() {
+            if (!confirm('Mark this event as OFFICIAL?\n\nAthletes without a mark will be recorded as DNS.')) {
+                return;
+            }
+            
+            try {
+                const entries = await fetchAPI(`/api/entries?eventId=${currentEventId}`);
+                const marks = await fetchAPI(`/api/marks?eventId=${currentEventId}`);
+                const athletes = await fetchAPI('/api/athletes');
+                
+                const athletesWithoutMark = entries.filter(entry => {
+                    const mark = marks.find(m => m.athleteId === entry.athleteId);
+                    return !mark || !mark.mark || mark.mark.trim() === '';
+                });
+                
+                if (athletesWithoutMark.length > 0) {
+                    const names = athletesWithoutMark.map(e => {
+                        const athlete = athletes.find(a => a.id === e.athleteId);
+                        return athlete ? athlete.name : 'Unknown';
+                    }).join(', ');
+                    
+                    if (confirm(`⚠️ These athletes have no mark: ${names}\n\nAuto-mark them as DNS?`)) {
+                        for (const entry of athletesWithoutMark) {
+                            await fetch(`/api/marks?password=admin123`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    eventId: currentEventId,
+                                    athleteId: entry.athleteId,
+                                    mark: 'DNS'
+                                })
+                            });
+                        }
+                        alert('✅ Athletes auto-marked as DNS!');
+                    } else {
+                        return;
+                    }
+                }
+                
+                await fetch(`/api/events/${currentEventId}?password=admin123`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'official' })
+                });
+                
+                alert('✅ Event marked as OFFICIAL!');
+                await loadEventData();
+                await loadEntries();
+                
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        function viewStartList() {
+            window.open(`/api/events/${currentEventId}/startlist?password=admin123`, '_blank');
+        }
+
+        function viewResults() {
+            window.open(`/api/events/${currentEventId}/results?password=admin123`, '_blank');
+        }
+
+        loadEvents();
+    </script>
+</body>
+</html>

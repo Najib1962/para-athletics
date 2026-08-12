@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Para Athletics - Mobile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --primary: #e94560;
+            --primary-dark: #c73e54;
+            --bg: #0a0a1a;
+            --card: #1a1a2e;
+            --card-hover: #222244;
+            --text: #fff;
+            --text-secondary: #999;
+            --border: #2a2a4e;
+            --shadow: 0 4px 20px rgba(0,0,0,0.4);
+            --radius: 16px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: calc(80px + var(--safe-bottom));
+            overflow-x: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .header-title span { color: var(--primary); }
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .header-btn {
+            background: var(--card);
+            border: none;
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .header-btn:active { background: var(--card-hover); }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+        
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+        .card:active { transform: scale(0.98); }
+        
+        .card-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .card-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .event-item:active { background: var(--card-hover); margin: 0 -12px; padding: 12px; }
+        .event-item:last-child { border-bottom: none; }
+        
+        .event-info {
+            flex: 1;
+        }
+        .event-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .event-detail {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        .event-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .status-pending { background: #FF9800; color: #fff; }
+        .status-official { background: #4CAF50; color: #fff; }
+        .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .result-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .result-item:last-child { border-bottom: none; }
+        
+        .result-rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+        .rank-1 { background: #FFD700; color: #000; }
+        .rank-2 { background: #C0C0C0; color: #000; }
+        .rank-3 { background: #CD7F32; color: #000; }
+        .rank-other { background: var(--border); color: var(--text-secondary); }
+        .rank-dns { background: transparent; color: var(--text-secondary); font-style: italic; }
+        
+        .result-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .result-name {
+            font-size: 15px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .result-class {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .result-mark {
+            font-size: 16px;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .result-mark-dns {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-weight: 400;
+        }
+        .result-points {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFD700;
+            flex-shrink: 0;
+            margin-left: 8px;
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(233, 69, 96, 0.1);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e94560;
+            animation: pulse 1.5s infinite;
+        }
+        .live-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Schedule Styles */
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            gap: 10px;
+            cursor: pointer;
+        }
+        .schedule-item:last-child { border-bottom: none; }
+        .schedule-item:active { background: var(--card-hover); margin: 0 -16px; padding: 10px 16px; }
+        .schedule-time {
+            min-width: 55px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 13px;
+        }
+        .schedule-info {
+            flex: 1;
+        }
+        .schedule-info .name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .schedule-info .detail {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .schedule-status {
+            font-size: 9px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .schedule-classes {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 3px;
+        }
+        .schedule-class {
+            background: var(--border);
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+        .schedule-class.combined {
+            background: var(--primary);
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 calc(8px + var(--safe-bottom));
+            z-index: 200;
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 6px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 9px;
+            transition: color 0.3s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-family: inherit;
+        }
+        .nav-item .nav-icon {
+            font-size: 20px;
+            margin-bottom: 1px;
+        }
+        .nav-item.active {
+            color: var(--primary);
+        }
+        .nav-item:active { transform: scale(0.95); }
+        
+        /* Display Grid for Mobile */
+        .display-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .display-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 6px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.3s;
+        }
+        .display-card:active { transform: scale(0.95); background: var(--card-hover); }
+        .display-card .icon { font-size: 24px; display: block; }
+        .display-card .label { font-size: 10px; font-weight: 500; margin-top: 3px; color: var(--text-secondary); }
+        .display-card.results { border-color: #e94560; }
+        .display-card.rotation { border-color: #FF9800; }
+        .display-card.startlists { border-color: #2196F3; }
+        .display-card.participants { border-color: #4CAF50; }
+        .display-card.medals { border-color: #FFD700; }
+        .display-section-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        /* Booklet Styles */
+        .booklet-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .booklet-event {
+            background: var(--bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .booklet-event.official { border-left: 3px solid #4CAF50; }
+        .booklet-event.live { border-left: 3px solid #e94560; }
+        .booklet-event.pending { border-left: 3px solid #FF9800; }
+        .booklet-event-header {
+            padding: 10px 14px;
+            background: var(--card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .booklet-event-header .name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .booklet-event-header .meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .booklet-event-header .status-badge {
+            font-size: 9px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .booklet-event-body {
+            padding: 0 14px;
+            overflow-x: auto;
+        }
+        .booklet-event-body table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .booklet-event-body th {
+            text-align: left;
+            padding: 8px 4px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+        .booklet-event-body td {
+            padding: 6px 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+        }
+        .booklet-event-body tr:last-child td { border-bottom: none; }
+        .rank-1 { color: #FFD700; font-weight: 700; }
+        .rank-2 { color: #C0C0C0; font-weight: 700; }
+        .rank-3 { color: #CD7F32; font-weight: 700; }
+        .rank-dns { color: #666; font-style: italic; }
+        .points-col { color: #FFD700; font-weight: 600; }
+        
+        .booklet-participant {
+            display: inline-block;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 4px;
+            font-size: 12px;
+        }
+        .booklet-participant .p-name { font-weight: 500; }
+        .booklet-participant .p-class {
+            background: var(--primary);
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .empty-state .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .refresh-control {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .refresh-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+        .refresh-btn:active { background: var(--card-hover); }
+        
+        .ranking-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 6px 10px;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .progress-container {
+            margin-top: 12px;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .admin-badge {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            z-index: 999;
+        }
+        .admin-badge a {
+            color: #e94560;
+            text-decoration: none;
+        }
+        .admin-badge a:hover { text-decoration: underline; }
+        
+        @media (max-width: 400px) {
+            .header-title { font-size: 17px; }
+            .card-value { font-size: 18px; }
+            .event-name { font-size: 14px; }
+            .result-name { font-size: 14px; }
+            .display-grid { grid-template-columns: repeat(2, 1fr); }
+            .nav-item { font-size: 8px; padding: 4px 4px; }
+            .nav-item .nav-icon { font-size: 18px; }
+            .bottom-nav { padding: 4px 0 calc(4px + var(--safe-bottom)); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <div class="header-title">🏃 <span>Para</span> Athletics</div>
+                <div class="header-subtitle" id="meetName">Loading...</div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="refreshAll()">🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent"></div>
+
+    <div class="bottom-nav">
+        <button class="nav-item active" data-view="events" onclick="switchView('events')">
+            <span class="nav-icon">📋</span>
+            Events
+        </button>
+        <button class="nav-item" data-view="schedule" onclick="switchView('schedule')">
+            <span class="nav-icon">📅</span>
+            Schedule
+        </button>
+        <button class="nav-item" data-view="live" onclick="switchView('live')">
+            <span class="nav-icon">📺</span>
+            Live
+        </button>
+        <button class="nav-item" data-view="results" onclick="switchView('results')">
+            <span class="nav-icon">🏆</span>
+            Results
+        </button>
+        <button class="nav-item" data-view="booklet" onclick="switchView('booklet')">
+            <span class="nav-icon">📖</span>
+            Booklet
+        </button>
+        <button class="nav-item" data-view="athletes" onclick="switchView('athletes')">
+            <span class="nav-icon">👤</span>
+            Athletes
+        </button>
+    </div>
+
+    <div class="admin-badge">
+        🔐 <a href="/login.html">Admin</a>
+    </div>
+
+    <script>
+        let currentView = 'events';
+        let selectedEventId = null;
+        let autoRefreshInterval = null;
+        
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        }
+        
+        function renderLoading() {
+            return `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading...</p>
+                </div>
+            `;
+        }
+        
+        function renderEmptyState(icon, title, description) {
+            return `
+                <div class="empty-state">
+                    <div class="empty-icon">${icon}</div>
+                    <div class="empty-title">${title}</div>
+                    <p style="color:var(--text-secondary); font-size:14px;">${description}</p>
+                </div>
+            `;
+        }
+
+        function renderDisplayAccess() {
+            return `
+                <div class="card" style="padding:12px 14px;">
+                    <div class="display-section-title">📺 Live Displays</div>
+                    <div class="display-grid">
+                        <a href="/display.html" class="display-card results" target="_blank">
+                            <span class="icon">📺</span>
+                            <span class="label">Live Results</span>
+                        </a>
+                        <a href="/display-rotation.html" class="display-card rotation" target="_blank">
+                            <span class="icon">🔄</span>
+                            <span class="label">Rotation</span>
+                        </a>
+                        <a href="/display-startlists.html" class="display-card startlists" target="_blank">
+                            <span class="icon">📋</span>
+                            <span class="label">Start Lists</span>
+                        </a>
+                        <a href="/display-participants.html" class="display-card participants" target="_blank">
+                            <span class="icon">👥</span>
+                            <span class="label">Participants</span>
+                        </a>
+                        <a href="/display-medals.html" class="display-card medals" target="_blank">
+                            <span class="icon">🏅</span>
+                            <span class="label">Medals</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderEventCard(event) {
+            const statusClass = event.status === 'official' ? 'status-official' : 
+                               event.status === 'live' ? 'status-live' : 'status-pending';
+            const statusLabel = event.status === 'official' ? '✓ Official' : 
+                               event.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+            
+            return `
+                <div class="event-item" onclick="selectEvent('${event.id}')">
+                    <div class="event-info">
+                        <div class="event-name">${event.name}</div>
+                        <div class="event-detail">${event.discipline} • ${event.sex} • ${event.round || 'Final'}</div>
+                    </div>
+                    <span class="event-status ${statusClass}">${statusLabel}</span>
+                </div>
+            `;
+        }
+
+        function renderScheduleItem(event, timeStr) {
+            const statusClass = event.status === 'official' ? 'status-official' : 
+                               event.status === 'live' ? 'status-live' : 'status-pending';
+            const statusLabel = event.status === 'official' ? '✓ Official' : 
+                               event.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+            
+            const classes = event.classes || [event.class || 'N/A'];
+            const isCombined = classes.length > 1;
+            const isRelay = event.discipline && event.discipline.includes('Relay');
+
+            return `
+                <div class="schedule-item" onclick="selectEvent('${event.id}')">
+                    <div class="schedule-time">${timeStr}</div>
+                    <div class="schedule-info">
+                        <div class="name">${event.name} ${isRelay ? '🏃' : ''}</div>
+                        <div class="detail">${event.discipline} • ${event.sex}</div>
+                        <div class="schedule-classes">
+                            ${isCombined ? `<span class="schedule-class combined">🔄 Combined</span>` : ''}
+                            ${classes.map(c => `<span class="schedule-class">${c}</span>`).join('')}
+                        </div>
+                    </div>
+                    <span class="schedule-status ${statusClass}">${statusLabel}</span>
+                </div>
+            `;
+        }
+        
+        function renderResultItem(athlete, index) {
+            const rankClass = athlete.rank === 1 ? 'rank-1' : 
+                             athlete.rank === 2 ? 'rank-2' : 
+                             athlete.rank === 3 ? 'rank-3' : 'rank-other';
+            const isDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(athlete.mark);
+            const rankDisplay = athlete.rank === '-' ? '-' : athlete.rank;
+            
+            let pointsDisplay = '';
+            if (athlete.points && athlete.points > 0) {
+                pointsDisplay = `<span class="result-points">${athlete.points}</span>`;
+            }
+            
+            return `
+                <div class="result-item slide-up" style="animation-delay: ${index * 0.05}s">
+                    <div class="result-rank ${rankClass}">${rankDisplay}</div>
+                    <div class="result-info">
+                        <div class="result-name">${athlete.name}</div>
+                        <div class="result-class">${athlete.class} • Bib: ${athlete.bib || '-'}</div>
+                    </div>
+                    <div class="result-mark ${isDNS ? 'result-mark-dns' : ''}">${athlete.mark}</div>
+                    ${pointsDisplay}
+                </div>
+            `;
+        }
+        
+        function renderAthleteCard(athlete) {
+            return `
+                <div class="card" style="padding:12px 16px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:600; font-size:16px;">${athlete.name}</div>
+                            <div style="font-size:13px; color:var(--text-secondary);">
+                                ${athlete.class} • ${athlete.sex || 'N/A'}
+                                ${athlete.bib ? `• Bib: ${athlete.bib}` : ''}
+                            </div>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-secondary);">
+                            ${athlete.club || 'No club'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // BOOKLET VIEW
+        // ============================================================
+        async function renderBookletView() {
+            const container = document.getElementById('mainContent');
+            container.innerHTML = renderLoading();
+
+            try {
+                const [events, athletes, meet] = await Promise.all([
+                    fetchAPI('/api/events'),
+                    fetchAPI('/api/athletes'),
+                    fetchAPI('/api/meet')
+                ]);
+
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+
+                let html = renderDisplayAccess();
+
+                if (events.length === 0) {
+                    html += renderEmptyState('📖', 'No Results Yet', 'Create events to generate the booklet.');
+                    container.innerHTML = html;
+                    return;
+                }
+
+                // Stats
+                const completed = events.filter(e => e.status === 'official').length;
+                const live = events.filter(e => e.status === 'live').length;
+
+                html += `
+                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;">
+                        <div style="background:var(--card); padding:10px; border-radius:8px; text-align:center; border:1px solid var(--border);">
+                            <div style="font-size:20px; font-weight:700; color:var(--primary);">${events.length}</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">Events</div>
+                        </div>
+                        <div style="background:var(--card); padding:10px; border-radius:8px; text-align:center; border:1px solid var(--border);">
+                            <div style="font-size:20px; font-weight:700; color:#4CAF50;">${completed}</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">Completed</div>
+                        </div>
+                        <div style="background:var(--card); padding:10px; border-radius:8px; text-align:center; border:1px solid var(--border);">
+                            <div style="font-size:20px; font-weight:700; color:${live > 0 ? '#e94560' : '#666'};">${live}</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">Live</div>
+                        </div>
+                    </div>
+                `;
+
+                // --- Medal Standings ---
+                html += `<div class="booklet-section-title">🏅 Medal Standings</div>`;
+                const medalHtml = await getMedalHtml(events);
+                html += medalHtml;
+
+                // --- Participants ---
+                html += `<div class="booklet-section-title" style="margin-top:16px;">👥 Participants</div>`;
+                const participantsHtml = getParticipantsHtml(athletes);
+                html += participantsHtml;
+
+                // --- Schedule ---
+                html += `<div class="booklet-section-title" style="margin-top:16px;">📅 Schedule</div>`;
+                const scheduleHtml = getScheduleHtml(events);
+                html += scheduleHtml;
+
+                // --- Results ---
+                html += `<div class="booklet-section-title" style="margin-top:16px;">📊 Results</div>`;
+                const resultsHtml = await getResultsHtml(events);
+                html += resultsHtml;
+
+                html += `
+                    <div class="refresh-control">
+                        <span>Updated: ${new Date().toLocaleTimeString()}</span>
+                        <button class="refresh-btn" onclick="renderBookletView()">↻ Refresh</button>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                container.innerHTML = renderEmptyState('⚠️', 'Error', error.message);
+            }
+        }
+
+        async function getMedalHtml(events) {
+            const completedEvents = events.filter(e => e.status === 'official');
+
+            if (completedEvents.length === 0) {
+                return `<div class="empty-state" style="padding:20px;"><div class="empty-icon">🏅</div><p style="color:var(--text-secondary); font-size:13px;">No completed events yet</p></div>`;
+            }
+
+            const medalWinners = {};
+
+            for (const event of completedEvents) {
+                try {
+                    const data = await fetchAPI(`/api/events/${event.id}/results`);
+                    const results = data.results || [];
+                    const validResults = results.filter(r => r.rank !== '-' && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark));
+                    const top3 = validResults.slice(0, 3);
+
+                    top3.forEach((r, index) => {
+                        const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+                        const country = r.club || 'Unknown';
+                        if (!medalWinners[country]) {
+                            medalWinners[country] = { gold: 0, silver: 0, bronze: 0, total: 0 };
+                        }
+                        medalWinners[country][medal]++;
+                        medalWinners[country].total++;
+                    });
+                } catch (error) {
+                    console.error('Error loading event results:', error);
+                }
+            }
+
+            const sorted = Object.entries(medalWinners).sort((a, b) => {
+                if (a[1].gold !== b[1].gold) return b[1].gold - a[1].gold;
+                if (a[1].silver !== b[1].silver) return b[1].silver - a[1].silver;
+                return b[1].bronze - a[1].bronze;
+            });
+
+            if (sorted.length === 0) {
+                return `<div class="empty-state" style="padding:20px;"><div class="empty-icon">🏅</div><p style="color:var(--text-secondary); font-size:13px;">No medal winners yet</p></div>`;
+            }
+
+            let html = `<div style="background:var(--card); border-radius:10px; border:1px solid var(--border); overflow:hidden; margin-bottom:12px;">`;
+            html += `<table style="width:100%; border-collapse:collapse; font-size:12px;">`;
+            html += `<tr style="background:var(--border);"><th style="padding:8px 10px; text-align:left;">Country</th><th style="padding:8px 10px; text-align:center;">🥇</th><th style="padding:8px 10px; text-align:center;">🥈</th><th style="padding:8px 10px; text-align:center;">🥉</th><th style="padding:8px 10px; text-align:center;">Total</th></tr>`;
+            sorted.slice(0, 10).forEach(([country, medals]) => {
+                html += `<tr><td style="padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.05);">${country}</td>
+                        <td style="padding:6px 10px; text-align:center; color:#FFD700;">${medals.gold}</td>
+                        <td style="padding:6px 10px; text-align:center; color:#C0C0C0;">${medals.silver}</td>
+                        <td style="padding:6px 10px; text-align:center; color:#CD7F32;">${medals.bronze}</td>
+                        <td style="padding:6px 10px; text-align:center; font-weight:700;">${medals.total}</td></tr>`;
+            });
+            html += `</table></div>`;
+            return html;
+        }
+
+        function getParticipantsHtml(athletes) {
+            if (athletes.length === 0) {
+                return `<div class="empty-state" style="padding:20px;"><div class="empty-icon">👥</div><p style="color:var(--text-secondary); font-size:13px;">No participants registered</p></div>`;
+            }
+
+            const grouped = {};
+            athletes.forEach(a => {
+                const cls = a.class || 'Unknown';
+                if (!grouped[cls]) grouped[cls] = [];
+                grouped[cls].push(a);
+            });
+
+            let html = `<div style="background:var(--card); border-radius:10px; border:1px solid var(--border); padding:10px; margin-bottom:12px;">`;
+            const sortedClasses = Object.keys(grouped).sort();
+            sortedClasses.forEach(cls => {
+                html += `<div style="font-size:12px; font-weight:600; color:var(--primary); margin:6px 0 4px 0;">${cls} (${grouped[cls].length})</div>`;
+                grouped[cls].forEach(a => {
+                    const isGuide = ['T11', 'T12', 'F11', 'F12'].includes(a.class);
+                    html += `<span class="booklet-participant"><span class="p-name">${a.name}</span><span class="p-class">${a.class}</span>${isGuide ? ' 👁️' : ''}</span>`;
+                });
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        function getScheduleHtml(events) {
+            if (events.length === 0) {
+                return `<div class="empty-state" style="padding:20px;"><div class="empty-icon">📅</div><p style="color:var(--text-secondary); font-size:13px;">No events scheduled</p></div>`;
+            }
+
+            const grouped = {};
+            events.forEach(e => {
+                const day = e.day || 'TBD';
+                if (!grouped[day]) grouped[day] = [];
+                grouped[day].push(e);
+            });
+
+            let html = `<div style="background:var(--card); border-radius:10px; border:1px solid var(--border); overflow:hidden; margin-bottom:12px;">`;
+            const sortedDays = Object.keys(grouped).sort((a, b) => {
+                if (a === 'TBD') return 1;
+                if (b === 'TBD') return -1;
+                return parseInt(a) - parseInt(b);
+            });
+
+            const trackOrder = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon', '4x100m Relay', '4x400m Relay'];
+
+            sortedDays.forEach(day => {
+                const dayEvents = grouped[day];
+                dayEvents.sort((a, b) => {
+                    const aIndex = trackOrder.indexOf(a.discipline) !== -1 ? trackOrder.indexOf(a.discipline) : 999;
+                    const bIndex = trackOrder.indexOf(b.discipline) !== -1 ? trackOrder.indexOf(b.discipline) : 999;
+                    return aIndex - bIndex || a.name.localeCompare(b.name);
+                });
+
+                html += `<div style="background:var(--border); padding:6px 12px; font-weight:600; font-size:13px;">📅 Day ${day}</div>`;
+                let dayTimeSlot = 0;
+                dayEvents.forEach(e => {
+                    dayTimeSlot += 30;
+                    const hours = 9 + Math.floor(dayTimeSlot / 60);
+                    const mins = dayTimeSlot % 60;
+                    const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+                    const classes = e.classes || [e.class || 'N/A'];
+                    const isCombined = classes.length > 1;
+                    const statusLabel = e.status === 'official' ? '✓' : e.status === 'live' ? '🔴' : '⏳';
+                    html += `<div style="display:flex; align-items:center; padding:6px 12px; border-bottom:1px solid rgba(255,255,255,0.05); gap:8px; font-size:12px;">
+                                <span style="min-width:45px; font-weight:600; color:var(--primary);">${timeStr}</span>
+                                <span style="flex:1;">${e.name}</span>
+                                ${isCombined ? `<span style="background:var(--primary); padding:1px 6px; border-radius:8px; font-size:8px;">Combined</span>` : ''}
+                                <span style="font-size:10px; color:var(--text-secondary);">${statusLabel}</span>
+                            </div>`;
+                });
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        async function getResultsHtml(events) {
+            let html = '';
+
+            for (const event of events) {
+                try {
+                    const data = await fetchAPI(`/api/events/${event.id}/results`);
+                    const results = data.results || [];
+                    const hasResults = results.some(r => r.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark));
+
+                    const statusClass = event.status === 'official' ? 'official' :
+                                       event.status === 'live' ? 'live' : 'pending';
+                    const statusLabel = event.status === 'official' ? '✓ Official' :
+                                       event.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+                    const statusColor = event.status === 'official' ? '#4CAF50' :
+                                       event.status === 'live' ? '#e94560' : '#FF9800';
+
+                    html += `<div class="booklet-event ${statusClass}">`;
+                    html += `<div class="booklet-event-header">
+                                <div>
+                                    <div class="name">${event.name}</div>
+                                    <div class="meta">${event.discipline} • ${event.sex} • Day ${event.day || 1}</div>
+                                </div>
+                                <span class="status-badge" style="background:${statusColor}; color:#fff;">${statusLabel}</span>
+                            </div>`;
+
+                    if (results.length === 0) {
+                        html += `<div class="booklet-event-body"><div style="padding:10px; text-align:center; color:var(--text-secondary); font-size:13px;">No athletes entered</div></div>`;
+                    } else if (!hasResults) {
+                        html += `<div class="booklet-event-body"><div style="padding:10px; text-align:center; color:var(--text-secondary); font-size:13px;">⏳ Waiting for marks...</div></div>`;
+                    } else {
+                        const showGuide = results.some(r => r.hasGuide);
+                        const showPoints = results.some(r => r.points !== null && r.points > 0);
+
+                        html += `<div class="booklet-event-body">`;
+                        html += `<table><thead><tr>
+                                    <th>#</th><th>Name</th><th>Class</th>
+                                    ${showGuide ? '<th>Guide</th>' : ''}
+                                    <th>Mark</th>
+                                    ${showPoints ? '<th>Pts</th>' : ''}
+                                </tr></thead><tbody>`;
+
+                        const sortedResults = [...results].sort((a, b) => {
+                            const aIsDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(a.mark);
+                            const bIsDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(b.mark);
+                            if (aIsDNS && bIsDNS) return a.name.localeCompare(b.name);
+                            if (aIsDNS) return 1;
+                            if (bIsDNS) return -1;
+                            return (a.rank || 999) - (b.rank || 999);
+                        });
+
+                        sortedResults.forEach(r => {
+                            const isDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark);
+                            const rankClass = r.rank === 1 ? 'rank-1' :
+                                             r.rank === 2 ? 'rank-2' :
+                                             r.rank === 3 ? 'rank-3' :
+                                             isDNS ? 'rank-dns' : '';
+                            let medal = '';
+                            if (r.rank === 1) medal = '🥇';
+                            else if (r.rank === 2) medal = '🥈';
+                            else if (r.rank === 3) medal = '🥉';
+                            html += `<tr>
+                                        <td class="${rankClass}">${r.rank || '-'} ${medal}</td>
+                                        <td>${r.name}</td>
+                                        <td>${r.class}</td>
+                                        ${showGuide ? `<td>${r.guide || '-'}</td>` : ''}
+                                        <td style="${isDNS ? 'color:#666; font-style:italic;' : 'font-weight:600;'}">${r.mark}</td>
+                                        ${showPoints ? `<td class="points-col">${r.points || '-'}</td>` : ''}
+                                    </tr>`;
+                        });
+
+                        html += `</tbody></table></div>`;
+
+                        const completed = results.filter(r => r.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark)).length;
+                        const total = results.length;
+                        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                        if (pct < 100 && pct > 0) {
+                            html += `<div style="padding:0 14px 10px 14px;">
+                                        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-secondary); margin-bottom:2px;">
+                                            <span>Progress</span>
+                                            <span>${completed}/${total}</span>
+                                        </div>
+                                        <div style="width:100%; height:4px; background:var(--border); border-radius:2px; overflow:hidden;">
+                                            <div style="width:${pct}%; height:100%; background:var(--primary); border-radius:2px;"></div>
+                                        </div>
+                                    </div>`;
+                        }
+                    }
+
+                    html += `</div>`;
+
+                } catch (error) {
+                    console.error('Error loading event results:', error);
+                    html += `
+                        <div class="booklet-event pending">
+                            <div class="booklet-event-header">
+                                <div>
+                                    <div class="name">${event.name}</div>
+                                    <div class="meta">${event.discipline} • ${event.sex}</div>
+                                </div>
+                                <span class="status-badge" style="background:#FF9800; color:#fff;">⏳ Pending</span>
+                            </div>
+                            <div class="booklet-event-body">
+                                <div style="padding:10px; text-align:center; color:var(--text-secondary); font-size:13px;">Unable to load results</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            return html;
+        }
+
+        // ============================================================
+        // EVENT VIEWS
+        // ============================================================
+
+        async function renderEventsView() {
+            const container = document.getElementById('mainContent');
+            container.innerHTML = renderLoading();
+            
+            try {
+                const events = await fetchAPI('/api/events');
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+                
+                let html = renderDisplayAccess();
+                
+                if (events.length === 0) {
+                    html += renderEmptyState('📋', 'No Events Yet', 'Create events in the admin panel to get started.');
+                    container.innerHTML = html;
+                    return;
+                }
+                
+                const grouped = {};
+                events.forEach(e => {
+                    const day = e.day || 'TBD';
+                    if (!grouped[day]) grouped[day] = [];
+                    grouped[day].push(e);
+                });
+                
+                html += `
+                    <div class="refresh-control">
+                        <span>${events.length} events</span>
+                        <button class="refresh-btn" onclick="renderEventsView()">↻ Refresh</button>
+                    </div>
+                `;
+                
+                Object.keys(grouped).sort().forEach(day => {
+                    html += `
+                        <div class="card">
+                            <div class="card-title">Day ${day}</div>
+                            ${grouped[day].map(e => renderEventCard(e)).join('')}
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = renderEmptyState('⚠️', 'Error Loading Events', error.message);
+            }
+        }
+
+        async function renderScheduleView() {
+            const container = document.getElementById('mainContent');
+            container.innerHTML = renderLoading();
+            
+            try {
+                const events = await fetchAPI('/api/events');
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+                
+                let html = renderDisplayAccess();
+                
+                if (events.length === 0) {
+                    html += renderEmptyState('📅', 'No Schedule Yet', 'Add events to generate a schedule.');
+                    container.innerHTML = html;
+                    return;
+                }
+                
+                const grouped = {};
+                events.forEach(e => {
+                    const day = e.day || 'TBD';
+                    if (!grouped[day]) grouped[day] = [];
+                    grouped[day].push(e);
+                });
+                
+                const trackOrder = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon', '4x100m Relay', '4x400m Relay'];
+                
+                html += `
+                    <div class="refresh-control">
+                        <span>${events.length} events</span>
+                        <button class="refresh-btn" onclick="renderScheduleView()">↻ Refresh</button>
+                    </div>
+                `;
+                
+                const sortedDays = Object.keys(grouped).sort((a, b) => {
+                    if (a === 'TBD') return 1;
+                    if (b === 'TBD') return -1;
+                    return parseInt(a) - parseInt(b);
+                });
+                
+                sortedDays.forEach(day => {
+                    const dayEvents = grouped[day];
+                    dayEvents.sort((a, b) => {
+                        const aIndex = trackOrder.indexOf(a.discipline) !== -1 ? trackOrder.indexOf(a.discipline) : 999;
+                        const bIndex = trackOrder.indexOf(b.discipline) !== -1 ? trackOrder.indexOf(b.discipline) : 999;
+                        return aIndex - bIndex || a.name.localeCompare(b.name);
+                    });
+                    
+                    html += `
+                        <div class="card">
+                            <div class="card-title">📅 Day ${day}</div>
+                    `;
+                    
+                    let dayTimeSlot = 0;
+                    dayEvents.forEach(e => {
+                        dayTimeSlot += 30;
+                        const hours = 9 + Math.floor(dayTimeSlot / 60);
+                        const mins = dayTimeSlot % 60;
+                        const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+                        html += renderScheduleItem(e, timeStr);
+                    });
+                    
+                    html += `</div>`;
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = renderEmptyState('⚠️', 'Error Loading Schedule', error.message);
+            }
+        }
+
+        async function renderLiveView() {
+            const container = document.getElementById('mainContent');
+            
+            let html = renderDisplayAccess();
+            
+            if (!selectedEventId) {
+                try {
+                    const events = await fetchAPI('/api/events');
+                    if (events.length === 0) {
+                        html += renderEmptyState('📺', 'No Events', 'Create an event first.');
+                        container.innerHTML = html;
+                        return;
+                    }
+                    
+                    html += `
+                        <div class="card">
+                            <div class="card-title">Select Event for Live View</div>
+                            ${events.map(e => `
+                                <div class="event-item" onclick="selectEvent('${e.id}')">
+                                    <div class="event-info">
+                                        <div class="event-name">${e.name}</div>
+                                        <div class="event-detail">${e.discipline} • ${e.sex}</div>
+                                    </div>
+                                    <span style="font-size:20px;">▶</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    container.innerHTML = html;
+                } catch (error) {
+                    container.innerHTML = renderEmptyState('⚠️', 'Error', error.message);
+                }
+                return;
+            }
+            
+            try {
+                const [event, results, meet] = await Promise.all([
+                    fetchAPI(`/api/events/${selectedEventId}`),
+                    fetchAPI(`/api/events/${selectedEventId}/results`),
+                    fetchAPI('/api/meet')
+                ]);
+                
+                const hasResults = results.results && results.results.length > 0;
+                const hasMarks = results.results && results.results.some(r => r.mark && !['DNS','DNF','DQ','NM'].includes(r.mark));
+                
+                const totalAthletes = results.results ? results.results.length : 0;
+                const completedAthletes = results.results ? results.results.filter(r => r.mark && !['DNS','DNF','DQ','NM'].includes(r.mark)).length : 0;
+                const progressPct = totalAthletes > 0 ? Math.round((completedAthletes / totalAthletes) * 100) : 0;
+                
+                let rankingInfo = '';
+                if (results.isCombinedClass) {
+                    rankingInfo = `🏆 Ranking by Raza Points • Combined Classes: ${results.uniqueClasses ? results.uniqueClasses.join(', ') : 'Multiple'}`;
+                } else {
+                    rankingInfo = `📊 Ranking by Performance`;
+                }
+                
+                html += `
+                    <div class="card">
+                        <div class="card-title">${event.name}</div>
+                        <div style="font-size:14px; color:var(--text-secondary); margin-bottom:12px;">
+                            ${event.discipline} • ${event.sex} • ${event.round || 'Final'}
+                            <span style="margin-left:8px; font-size:12px; padding:2px 8px; border-radius:10px; background:${event.status === 'official' ? '#4CAF50' : '#FF9800'}; color:#fff;">
+                                ${event.status === 'official' ? '✓ Official' : '⏳ Live'}
+                            </span>
+                        </div>
+                        <div class="ranking-info">${rankingInfo}</div>
+                        ${event.summary ? `<div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">${event.summary}</div>` : ''}
+                    </div>
+                `;
+                
+                if (!hasResults || !hasMarks) {
+                    html += `
+                        <div class="card">
+                            <div class="live-indicator">
+                                <div class="live-dot"></div>
+                                <div class="live-text">Waiting for results...</div>
+                            </div>
+                            <div style="text-align:center; padding:20px; color:var(--text-secondary);">
+                                ${!hasResults ? 'No athletes entered yet' : 'No marks recorded yet'}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-text">
+                                    <span>Progress</span>
+                                    <span>${completedAthletes}/${totalAthletes}</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${progressPct}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="card">
+                            <div class="live-indicator">
+                                <div class="live-dot"></div>
+                                <div class="live-text">Live Results • ${completedAthletes} completed</div>
+                            </div>
+                            ${results.results.map((r, i) => renderResultItem(r, i)).join('')}
+                        </div>
+                    `;
+                    
+                    html += `
+                        <div class="card" style="padding:12px 16px;">
+                            <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text-secondary);">
+                                <span>Progress</span>
+                                <span>${completedAthletes}/${totalAthletes}</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${progressPct}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="refresh-control">
+                        <span>Auto-refresh: ON (5s)</span>
+                        <button class="refresh-btn" onclick="renderLiveView()">↻ Now</button>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = renderEmptyState('⚠️', 'Error', error.message);
+            }
+        }
+
+        async function renderResultsView() {
+            const container = document.getElementById('mainContent');
+            
+            let html = renderDisplayAccess();
+            
+            try {
+                const events = await fetchAPI('/api/events');
+                const eventsWithResults = [];
+                
+                for (const event of events) {
+                    try {
+                        const results = await fetchAPI(`/api/events/${event.id}/results`);
+                        const hasMarks = results.results && results.results.some(r => r.mark && !['DNS','DNF','DQ','NM'].includes(r.mark));
+                        if (hasMarks) {
+                            eventsWithResults.push({ ...event, results: results.results });
+                        }
+                    } catch (e) {}
+                }
+                
+                if (eventsWithResults.length === 0) {
+                    html += renderEmptyState('🏆', 'No Results Yet', 'Complete events to see results.');
+                    container.innerHTML = html;
+                    return;
+                }
+                
+                html += `
+                    <div class="refresh-control">
+                        <span>${eventsWithResults.length} events with results</span>
+                        <button class="refresh-btn" onclick="renderResultsView()">↻ Refresh</button>
+                    </div>
+                `;
+                
+                eventsWithResults.forEach(event => {
+                    const top3 = event.results.filter(r => r.rank && r.rank <= 3 && !['DNS','DNF','DQ','NM'].includes(r.mark));
+                    
+                    html += `
+                        <div class="card">
+                            <div class="card-title">${event.name}</div>
+                            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+                                ${event.discipline} • ${event.sex}
+                                <span style="margin-left:8px; font-size:12px; padding:2px 8px; border-radius:10px; background:${event.status === 'official' ? '#4CAF50' : '#FF9800'}; color:#fff;">
+                                    ${event.status === 'official' ? '✓ Official' : 'Unofficial'}
+                                </span>
+                            </div>
+                            ${top3.length > 0 ? `
+                                <div style="display:flex; gap:12px; margin-bottom:12px;">
+                                    ${top3.map((r, i) => `
+                                        <div style="flex:1; text-align:center; padding:8px; background:var(--bg); border-radius:8px;">
+                                            <div style="font-size:20px; font-weight:700; color:${i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : '#CD7F32'};">${r.rank}</div>
+                                            <div style="font-size:13px; font-weight:500; margin-top:4px;">${r.name}</div>
+                                            <div style="font-size:12px; color:var(--text-secondary);">${r.class}</div>
+                                            <div style="font-size:14px; font-weight:600; margin-top:4px;">${r.mark}</div>
+                                            ${r.points ? `<div style="font-size:12px; color:#FFD700;">${r.points} pts</div>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            <div style="font-size:12px; color:var(--text-secondary);">
+                                ${event.results.filter(r => r.mark && !['DNS','DNF','DQ','NM'].includes(r.mark)).length} athletes completed
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = renderEmptyState('⚠️', 'Error', error.message);
+            }
+        }
+
+        async function renderAthletesView() {
+            const container = document.getElementById('mainContent');
+            container.innerHTML = renderLoading();
+            
+            try {
+                const athletes = await fetchAPI('/api/athletes');
+                
+                let html = renderDisplayAccess();
+                
+                if (athletes.length === 0) {
+                    html += renderEmptyState('👤', 'No Athletes', 'Import athletes from the admin panel.');
+                    container.innerHTML = html;
+                    return;
+                }
+                
+                const grouped = {};
+                athletes.forEach(a => {
+                    const cls = a.class || 'Unknown';
+                    if (!grouped[cls]) grouped[cls] = [];
+                    grouped[cls].push(a);
+                });
+                
+                const sortedClasses = Object.keys(grouped).sort();
+                
+                html += `
+                    <div class="refresh-control">
+                        <span>${athletes.length} athletes</span>
+                        <button class="refresh-btn" onclick="renderAthletesView()">↻ Refresh</button>
+                    </div>
+                    <div class="card" style="padding:12px;">
+                        <input type="text" id="athleteSearch" placeholder="🔍 Search athletes..." 
+                               style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px;"
+                               oninput="filterAthletes()">
+                    </div>
+                    <div id="athleteList">
+                `;
+                
+                sortedClasses.forEach(cls => {
+                    html += `
+                        <div class="card" style="padding:12px 16px;">
+                            <div class="card-title">Class ${cls}</div>
+                            ${grouped[cls].map(a => renderAthleteCard(a)).join('')}
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = renderEmptyState('⚠️', 'Error', error.message);
+            }
+        }
+        
+        function filterAthletes() {
+            const query = document.getElementById('athleteSearch').value.toLowerCase();
+            const items = document.querySelectorAll('#athleteList .card');
+            items.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        }
+        
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+        function switchView(view) {
+            currentView = view;
+            
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.view === view);
+            });
+            
+            if (view !== 'live' && autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            
+            switch(view) {
+                case 'events': renderEventsView(); break;
+                case 'schedule': renderScheduleView(); break;
+                case 'live':
+                    renderLiveView();
+                    if (!autoRefreshInterval) {
+                        autoRefreshInterval = setInterval(renderLiveView, 5000);
+                    }
+                    break;
+                case 'results': renderResultsView(); break;
+                case 'booklet': renderBookletView(); break;
+                case 'athletes': renderAthletesView(); break;
+            }
+        }
+        
+        function selectEvent(eventId) {
+            selectedEventId = eventId;
+            if (currentView === 'live') {
+                renderLiveView();
+            } else {
+                switchView('live');
+            }
+        }
+        
+        function refreshAll() {
+            switchView(currentView);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            renderEventsView();
+        });
+        
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                refreshAll();
+            }
+        });
+    </script>
+</body>
+</html>

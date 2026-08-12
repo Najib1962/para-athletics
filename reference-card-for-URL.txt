@@ -1,0 +1,20 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                    PARA ATHLETICS SYSTEM                      ║
+╠═══════════════════════════════════════════════════════════════╣
+║                                                               ║
+║  🔓 PUBLIC (No password)                                     ║
+║  ─────────────────────────────                               ║
+║  http://localhost:3000/                                      ║
+║  http://localhost:3000/live.html                             ║
+║  http://localhost:3000/medals.html                           ║
+║  http://localhost:3000/athletes-public.html                  ║
+║  http://localhost:3000/mobile.html                           ║
+║                                                               ║
+║  🔐 ADMIN (password: admin123)                               ║
+║  ─────────────────────────────                               ║
+║  http://localhost:3000/admin.html?password=admin123          ║
+║  http://localhost:3000/athletes.html?password=admin123       ║
+║  http://localhost:3000/entries.html?password=admin123        ║
+║  http://localhost:3000/login.html                            ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝

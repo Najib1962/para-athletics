@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result Booklet - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .booklet-header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px 40px;
+            border-radius: 16px;
+            border: 2px solid #e94560;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .booklet-header .logo { font-size: 36px; font-weight: 700; }
+        .booklet-header .logo span { color: #e94560; }
+        .booklet-header .subtitle { color: #999; font-size: 16px; margin-top: 5px; }
+        .booklet-header .meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .booklet-header .meta span strong { color: #fff; }
+        .booklet-header .status {
+            display: inline-block;
+            padding: 4px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        .status-complete { background: #4CAF50; color: #fff; }
+        .status-pending { background: #FF9800; color: #fff; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover { border-color: #e94560; background: #2a2a4e; }
+        .nav-links a.active { border-color: #e94560; background: #e94560; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+        }
+        .controls-left {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .controls button {
+            padding: 8px 18px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .controls button:hover {
+            border-color: #e94560;
+            background: #2a2a4e;
+        }
+        .controls button.primary {
+            background: #e94560;
+            border-color: #e94560;
+        }
+        .controls button.primary:hover {
+            background: #c73e54;
+        }
+        .controls .info {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e94560;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-title .badge {
+            background: #e94560;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-box {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        .stat-box .number { font-size: 28px; font-weight: 700; color: #e94560; }
+        .stat-box .label { font-size: 13px; color: #999; margin-top: 4px; }
+
+        /* Schedule Styles */
+        .schedule-container {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .schedule-day {
+            border-bottom: 1px solid #2a2a4e;
+        }
+        .schedule-day:last-child { border-bottom: none; }
+        .schedule-day-header {
+            background: #2a2a4e;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .schedule-day-header h3 { font-size: 16px; font-weight: 600; }
+        .schedule-day-header .count { color: #999; font-size: 13px; }
+        .schedule-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid #2a2a4e;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .schedule-row:last-child { border-bottom: none; }
+        .schedule-row:hover { background: rgba(255,255,255,0.03); }
+        .schedule-time { min-width: 70px; font-weight: 600; color: #e94560; font-size: 14px; }
+        .schedule-info { flex: 1; }
+        .schedule-info .name { font-size: 15px; font-weight: 500; }
+        .schedule-info .detail { font-size: 12px; color: #999; }
+        .schedule-classes { display: flex; gap: 5px; flex-wrap: wrap; }
+        .schedule-class {
+            background: #2a2a4e;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .schedule-class.combined { background: #e94560; }
+        .schedule-status {
+            font-size: 10px;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #FF9800; color: #fff; }
+        .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        .status-official { background: #4CAF50; color: #fff; }
+
+        /* Start List Styles */
+        .startlist-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .startlist-card:hover { border-color: #2196F3; }
+        .startlist-card .event-header {
+            padding: 16px 20px;
+            background: #2a2a4e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-left: 4px solid #2196F3;
+        }
+        .startlist-card .event-header .event-name { font-size: 18px; font-weight: 600; }
+        .startlist-card .event-header .event-meta {
+            font-size: 13px;
+            color: #999;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .startlist-card .event-body { padding: 0 20px; overflow-x: auto; }
+        .startlist-card .event-body table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .startlist-card .event-body th {
+            text-align: left;
+            padding: 10px 8px;
+            color: #999;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #2a2a4e;
+        }
+        .startlist-card .event-body td {
+            padding: 8px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .startlist-card .event-body tr:last-child td { border-bottom: none; }
+        .startlist-card .status-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .startlist-card .status-lane { background: #2196F3; color: #fff; }
+        .startlist-card .status-order { background: #FF9800; color: #fff; }
+        .startlist-card .status-pending { background: #FF9800; color: #fff; }
+        .startlist-card .status-live { background: #e94560; color: #fff; }
+        .startlist-card .status-official { background: #4CAF50; color: #fff; }
+
+        /* Results Event Cards */
+        .event-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .event-card:hover { border-color: #e94560; }
+        .event-card.official { border-left: 4px solid #4CAF50; }
+        .event-card.live { border-left: 4px solid #e94560; }
+        .event-card.pending { border-left: 4px solid #FF9800; }
+
+        .event-card .event-header {
+            padding: 16px 20px;
+            background: #2a2a4e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .event-card .event-header .event-name { font-size: 18px; font-weight: 600; }
+        .event-card .event-header .event-meta {
+            font-size: 13px;
+            color: #999;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .event-card .event-header .event-status {
+            font-size: 12px;
+            padding: 4px 14px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .event-card .event-header .event-classes { font-size: 12px; color: #FFD700; }
+
+        .event-card .event-body { padding: 0 20px; overflow-x: auto; }
+        .event-card .event-body table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .event-card .event-body th {
+            text-align: left;
+            padding: 10px 8px;
+            color: #999;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #2a2a4e;
+        }
+        .event-card .event-body td {
+            padding: 8px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .event-card .event-body tr:last-child td { border-bottom: none; }
+
+        .rank-1 { color: #FFD700; font-weight: 700; }
+        .rank-2 { color: #C0C0C0; font-weight: 700; }
+        .rank-3 { color: #CD7F32; font-weight: 700; }
+        .rank-dns { color: #666; font-style: italic; }
+        .points-col { color: #FFD700; font-weight: 600; }
+
+        /* Medal Table */
+        .medal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .medal-table th {
+            background: #2a2a4e;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #ccc;
+        }
+        .medal-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #2a2a4e;
+        }
+        .medal-table tr:hover td { background: rgba(255,255,255,0.03); }
+        .medal-table .gold { color: #FFD700; }
+        .medal-table .silver { color: #C0C0C0; }
+        .medal-table .bronze { color: #CD7F32; }
+
+        .no-data { text-align: center; color: #666; padding: 40px 20px; }
+        .no-data .icon { font-size: 48px; margin-bottom: 10px; }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 13px;
+            border-top: 1px solid #2a2a4e;
+            margin-top: 20px;
+        }
+
+        .booklet-toc {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            padding: 15px 20px;
+            background: #0a0a1a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .booklet-toc a {
+            color: #e94560;
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 12px;
+            background: #1a1a2e;
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .booklet-toc a:hover { background: #2a2a4e; }
+
+        .guide-badge {
+            display: inline-block;
+            background: #2196F3;
+            padding: 1px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Print Styles */
+        @media print {
+            .controls, .nav-links, .no-print { display: none !important; }
+            body { background: white !important; color: black !important; padding: 10px !important; }
+            .booklet-header {
+                background: white !important;
+                border: 1px solid #ddd !important;
+            }
+            .booklet-header .logo { color: #333 !important; }
+            .booklet-header .logo span { color: #e94560 !important; }
+            .booklet-header .subtitle { color: #666 !important; }
+            .booklet-header .meta { color: #999 !important; }
+            .booklet-header .meta span strong { color: #333 !important; }
+            .stats-row .stat-box {
+                border: 1px solid #ddd !important;
+                background: white !important;
+            }
+            .stat-box .number { color: #e94560 !important; }
+            .stat-box .label { color: #666 !important; }
+            .schedule-container {
+                border: 1px solid #ddd !important;
+                background: white !important;
+            }
+            .schedule-day-header {
+                background: #f5f5f5 !important;
+                color: #333 !important;
+            }
+            .schedule-row {
+                border-bottom: 1px solid #eee !important;
+            }
+            .startlist-card {
+                border: 1px solid #ddd !important;
+                background: white !important;
+                break-inside: avoid !important;
+            }
+            .startlist-card .event-header {
+                background: #f5f5f5 !important;
+                color: #333 !important;
+                border-left: 4px solid #2196F3 !important;
+            }
+            .startlist-card .event-header .event-meta { color: #666 !important; }
+            .startlist-card .event-body th {
+                color: #666 !important;
+                border-bottom: 1px solid #ddd !important;
+            }
+            .startlist-card .event-body td {
+                border-bottom: 1px solid #eee !important;
+            }
+            .event-card {
+                border: 1px solid #ddd !important;
+                background: white !important;
+                break-inside: avoid !important;
+            }
+            .event-card.official { border-left: 4px solid #4CAF50 !important; }
+            .event-card.live { border-left: 4px solid #e94560 !important; }
+            .event-card.pending { border-left: 4px solid #FF9800 !important; }
+            .event-card .event-header {
+                background: #f5f5f5 !important;
+                color: #333 !important;
+            }
+            .event-card .event-header .event-meta { color: #666 !important; }
+            .event-card .event-body th {
+                color: #666 !important;
+                border-bottom: 1px solid #ddd !important;
+            }
+            .event-card .event-body td {
+                border-bottom: 1px solid #eee !important;
+            }
+            .rank-1 { color: #FFD700 !important; }
+            .rank-2 { color: #C0C0C0 !important; }
+            .rank-3 { color: #CD7F32 !important; }
+            .points-col { color: #e94560 !important; }
+            .medal-table th {
+                background: #f5f5f5 !important;
+                color: #333 !important;
+            }
+            .medal-table td {
+                border-bottom: 1px solid #eee !important;
+            }
+            .footer { color: #999 !important; border-top: 1px solid #ddd !important; }
+            .section-title { border-bottom: 2px solid #e94560 !important; color: #333 !important; }
+            .no-data { color: #999 !important; }
+            .status-badge { color: #fff !important; }
+        }
+
+        @media (max-width: 768px) {
+            .booklet-header { padding: 20px; }
+            .booklet-header .logo { font-size: 24px; }
+            .event-body { font-size: 12px; }
+            .event-body td, .event-body th { padding: 4px 6px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .event-header .event-name { font-size: 15px; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .controls-left { flex-direction: column; }
+            .startlist-card .event-body { font-size: 12px; }
+            .startlist-card .event-body td, .startlist-card .event-body th { padding: 4px 6px; }
+            .schedule-row { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .schedule-time { min-width: auto; }
+            .booklet-toc { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Booklet Header -->
+        <div class="booklet-header">
+            <div class="logo">🏃 <span>Para Athletics</span></div>
+            <div class="subtitle">Complete Results Booklet</div>
+            <div class="meta">
+                <span><strong id="meetName">Loading...</strong></span>
+                <span><strong id="meetVenue">Loading...</strong></span>
+                <span><strong id="meetDate">Loading...</strong></span>
+            </div>
+            <div>
+                <span class="status status-live" id="statusBadge">🔴 LIVE</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-links no-print">
+            <a href="/">🏠 Home</a>
+            <a href="/live.html">📺 Live Results</a>
+            <a href="/medals.html">🏅 Medals</a>
+            <a href="/result-booklet.html" class="active">📖 Result Booklet</a>
+            <a href="/mobile.html">📱 Mobile</a>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls no-print">
+            <div class="controls-left">
+                <button onclick="refreshBooklet()">🔄 Refresh</button>
+                <button onclick="window.print()" class="primary">🖨️ Print Booklet</button>
+                <button onclick="exportPDF()">📄 Export PDF</button>
+                <button onclick="toggleSection('schedule')">📅 Schedule</button>
+                <button onclick="toggleSection('startlists')">📋 Start Lists</button>
+                <button onclick="toggleSection('results')">📊 Results</button>
+                <button onclick="toggleSection('medals')">🏅 Medals</button>
+                <button onclick="showAllSections()">📖 Show All</button>
+            </div>
+            <div class="info" id="updateInfo">Last updated: Loading...</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-box">
+                <div class="number" id="totalEvents">0</div>
+                <div class="label">Total Events</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="completedEvents">0</div>
+                <div class="label">Completed</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="liveEvents">0</div>
+                <div class="label">Live Now</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="totalAthletes">0</div>
+                <div class="label">Athletes</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="totalClasses">0</div>
+                <div class="label">Classes</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="totalCountries">0</div>
+                <div class="label">Countries/Clubs</div>
+            </div>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="booklet-toc no-print">
+            <a href="#section-schedule">📅 Schedule</a>
+            <a href="#section-startlists">📋 Start Lists</a>
+            <a href="#section-results">📊 Results</a>
+            <a href="#section-medals">🏅 Medal Standings</a>
+        </div>
+
+        <!-- Section: Schedule -->
+        <div id="section-schedule" class="section-container keep-together">
+            <div class="section-title">
+                📅 Competition Schedule
+                <span class="badge">All Events</span>
+            </div>
+            <div id="scheduleContainer" class="schedule-container">
+                <div class="no-data">Loading schedule...</div>
+            </div>
+        </div>
+
+        <!-- Section: Start Lists -->
+        <div id="section-startlists" class="section-container keep-together">
+            <div class="section-title">
+                📋 Start Lists
+                <span class="badge">All Events</span>
+            </div>
+            <div id="startlistContainer">
+                <div class="no-data">Loading start lists...</div>
+            </div>
+        </div>
+
+        <!-- Section: Medal Standings -->
+        <div id="section-medals" class="section-container keep-together">
+            <div class="section-title">
+                🏅 Medal Standings
+                <span class="badge">Standings</span>
+            </div>
+            <div id="medalContainer">
+                <div class="no-data">Loading medal standings...</div>
+            </div>
+        </div>
+
+        <!-- Section: Results -->
+        <div id="section-results" class="section-container keep-together">
+            <div class="section-title">
+                📊 Event Results
+                <span class="badge">Results</span>
+            </div>
+            <div id="bookletContainer">
+                <div class="no-data">Loading results...</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span>📖 Complete Result Booklet &bull; Para Athletics Competition Management System</span>
+            <span style="margin-left: 20px;" id="footerTime">Auto-updates every 30s</span>
+        </div>
+
+    </div>
+
+    <script>
+        let allEvents = [];
+        let allAthletes = [];
+        let refreshInterval = null;
+        let visibleSections = {
+            schedule: true,
+            startlists: true,
+            results: true,
+            medals: true
+        };
+
+        // ---------- PUBLIC API - NO PASSWORD ----------
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Para Athletics';
+                document.getElementById('meetVenue').textContent = meet.venue || '';
+                document.getElementById('meetDate').textContent = meet.date || '';
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadData() {
+            try {
+                // Get all data from public endpoints
+                const [events, athletes] = await Promise.all([
+                    fetchAPI('/api/events'),
+                    fetchAPI('/api/athletes')
+                ]);
+
+                allEvents = events;
+                allAthletes = athletes;
+
+                // Update stats
+                const completed = events.filter(e => e.status === 'official').length;
+                const live = events.filter(e => e.status === 'live').length;
+                const uniqueClasses = new Set();
+                const uniqueCountries = new Set();
+
+                events.forEach(e => {
+                    if (e.classes) e.classes.forEach(c => uniqueClasses.add(c));
+                    else if (e.class) uniqueClasses.add(e.class);
+                });
+
+                athletes.forEach(a => {
+                    if (a.club) uniqueCountries.add(a.club);
+                });
+
+                document.getElementById('totalEvents').textContent = events.length;
+                document.getElementById('completedEvents').textContent = completed;
+                document.getElementById('liveEvents').textContent = live;
+                document.getElementById('totalAthletes').textContent = athletes.length;
+                document.getElementById('totalClasses').textContent = uniqueClasses.size;
+                document.getElementById('totalCountries').textContent = uniqueCountries.size;
+
+                // Update status badge
+                const badge = document.getElementById('statusBadge');
+                if (completed === events.length && events.length > 0) {
+                    badge.textContent = '✅ COMPLETE';
+                    badge.className = 'status status-complete';
+                } else if (live > 0) {
+                    badge.textContent = '🔴 LIVE';
+                    badge.className = 'status status-live';
+                } else if (events.length > 0) {
+                    badge.textContent = '⏳ IN PROGRESS';
+                    badge.className = 'status status-pending';
+                } else {
+                    badge.textContent = '⏳ PENDING';
+                    badge.className = 'status status-pending';
+                }
+
+                // Render all sections
+                await renderSchedule();
+                await renderStartLists();
+                await renderMedals();
+                await renderResults();
+
+                applyVisibility();
+
+                document.getElementById('updateInfo').textContent = `Last updated: ${new Date().toLocaleString()}`;
+                document.getElementById('footerTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('bookletContainer').innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">⚠️</div>
+                        <p>Error loading results: ${error.message}</p>
+                        <p style="font-size:12px; color:#555; margin-top:10px;">Please make sure the server is running.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ---------- SCHEDULE ----------
+        async function renderSchedule() {
+            const container = document.getElementById('scheduleContainer');
+
+            if (allEvents.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">📅</div>
+                        <p>No events scheduled yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const grouped = {};
+            allEvents.forEach(e => {
+                const day = e.day || 'TBD';
+                if (!grouped[day]) grouped[day] = [];
+                grouped[day].push(e);
+            });
+
+            let html = '';
+            const sortedDays = Object.keys(grouped).sort((a, b) => {
+                if (a === 'TBD') return 1;
+                if (b === 'TBD') return -1;
+                return parseInt(a) - parseInt(b);
+            });
+
+            const trackOrder = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon', '4x100m Relay', '4x400m Relay'];
+
+            sortedDays.forEach(day => {
+                const dayEvents = grouped[day];
+                dayEvents.sort((a, b) => {
+                    const aIndex = trackOrder.indexOf(a.discipline) !== -1 ? trackOrder.indexOf(a.discipline) : 999;
+                    const bIndex = trackOrder.indexOf(b.discipline) !== -1 ? trackOrder.indexOf(b.discipline) : 999;
+                    return aIndex - bIndex || a.name.localeCompare(b.name);
+                });
+
+                html += `
+                    <div class="schedule-day">
+                        <div class="schedule-day-header">
+                            <h3>📅 Day ${day}</h3>
+                            <span class="count">${dayEvents.length} events</span>
+                        </div>
+                `;
+
+                let dayTimeSlot = 0;
+                dayEvents.forEach(e => {
+                    dayTimeSlot += 30;
+                    const hours = 9 + Math.floor(dayTimeSlot / 60);
+                    const mins = dayTimeSlot % 60;
+                    const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+
+                    const classes = e.classes || [e.class || 'N/A'];
+                    const isCombined = classes.length > 1;
+                    const statusClass = e.status === 'official' ? 'status-official' :
+                                       e.status === 'live' ? 'status-live' : 'status-pending';
+                    const statusLabel = e.status === 'official' ? '✓ Official' :
+                                       e.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+                    const isRelay = e.discipline && e.discipline.includes('Relay');
+
+                    html += `
+                        <div class="schedule-row">
+                            <div class="schedule-time">${timeStr}</div>
+                            <div class="schedule-info">
+                                <div class="name">${e.name} ${isRelay ? '🏃' : ''}</div>
+                                <div class="detail">${e.discipline} • ${e.sex} • ${e.round || 'Final'}</div>
+                            </div>
+                            <div class="schedule-classes">
+                                ${isCombined ? `<span class="schedule-class combined">🔄 Combined</span>` : ''}
+                                ${classes.map(c => `<span class="schedule-class">${c}</span>`).join('')}
+                            </div>
+                            <span class="schedule-status ${statusClass}">${statusLabel}</span>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ---------- START LISTS ----------
+        async function renderStartLists() {
+            const container = document.getElementById('startlistContainer');
+
+            if (allEvents.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">📋</div>
+                        <p>No events yet. Start lists will appear here once events are created.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            let hasStartList = false;
+
+            for (const event of allEvents) {
+                try {
+                    const data = await fetchAPI(`/api/events/${event.id}/results`);
+                    const results = data.results || [];
+
+                    if (results.length === 0) continue;
+
+                    hasStartList = true;
+                    const isTrack = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon', '4x100m Relay', '4x400m Relay'].includes(event.discipline);
+                    const showGuide = results.some(r => r.hasGuide);
+
+                    html += `
+                        <div class="startlist-card">
+                            <div class="event-header">
+                                <div>
+                                    <div class="event-name">📋 ${event.name}</div>
+                                    <div class="event-meta">
+                                        <span>${event.discipline}</span>
+                                        <span>${event.sex}</span>
+                                        <span>${event.round || 'Final'}</span>
+                                        <span>Day ${event.day || 1}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="status-badge ${event.status === 'official' ? 'status-official' : event.status === 'live' ? 'status-live' : 'status-pending'}">
+                                        ${event.status === 'official' ? '✓ Official' : event.status === 'live' ? '🔴 LIVE' : '⏳ Pending'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="event-body">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width:40px;">${isTrack ? 'Lane' : 'Order'}</th>
+                                            <th>Name</th>
+                                            <th style="width:70px;">Class</th>
+                                            ${showGuide ? '<th style="width:60px;">Guide</th>' : ''}
+                                            <th style="width:60px;">Bib</th>
+                                            <th>Club</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    results.forEach((r, idx) => {
+                        const isGuide = r.hasGuide;
+                        html += `
+                            <tr>
+                                <td><span class="status-badge ${isTrack ? 'status-lane' : 'status-order'}">${idx + 1}</span></td>
+                                <td><strong>${r.name}</strong></td>
+                                <td>${r.class}</td>
+                                ${showGuide ? `<td>${isGuide ? 'Yes' : '-'}</td>` : ''}
+                                <td>${r.bib || '-'}</td>
+                                <td>${r.club || '-'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                    </tbody>
+                                </table>
+                                <div style="padding: 8px 0; color: #666; font-size: 12px;">
+                                    Total Athletes: ${results.length}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                } catch (error) {
+                    console.error('Error loading start list for', event.name, error);
+                }
+            }
+
+            if (!hasStartList) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">📋</div>
+                        <p>No athletes entered in any events yet.</p>
+                        <p style="font-size: 12px; color: #555; margin-top: 5px;">Go to Entries page to add athletes to events.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = html;
+            }
+        }
+
+        // ---------- MEDAL STANDINGS ----------
+        async function renderMedals() {
+            const container = document.getElementById('medalContainer');
+
+            try {
+                const completedEvents = allEvents.filter(e => e.status === 'official');
+
+                if (completedEvents.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-data">
+                            <div class="icon">🏅</div>
+                            <p>No completed events yet. Medal standings will appear here once events are finalized.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const medalWinners = {};
+
+                for (const event of completedEvents) {
+                    try {
+                        const data = await fetchAPI(`/api/events/${event.id}/results`);
+                        const results = data.results || [];
+                        const validResults = results.filter(r => r.rank !== '-' && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark));
+                        const top3 = validResults.slice(0, 3);
+
+                        top3.forEach((r, index) => {
+                            const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+                            const country = r.club || 'Unknown';
+                            if (!medalWinners[country]) {
+                                medalWinners[country] = { gold: 0, silver: 0, bronze: 0, total: 0 };
+                            }
+                            medalWinners[country][medal]++;
+                            medalWinners[country].total++;
+                        });
+                    } catch (error) {
+                        console.error('Error loading event results:', error);
+                    }
+                }
+
+                const sorted = Object.entries(medalWinners)
+                    .sort((a, b) => {
+                        if (a[1].gold !== b[1].gold) return b[1].gold - a[1].gold;
+                        if (a[1].silver !== b[1].silver) return b[1].silver - a[1].silver;
+                        return b[1].bronze - a[1].bronze;
+                    });
+
+                if (sorted.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-data">
+                            <div class>🏅</div>
+                            <p>No medal winners yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <table class="medal-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Country / Club</th>
+                                <th style="text-align:center;">🥇 Gold</th>
+                                <th style="text-align:center;">🥈 Silver</th>
+                                <th style="text-align:center;">🥉 Bronze</th>
+                                <th style="text-align:center;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                sorted.forEach(([country, medals], index) => {
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><strong>${country}</strong></td>
+                            <td style="text-align:center;" class="gold">${medals.gold}</td>
+                            <td style="text-align:center;" class="silver">${medals.silver}</td>
+                            <td style="text-align:center;" class="bronze">${medals.bronze}</td>
+                            <td style="text-align:center; font-weight:700;">${medals.total}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 10px; color: #666; font-size: 13px; text-align: center;">
+                        Based on ${completedEvents.length} completed events
+                    </div>
+                `;
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                console.error('Error rendering medals:', error);
+                container.innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">⚠️</div>
+                        <p>Error loading medal standings: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ---------- RESULTS ----------
+        async function renderResults() {
+            const container = document.getElementById('bookletContainer');
+
+            if (allEvents.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">📖</div>
+                        <p>No events yet. Results will appear here once events are created.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            let hasResults = false;
+
+            for (const event of allEvents) {
+                try {
+                    const data = await fetchAPI(`/api/events/${event.id}/results`);
+                    const results = data.results || [];
+                    const isCombined = data.isCombinedClass || false;
+                    const hasMarks = results.some(r => r.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark));
+
+                    if (!hasMarks) continue;
+
+                    hasResults = true;
+
+                    let statusClass = 'pending';
+                    if (event.status === 'official') statusClass = 'official';
+                    else if (event.status === 'live') statusClass = 'live';
+
+                    const statusLabel = event.status === 'official' ? '✓ Official' :
+                                       event.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+
+                    const classes = event.classes ? event.classes.join(', ') : event.class || 'Single';
+                    const isCombinedEvent = event.classes && event.classes.length > 1;
+
+                    html += `
+                        <div class="event-card ${statusClass}">
+                            <div class="event-header">
+                                <div>
+                                    <div class="event-name">${event.name}</div>
+                                    <div class="event-meta">
+                                        <span>${event.discipline}</span>
+                                        <span>${event.sex}</span>
+                                        <span>${event.round || 'Final'}</span>
+                                        <span>Day ${event.day || 1}</span>
+                                    </div>
+                                    <div class="event-classes">
+                                        ${isCombinedEvent ? '🔄 Combined: ' : ''}${classes}
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span class="event-status" style="background: ${event.status === 'official' ? '#4CAF50' : event.status === 'live' ? '#e94560' : '#FF9800'}; color: #fff; padding: 4px 14px; border-radius: 12px; font-size: 12px; font-weight: 600;">${statusLabel}</span>
+                                    ${event.summary ? `<div style="font-size: 12px; color: #999; margin-top: 5px;">${event.summary}</div>` : ''}
+                                </div>
+                            </div>
+                            <div class="event-body">
+                    `;
+
+                    const showGuide = results.some(r => r.hasGuide);
+                    const showPoints = isCombined || results.some(r => r.points !== null && r.points > 0);
+
+                    html += `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:50px;">#</th>
+                                    <th>Name</th>
+                                    <th style="width:70px;">Class</th>
+                                    ${showGuide ? '<th style="width:60px;">Guide</th>' : ''}
+                                    <th style="width:50px;">Bib</th>
+                                    <th style="width:100px;">Club</th>
+                                    <th style="width:100px; text-align:center;">Mark</th>
+                                    ${showPoints ? '<th style="width:80px; text-align:center;">Points</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    const sortedResults = [...results].sort((a, b) => {
+                        const aIsDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(a.mark);
+                        const bIsDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(b.mark);
+                        if (aIsDNS && bIsDNS) return a.name.localeCompare(b.name);
+                        if (aIsDNS) return 1;
+                        if (bIsDNS) return -1;
+                        return (a.rank || 999) - (b.rank || 999);
+                    });
+
+                    sortedResults.forEach(r => {
+                        const isDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark);
+                        const rankClass = r.rank === 1 ? 'rank-1' :
+                                         r.rank === 2 ? 'rank-2' :
+                                         r.rank === 3 ? 'rank-3' :
+                                         isDNS ? 'rank-dns' : '';
+                        const rankDisplay = r.rank === '-' ? '-' : r.rank;
+
+                        let medalIcon = '';
+                        if (r.rank === 1) medalIcon = '🥇';
+                        else if (r.rank === 2) medalIcon = '🥈';
+                        else if (r.rank === 3) medalIcon = '🥉';
+
+                        html += `
+                            <tr>
+                                <td class="${rankClass}">${rankDisplay} ${medalIcon}</td>
+                                <td>${r.name}</td>
+                                <td>${r.class}</td>
+                                ${showGuide ? `<td>${r.guide || '-'}</td>` : ''}
+                                <td>${r.bib || '-'}</td>
+                                <td>${r.club || '-'}</td>
+                                <td style="text-align:center; ${isDNS ? 'color:#666; font-style:italic;' : 'font-weight:600;'}">${r.mark}</td>
+                                ${showPoints ? `<td class="points-col" style="text-align:center;">${r.points || '-'}</td>` : ''}
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+
+                    const completed = results.filter(r => r.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark)).length;
+                    const total = results.length;
+                    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                    if (pct < 100 && pct > 0) {
+                        html += `
+                            <div style="margin: 12px 0; padding: 8px 0;">
+                                <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-bottom:4px;">
+                                    <span>Progress</span>
+                                    <span>${completed}/${total}</span>
+                                </div>
+                                <div style="width:100%; height:4px; background:#2a2a4e; border-radius:2px; overflow:hidden;">
+                                    <div style="width:${pct}%; height:100%; background:#e94560; border-radius:2px; transition:width 0.5s;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+
+                } catch (error) {
+                    console.error('Error loading event results:', error);
+                }
+            }
+
+            if (!hasResults) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <div class="icon">📊</div>
+                        <p>No results yet. Enter results in the Result Sheet.</p>
+                        <p style="font-size: 12px; color: #555; margin-top: 5px;">Go to Result Sheet to enter marks and publish events.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = html;
+            }
+        }
+
+        // ---------- SECTION VISIBILITY ----------
+        function toggleSection(section) {
+            visibleSections[section] = !visibleSections[section];
+            applyVisibility();
+        }
+
+        function showAllSections() {
+            visibleSections = {
+                schedule: true,
+                startlists: true,
+                results: true,
+                medals: true
+            };
+            applyVisibility();
+        }
+
+        function applyVisibility() {
+            document.getElementById('section-schedule').style.display = visibleSections.schedule ? 'block' : 'none';
+            document.getElementById('section-startlists').style.display = visibleSections.startlists ? 'block' : 'none';
+            document.getElementById('section-results').style.display = visibleSections.results ? 'block' : 'none';
+            document.getElementById('section-medals').style.display = visibleSections.medals ? 'block' : 'none';
+        }
+
+        function refreshBooklet() { loadData(); }
+        function exportPDF() { window.print(); }
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(loadData, 30000);
+        }
+
+        loadMeetInfo();
+        loadData();
+        startAutoRefresh();
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'p' || e.key === 'P') { window.print(); }
+            if (e.key === 'r' || e.key === 'R') { refreshBooklet(); }
+        });
+    </script>
+</body>
+</html>

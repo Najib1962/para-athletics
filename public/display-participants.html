@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Participants - Rotation Display</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+            z-index: 10;
+        }
+        .top-bar .meet-name { font-size: 20px; font-weight: 700; color: #e94560; }
+        .top-bar .meet-venue { font-size: 14px; color: #999; }
+        .top-bar .status {
+            font-size: 14px;
+            color: #4CAF50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+        .controls button {
+            padding: 10px 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .controls button:hover { background: #2a2a4e; border-color: #e94560; }
+        .controls button.active { background: #e94560; border-color: #e94560; }
+        .controls button.danger { border-color: #dc3545; }
+        .controls button.danger:hover { background: #dc3545; }
+        .controls .info { color: #999; font-size: 14px; margin-left: 10px; }
+
+        .display-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a2e;
+            border-radius: 16px;
+            border: 2px solid #2a2a4e;
+            padding: 30px;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            animation: slideIn 0.6s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .class-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2a2a4e;
+            margin-bottom: 20px;
+        }
+        .class-header h1 { font-size: 36px; font-weight: 700; }
+        .class-header .meta {
+            font-size: 18px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .participant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            flex: 1;
+        }
+
+        .participant-card {
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .participant-card:hover {
+            border-color: #e94560;
+        }
+        .participant-card .name {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .participant-card .detail {
+            font-size: 14px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .participant-card .class-badge {
+            display: inline-block;
+            background: #e94560;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .participant-card .guide-badge {
+            display: inline-block;
+            background: #2196F3;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+            margin-left: 5px;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+            font-size: 24px;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+            padding: 10px;
+            border-top: 1px solid #2a2a4e;
+        }
+        .progress-indicator .highlight { color: #fff; font-weight: 600; }
+        .progress-indicator .dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .progress-indicator .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #2a2a4e;
+            transition: all 0.3s;
+        }
+        .progress-indicator .dot.active { background: #e94560; transform: scale(1.2); }
+        .progress-indicator .dot.completed { background: #4CAF50; }
+
+        .footer {
+            text-align: center;
+            padding: 15px 20px;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+            border-top: 1px solid #2a2a4e;
+        }
+
+        @media (min-width: 1200px) {
+            .participant-card .name { font-size: 26px; }
+            .participant-card .detail { font-size: 18px; }
+            .class-header h1 { font-size: 48px; }
+        }
+        @media (max-width: 768px) {
+            .display-container { padding: 15px; }
+            .participant-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .participant-card .name { font-size: 16px; }
+            .class-header h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div>
+            <div class="meet-name" id="meetName">🏃 Para Athletics</div>
+            <div class="meet-venue" id="meetVenue">Loading...</div>
+        </div>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span>PARTICIPANTS ROTATION</span>
+            <span style="margin-left: 15px; color: #666;" id="updateTime">Loading...</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="toggleRotation()" id="toggleBtn" class="active">⏸ Pause</button>
+        <button onclick="prevClass()">◀ Prev</button>
+        <button onclick="nextClass()">Next ▶</button>
+        <button onclick="goFullscreen()">⛶ Fullscreen</button>
+        <button onclick="refreshData()">🔄 Refresh</button>
+        <span class="info" id="classCounter">0 / 0 classes</span>
+        <span class="info" style="margin-left: 15px;" id="timerDisplay">⏱ 5s</span>
+    </div>
+
+    <div class="display-container" id="displayContainer">
+        <div class="no-results">Loading participants...</div>
+    </div>
+
+    <div class="footer">
+        <span>👤 Participants • Rotation Mode</span>
+        <span style="margin-left: 20px;" id="autoStatus">Auto-cycling every 5 seconds</span>
+    </div>
+
+    <script>
+        let classes = [];
+        let currentIndex = 0;
+        let isRotating = true;
+        let rotationInterval = null;
+        const DISPLAY_DURATION = 5000;
+
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = `🏃 ${meet.name || 'Para Athletics'}`;
+                document.getElementById('meetVenue').textContent = `${meet.venue || ''} • ${meet.date || ''}`;
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const athletes = await fetchAPI('/api/athletes');
+                const grouped = {};
+                athletes.forEach(a => {
+                    const cls = a.class || 'Unknown';
+                    if (!grouped[cls]) grouped[cls] = [];
+                    grouped[cls].push(a);
+                });
+                classes = Object.keys(grouped).sort().map(cls => ({ class: cls, athletes: grouped[cls] }));
+
+                updateCounter();
+                if (classes.length === 0) {
+                    document.getElementById('displayContainer').innerHTML = `
+                        <div class="no-results">No participants registered yet.</div>
+                    `;
+                    return;
+                }
+                if (currentIndex >= classes.length) currentIndex = 0;
+                displayClass(currentIndex);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('displayContainer').innerHTML = `
+                    <div class="no-results">Error loading participants: ${error.message}</div>
+                `;
+            }
+        }
+
+        function displayClass(index) {
+            if (classes.length === 0 || index >= classes.length) return;
+            const cls = classes[index];
+            document.getElementById('updateTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+
+            const container = document.getElementById('displayContainer');
+            const guideClasses = ['T11','T12','F11','F12'];
+
+            let html = `
+                <div class="slide">
+                    <div class="class-header">
+                        <h1>👤 Class ${cls.class}</h1>
+                        <div class="meta">${cls.athletes.length} athletes</div>
+                    </div>
+                    <div class="participant-grid">
+            `;
+
+            cls.athletes.forEach(a => {
+                const isGuide = guideClasses.includes(a.class);
+                html += `
+                    <div class="participant-card">
+                        <div class="name">${a.name}</div>
+                        <div class="detail">${a.sex || 'N/A'} • ${a.bib ? 'Bib: ' + a.bib : ''}</div>
+                        <div class="detail">${a.club || 'No club'}</div>
+                        <span class="class-badge">${a.class}</span>
+                        ${isGuide ? '<span class="guide-badge">👁️ Guide</span>' : ''}
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <div class="progress-indicator">
+                        <span>Class <span class="highlight">${index + 1}</span> of <span class="highlight">${classes.length}</span></span>
+                        <div class="dots">
+                            ${classes.map((_, i) => `
+                                <div class="dot ${i === index ? 'active' : ''} ${i < index ? 'completed' : ''}"></div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            updateCounter();
+        }
+
+        function updateCounter() {
+            document.getElementById('classCounter').textContent = `${classes.length > 0 ? currentIndex + 1 : 0} / ${classes.length} classes`;
+        }
+
+        function nextClass() {
+            if (classes.length === 0) return;
+            currentIndex = (currentIndex + 1) % classes.length;
+            displayClass(currentIndex);
+            resetTimer();
+        }
+
+        function prevClass() {
+            if (classes.length === 0) return;
+            currentIndex = (currentIndex - 1 + classes.length) % classes.length;
+            displayClass(currentIndex);
+            resetTimer();
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const btn = document.getElementById('toggleBtn');
+            if (isRotating) {
+                btn.textContent = '⏸ Pause';
+                btn.className = 'active';
+                document.getElementById('autoStatus').textContent = 'Auto-cycling every 5 seconds';
+                startRotation();
+            } else {
+                btn.textContent = '▶ Play';
+                btn.className = 'danger';
+                document.getElementById('autoStatus').textContent = '⏸ Paused';
+                stopRotation();
+            }
+        }
+
+        function startRotation() {
+            if (rotationInterval) clearInterval(rotationInterval);
+            rotationInterval = setInterval(() => {
+                if (isRotating && classes.length > 0) nextClass();
+            }, DISPLAY_DURATION);
+            resetTimer();
+        }
+
+        function stopRotation() {
+            if (rotationInterval) { clearInterval(rotationInterval); rotationInterval = null; }
+            document.getElementById('timerDisplay').textContent = '⏱ Paused';
+        }
+
+        function resetTimer() {
+            if (isRotating) {
+                document.getElementById('timerDisplay').textContent = `⏱ ${DISPLAY_DURATION / 1000}s`;
+                let count = DISPLAY_DURATION / 1000;
+                const timerInterval = setInterval(() => {
+                    count--;
+                    if (count <= 0 || !isRotating) { clearInterval(timerInterval); if (isRotating) document.getElementById('timerDisplay').textContent = `⏱ ${DISPLAY_DURATION / 1000}s`; return; }
+                    document.getElementById('timerDisplay').textContent = `⏱ ${count}s`;
+                }, 1000);
+            }
+        }
+
+        function goFullscreen() {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        }
+
+        async function refreshData() { await loadData(); if (isRotating) startRotation(); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'f' || e.key === 'F') goFullscreen();
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextClass(); }
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevClass(); }
+            if (e.key === ' ') { e.preventDefault(); toggleRotation(); }
+            if (e.key === 'r' || e.key === 'R') refreshData();
+        });
+
+        loadMeetInfo();
+        loadData();
+        setTimeout(() => { if (classes.length > 0 && isRotating) startRotation(); }, 2000);
+        setInterval(loadData, 60000);
+    </script>
+</body>
+</html>

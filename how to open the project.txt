@@ -1,0 +1,4 @@
+
+C:\Users\m>cd Desktop\para-athletics
+to close the server Cl+C
+To start the server: node server.js

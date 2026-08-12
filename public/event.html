@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            border-bottom: 2px solid #e94560;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-logo { font-size: 28px; font-weight: 700; color: #fff; }
+        .header-logo span { color: #e94560; }
+        .header-subtitle { font-size: 14px; color: #999; }
+        .header-right { display: flex; gap: 15px; flex-wrap: wrap; }
+        .header-btn {
+            padding: 10px 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .header-btn:hover { background: #e94560; border-color: #e94560; }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        .back-link {
+            display: inline-block;
+            color: #e94560;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .event-header {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .event-header h1 { font-size: 28px; font-weight: 700; }
+        .event-header .meta {
+            color: #999;
+            font-size: 14px;
+            margin-top: 5px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .event-header .status {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .status-pending { background: #FF9800; color: #fff; }
+        .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        .status-official { background: #4CAF50; color: #fff; }
+        .event-header .classes {
+            color: #FFD700;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .results-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .results-card h2 { font-size: 18px; margin-bottom: 15px; color: #ccc; }
+
+        .result-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #0a0a1a;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            border-left: 4px solid transparent;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .result-row.rank-1 { border-left-color: #FFD700; background: rgba(255, 215, 0, 0.08); }
+        .result-row.rank-2 { border-left-color: #C0C0C0; background: rgba(192, 192, 192, 0.08); }
+        .result-row.rank-3 { border-left-color: #CD7F32; background: rgba(205, 127, 50, 0.08); }
+
+        .result-rank {
+            font-size: 20px;
+            font-weight: 700;
+            width: 45px;
+            text-align: center;
+        }
+        .rank-1-text { color: #FFD700; }
+        .rank-2-text { color: #C0C0C0; }
+        .rank-3-text { color: #CD7F32; }
+
+        .result-info { flex: 1; min-width: 150px; }
+        .result-name { font-size: 16px; font-weight: 500; }
+        .result-detail { font-size: 13px; color: #999; }
+        .result-mark { font-size: 18px; font-weight: 700; padding: 4px 15px; background: #0a0a1a; border-radius: 6px; }
+        .result-points { font-size: 16px; font-weight: 700; color: #FFD700; min-width: 60px; text-align: center; }
+        .result-dns { color: #666; font-style: italic; font-weight: 400; }
+
+        .guide-badge {
+            background: #2196F3;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+
+        .ranking-info {
+            font-size: 13px;
+            color: #999;
+            padding: 10px 15px;
+            background: #0a0a1a;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #666;
+            z-index: 999;
+        }
+        .admin-badge a { color: #e94560; text-decoration: none; }
+        .admin-badge a:hover { text-decoration: underline; }
+
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid #2a2a4e;
+            margin-top: 40px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; }
+            .event-header h1 { font-size: 22px; }
+            .result-row { gap: 10px; }
+            .result-rank { width: 35px; font-size: 16px; }
+            .result-mark { font-size: 15px; padding: 4px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="header-logo">🏃 <span>Para</span> Athletics</div>
+            <div class="header-subtitle" id="meetName">Loading...</div>
+        </div>
+        <div class="header-right">
+            <a href="/" class="header-btn">📋 Schedule</a>
+            <a href="/live.html" class="header-btn">📺 Live Results</a>
+            <a href="/medals.html" class="header-btn">🏅 Medals</a>
+            <a href="/athletes-public.html" class="header-btn">👤 Athletes</a>
+            <a href="/mobile.html" class="header-btn">📱 Mobile</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="/" class="back-link">← Back to Schedule</a>
+
+        <div id="eventContent">
+            <div class="no-results">Loading event...</div>
+        </div>
+    </div>
+
+    <div class="admin-badge">
+        🔐 <a href="/login.html">Admin</a>
+    </div>
+
+    <footer class="footer">
+        <p>🏃 Para Athletics Competition Management System &bull; Data updates automatically</p>
+    </footer>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('id');
+        let refreshInterval = null;
+
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadEvent() {
+            if (!eventId) {
+                document.getElementById('eventContent').innerHTML = `
+                    <div class="results-card">
+                        <div class="no-results">No event selected.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const data = await fetchAPI(`/api/events/${eventId}/results`);
+                displayEvent(data);
+            } catch (error) {
+                document.getElementById('eventContent').innerHTML = `
+                    <div class="results-card">
+                        <div class="no-results">Error loading event: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function displayEvent(data) {
+            const event = data.event;
+            const results = data.results || [];
+            const isCombined = data.isCombinedClass || false;
+            const uniqueClasses = data.uniqueClasses || [];
+
+            const hasResults = results.some(r => r.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark));
+            const statusClass = event.status === 'official' ? 'status-official' :
+                               event.status === 'live' ? 'status-live' : 'status-pending';
+            const statusLabel = event.status === 'official' ? '✓ OFFICIAL' :
+                               event.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+
+            let classesDisplay = '';
+            if (event.classes && event.classes.length > 1) {
+                classesDisplay = `🔄 Combined Classes: ${event.classes.join(', ')}`;
+            } else if (event.class) {
+                classesDisplay = `Class: ${event.class}`;
+            }
+
+            let html = `
+                <div class="event-header">
+                    <h1>${event.name}</h1>
+                    <div class="meta">
+                        <span>${event.discipline}</span>
+                        <span>${event.sex}</span>
+                        <span>${event.round || 'Final'}</span>
+                        <span>Day ${event.day || 1}</span>
+                    </div>
+                    <div class="classes">${classesDisplay}</div>
+                    <span class="status ${statusClass}">${statusLabel}</span>
+                </div>
+            `;
+
+            html += `
+                <div class="results-card">
+                    <h2>🏆 Results</h2>
+                    <div class="ranking-info">
+                        ${isCombined ? `🏆 Ranking by Raza Points • Classes: ${uniqueClasses.join(', ')}` : '📊 Ranking by Performance'}
+                        ${event.summary ? `<br><br>${event.summary}` : ''}
+                    </div>
+            `;
+
+            if (results.length === 0) {
+                html += `<div class="no-results">No athletes entered yet.</div>`;
+            } else if (!hasResults) {
+                html += `<div class="no-results">⏳ Waiting for marks...</div>`;
+            } else {
+                results.forEach(r => {
+                    const rankClass = r.rank === 1 ? 'rank-1' :
+                                     r.rank === 2 ? 'rank-2' :
+                                     r.rank === 3 ? 'rank-3' : '';
+                    const rankText = r.rank === 1 ? 'rank-1-text' :
+                                    r.rank === 2 ? 'rank-2-text' :
+                                    r.rank === 3 ? 'rank-3-text' : '';
+                    const isDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark);
+                    const rankDisplay = r.rank === '-' ? '-' : r.rank;
+
+                    html += `
+                        <div class="result-row ${rankClass}">
+                            <div class="result-rank ${rankText}">${rankDisplay}</div>
+                            <div class="result-info">
+                                <div class="result-name">
+                                    ${r.name}
+                                    ${r.hasGuide ? '<span class="guide-badge">👁️ Guide</span>' : ''}
+                                    <span style="font-size: 12px; color: #999; margin-left: 5px;">${r.class}</span>
+                                </div>
+                                <div class="result-detail">
+                                    ${r.bib ? 'Bib: ' + r.bib : ''} ${r.club ? '• ' + r.club : ''}
+                                </div>
+                            </div>
+                            <div class="result-mark ${isDNS ? 'result-dns' : ''}">${r.mark}</div>
+                            ${r.points ? `<div class="result-points">${r.points}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            const completed = results.filter(r => r.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark)).length;
+            html += `
+                    <div style="margin-top: 15px; color: #666; font-size: 13px;">
+                        ${completed} athletes completed • Updated: ${new Date().toLocaleTimeString()}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('eventContent').innerHTML = html;
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(loadEvent, 15000);
+        }
+
+        loadMeetInfo();
+        loadEvent();
+        startAutoRefresh();
+    </script>
+</body>
+</html>

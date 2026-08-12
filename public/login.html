@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-container h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #e94560;
+        }
+        .login-container p {
+            text-align: center;
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .login-container input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .login-container button:hover {
+            background: #c73e54;
+        }
+        .login-container .error {
+            color: #ff6b6b;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+        .login-container .hint {
+            color: #666;
+            text-align: center;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .back-link:hover { color: #e94560; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>🔐 Admin Access</h1>
+        <p>Enter the admin password to access management tools</p>
+        
+        <form onsubmit="login(event)">
+            <input type="password" id="passwordInput" placeholder="Enter admin password..." autofocus>
+            <button type="submit">Login</button>
+        </form>
+        <div class="error" id="errorMessage">❌ Incorrect password. Please try again.</div>
+        <div class="hint">Default password: <strong>admin123</strong></div>
+        <a href="/" class="back-link">← Back to Public Site</a>
+    </div>
+
+    <script>
+        function login(event) {
+            event.preventDefault();
+            const password = document.getElementById('passwordInput').value;
+            const error = document.getElementById('errorMessage');
+            
+            if (password === 'admin123') {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                sessionStorage.setItem('adminPassword', password);
+                window.location.href = '/admin.html';
+            } else {
+                error.style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+        
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            window.location.href = '/admin.html';
+        }
+    </script>
+</body>
+</html>

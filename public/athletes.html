@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athletes - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #0a0a1a; color: #fff; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #e94560; margin-bottom: 20px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2a4e; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #ccc; }
+        textarea { width: 100%; padding: 10px; background: #0a0a1a; border: 1px solid #2a2a4e; border-radius: 6px; color: #fff; margin-bottom: 12px; font-size: 14px; font-family: inherit; min-height: 150px; resize: vertical; }
+        button { padding: 10px 20px; background: #e94560; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+        button:hover { background: #c73e54; }
+        button.success { background: #4CAF50; }
+        button.success:hover { background: #45a049; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button.info { background: #2196F3; }
+        button.info:hover { background: #1976D2; }
+        .athlete-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #0a0a1a; border-radius: 6px; margin-bottom: 5px; flex-wrap: wrap; gap: 10px; }
+        .athlete-item .name { font-weight: 500; }
+        .athlete-item .detail { color: #999; font-size: 13px; }
+        .athlete-item .events { color: #FFD700; font-size: 12px; }
+        .success { color: #4CAF50; margin-top: 10px; }
+        .stats { display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
+        .stats span { color: #999; font-size: 13px; }
+        .stats strong { color: #fff; }
+        .group-title { color: #e94560; font-weight: bold; margin: 10px 0 5px 0; }
+        .nav-links { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px; }
+        .nav-links a { color: #e94560; text-decoration: none; padding: 8px 16px; background: #1a1a2e; border-radius: 6px; border: 1px solid #2a2a4e; }
+        .nav-links a:hover { background: #2a2a4e; }
+        .hint { color: #666; font-size: 12px; margin-top: -8px; margin-bottom: 12px; }
+        .status-msg { padding: 10px; border-radius: 6px; margin-top: 10px; display: none; }
+        .status-msg.success { background: rgba(76, 175, 80, 0.2); color: #4CAF50; display: block; }
+        .status-msg.error { background: rgba(220, 53, 69, 0.2); color: #dc3545; display: block; }
+        .status-msg.info { background: rgba(33, 150, 243, 0.2); color: #2196F3; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👤 Athlete Management</h1>
+        
+        <div class="card">
+            <h2>📋 Navigation</h2>
+            <div class="nav-links">
+                <a href="/admin.html">📊 Admin</a>
+                <a href="/athletes.html">👤 Athletes</a>
+                <a href="/entries.html">📋 Entries</a>
+                <a href="/live.html">📺 Live Results</a>
+                <a href="/mobile.html">📱 Mobile</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📥 Import Athletes with Events</h2>
+            <p style="color: #999; font-size: 13px; margin-bottom: 10px;">
+                Paste tab-separated or comma-separated data. 
+                <strong>Columns: Name, Class, Sex, Bib (optional), Club (optional), Events</strong>
+            </p>
+            <p style="color: #666; font-size: 12px; margin-bottom: 10px;">
+                💡 Events should be comma-separated (e.g., "100m, 200m, Long Jump")
+            </p>
+            <textarea id="csvInput" placeholder="Example:&#10;John Doe	T11	M	101	USA	100m, 200m, Long Jump&#10;Jane Smith	F11	F	102	GBR	100m"></textarea>
+            <button class="success" onclick="importAthletes()">📥 Import Athletes & Entries</button>
+            <button class="info" onclick="loadSampleWithEvents()">📥 Load Sample with Events</button>
+            <div id="importStatus" class="status-msg"></div>
+        </div>
+
+        <div class="card">
+            <h2>👥 All Athletes</h2>
+            <div id="athleteList">
+                <p style="color: #666;">No athletes yet. Import some above!</p>
+            </div>
+            <div id="athleteStats" class="stats"></div>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Actions</h2>
+            <button class="success" onclick="loadSampleAthletes()">📥 Load Sample Athletes</button>
+            <button class="success" onclick="loadJumpAthletes()" style="background: #9C27B0;">📥 Load Jump Athletes (F11/F12)</button>
+            <button class="danger" onclick="deleteAllAthletes()">🗑️ Delete All Athletes</button>
+        </div>
+    </div>
+
+    <script>
+        async function fetchAPI(url, options = {}) {
+            const password = 'admin123';
+            const separator = url.includes('?') ? '&' : '?';
+            const finalUrl = `${url}${separator}password=${password}`;
+            
+            const response = await fetch(finalUrl, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            });
+            return response.json();
+        }
+
+        function showStatus(message, type = 'info') {
+            const el = document.getElementById('importStatus');
+            el.textContent = message;
+            el.className = 'status-msg ' + type;
+        }
+
+        async function loadAthletes() {
+            try {
+                const athletes = await fetchAPI('/api/athletes');
+                const container = document.getElementById('athleteList');
+                const stats = document.getElementById('athleteStats');
+                
+                if (athletes.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No athletes yet. Import some above!</p>';
+                    stats.innerHTML = '';
+                    return;
+                }
+                
+                const grouped = {};
+                athletes.forEach(a => {
+                    const cls = a.class || 'Unknown';
+                    if (!grouped[cls]) grouped[cls] = [];
+                    grouped[cls].push(a);
+                });
+                
+                let html = '';
+                Object.keys(grouped).sort().forEach(cls => {
+                    html += `<div class="group-title">Class ${cls}</div>`;
+                    grouped[cls].forEach(a => {
+                        html += `
+                            <div class="athlete-item">
+                                <div>
+                                    <div class="name">${a.name}</div>
+                                    <div class="detail">${a.sex || 'N/A'} • ${a.bib ? 'Bib: ' + a.bib : ''} ${a.club ? '• ' + a.club : ''}</div>
+                                    <div class="events">${a.events ? '📋 ' + a.events : ''}</div>
+                                </div>
+                                <button onclick="deleteAthlete('${a.id}')" class="danger" style="padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">✕</button>
+                            </div>
+                        `;
+                    });
+                });
+                
+                container.innerHTML = html;
+                
+                const total = athletes.length;
+                const classes = Object.keys(grouped).length;
+                stats.innerHTML = `
+                    <span>Total: <strong>${total}</strong> athletes</span>
+                    <span>Classes: <strong>${classes}</strong></span>
+                `;
+            } catch (error) {
+                console.error('Error loading athletes:', error);
+            }
+        }
+
+        async function importAthletes() {
+            const text = document.getElementById('csvInput').value.trim();
+            if (!text) {
+                showStatus('Please paste some data', 'error');
+                return;
+            }
+            
+            const lines = text.split('\n').filter(l => l.trim());
+            
+            // Check if first line is header
+            let startIndex = 0;
+            const firstLine = lines[0].toLowerCase();
+            if (firstLine.includes('name') && firstLine.includes('class')) {
+                startIndex = 1;
+            }
+            
+            const athletes = [];
+            for (let i = startIndex; i < lines.length; i++) {
+                const line = lines[i];
+                const parts = line.split(/[\t,]+/).map(s => s.trim());
+                
+                let name = parts[0] || '';
+                let cls = parts[1] || '';
+                let sex = parts[2] || 'M';
+                let bib = parts[3] || '';
+                let club = parts[4] || '';
+                let events = '';
+                
+                // If there are more than 5 parts, the rest are events
+                if (parts.length > 5) {
+                    events = parts.slice(5).join(', ').replace(/,\s*,/g, ',').replace(/^,\s*/, '');
+                } else if (parts.length === 6) {
+                    events = parts[5] || '';
+                }
+                
+                if (name && cls) {
+                    athletes.push({ name, class: cls, sex, bib, club, events });
+                }
+            }
+            
+            if (athletes.length === 0) {
+                showStatus('No valid athletes found. Need Name and Class.', 'error');
+                return;
+            }
+            
+            showStatus(`Importing ${athletes.length} athletes...`, 'info');
+            
+            let imported = 0;
+            let errors = 0;
+            let eventErrors = 0;
+            
+            // Get all events first
+            const allEvents = await fetchAPI('/api/events');
+            
+            for (const athlete of athletes) {
+                try {
+                    // Import athlete
+                    const result = await fetchAPI('/api/athletes', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            name: athlete.name,
+                            class: athlete.class,
+                            sex: athlete.sex,
+                            bib: athlete.bib,
+                            club: athlete.club,
+                            events: athlete.events
+                        })
+                    });
+                    imported++;
+                    
+                    // If athlete has events, register them
+                    if (athlete.events && athlete.events.trim()) {
+                        const eventList = athlete.events.split(',').map(e => e.trim()).filter(e => e);
+                        for (const eventName of eventList) {
+                            try {
+                                // Find matching event by discipline or name
+                                const matchedEvent = allEvents.find(e => {
+                                    return e.discipline === eventName || 
+                                           e.name.includes(eventName) ||
+                                           eventName.includes(e.discipline);
+                                });
+                                
+                                if (matchedEvent) {
+                                    // Add entry
+                                    await fetchAPI('/api/entries', {
+                                        method: 'POST',
+                                        body: JSON.stringify({
+                                            eventId: matchedEvent.id,
+                                            athleteId: result.id
+                                        })
+                                    });
+                                } else {
+                                    eventErrors++;
+                                    console.log(`Event not found: ${eventName} for ${athlete.name}`);
+                                }
+                            } catch (e) {
+                                eventErrors++;
+                                console.error(`Error registering ${athlete.name} for ${eventName}:`, e);
+                            }
+                        }
+                    }
+                    
+                } catch (error) {
+                    errors++;
+                    console.error('Error importing athlete:', athlete.name, error);
+                }
+            }
+            
+            let message = `✅ Imported ${imported} athletes!`;
+            if (eventErrors > 0) {
+                message += `\n⚠️ ${eventErrors} event registrations failed (events may not exist yet).`;
+            }
+            if (errors > 0) {
+                message += `\n⚠️ ${errors} errors occurred.`;
+            }
+            
+            showStatus(message, errors > 0 ? 'error' : 'success');
+            document.getElementById('csvInput').value = '';
+            loadAthletes();
+        }
+
+        async function deleteAthlete(id) {
+            if (confirm('Delete this athlete?')) {
+                await fetchAPI(`/api/athletes/${id}`, { method: 'DELETE' });
+                loadAthletes();
+            }
+        }
+
+        async function deleteAllAthletes() {
+            if (confirm('Delete ALL athletes? This cannot be undone!')) {
+                const response = await fetch(`/api/athletes/all?password=admin123`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadAthletes();
+                    alert('✅ All athletes deleted!');
+                } else {
+                    alert('Error deleting athletes');
+                }
+            }
+        }
+
+        async function loadSampleAthletes() {
+            const sampleAthletes = [
+                { name: "John Smith", class: "T11", sex: "M", bib: "101", club: "USA", events: "100m, 200m, Long Jump" },
+                { name: "Mike Johnson", class: "T11", sex: "M", bib: "102", club: "GBR", events: "100m" },
+                { name: "Carlos Rodriguez", class: "T11", sex: "M", bib: "103", club: "ESP", events: "100m, 200m" },
+                { name: "Thomas Muller", class: "T11", sex: "M", bib: "107", club: "GER", events: "100m" },
+                { name: "Sarah Williams", class: "F11", sex: "F", bib: "201", club: "USA", events: "100m, Long Jump" },
+                { name: "Emma Brown", class: "F11", sex: "F", bib: "202", club: "GBR", events: "100m, 200m" },
+                { name: "David Lee", class: "T12", sex: "M", bib: "104", club: "KOR", events: "100m, Long Jump" },
+                { name: "Maria Garcia", class: "F12", sex: "F", bib: "203", club: "ESP", events: "100m, Discus" },
+                { name: "James Wilson", class: "T20", sex: "M", bib: "105", club: "AUS", events: "Long Jump" },
+                { name: "Lisa Chen", class: "T34", sex: "F", bib: "204", club: "CHN", events: "200m" },
+                { name: "Robert Kim", class: "T53", sex: "M", bib: "106", club: "KOR", events: "400m" },
+                { name: "Patricia Davis", class: "F11", sex: "F", bib: "205", club: "CAN", events: "100m, 200m, Long Jump" },
+                { name: "Anna Svensson", class: "F34", sex: "F", bib: "206", club: "SWE", events: "200m" },
+                { name: "Peter Jones", class: "T12", sex: "M", bib: "108", club: "GBR", events: "100m, Long Jump" },
+                { name: "Marta Diaz", class: "F12", sex: "F", bib: "207", club: "ESP", events: "100m, Discus" },
+                { name: "Daniel Ng", class: "T20", sex: "M", bib: "109", club: "SIN", events: "Long Jump" }
+            ];
+            
+            // First load athletes
+            for (const athlete of sampleAthletes) {
+                await fetchAPI('/api/athletes', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: athlete.name,
+                        class: athlete.class,
+                        sex: athlete.sex,
+                        bib: athlete.bib,
+                        club: athlete.club,
+                        events: athlete.events
+                    })
+                });
+            }
+            
+            // Then register entries
+            const allAthletes = await fetchAPI('/api/athletes');
+            const allEvents = await fetchAPI('/api/events');
+            
+            for (const athlete of sampleAthletes) {
+                const athleteData = allAthletes.find(a => a.name === athlete.name);
+                if (!athleteData) continue;
+                
+                const eventList = athlete.events.split(',').map(e => e.trim());
+                for (const eventName of eventList) {
+                    const matchedEvent = allEvents.find(e => e.discipline === eventName || e.name.includes(eventName));
+                    if (matchedEvent) {
+                        await fetchAPI('/api/entries', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                eventId: matchedEvent.id,
+                                athleteId: athleteData.id
+                            })
+                        });
+                    }
+                }
+            }
+            
+            loadAthletes();
+            alert('✅ Sample athletes with events loaded!');
+        }
+
+        async function loadSampleWithEvents() {
+            const sampleData = `Name	Class	Sex	Bib	Club	Events
+John Smith	T11	M	101	USA	100m, 200m, Long Jump
+Mike Johnson	T11	M	102	GBR	100m
+Carlos Rodriguez	T11	M	103	ESP	100m, 200m
+Thomas Muller	T11	M	107	GER	100m
+Sarah Williams	F11	F	201	USA	100m, Long Jump
+Emma Brown	F11	F	202	GBR	100m, 200m
+David Lee	T12	M	104	KOR	100m, Long Jump
+Maria Garcia	F12	F	203	ESP	100m, Discus
+James Wilson	T20	M	105	AUS	Long Jump
+Lisa Chen	T34	F	204	CHN	200m
+Robert Kim	T53	M	106	KOR	400m
+Patricia Davis	F11	F	205	CAN	100m, 200m, Long Jump
+Anna Svensson	F34	F	206	SWE	200m
+Peter Jones	T12	M	108	GBR	100m, Long Jump
+Marta Diaz	F12	F	207	ESP	100m, Discus
+Daniel Ng	T20	M	109	SIN	Long Jump`;
+            document.getElementById('csvInput').value = sampleData;
+            showStatus('Sample data loaded! Click "Import Athletes & Entries" to import.', 'success');
+        }
+
+        async function loadJumpAthletes() {
+            const jumpAthletes = [
+                { name: "Mark Anderson", class: "F11", sex: "M", bib: "301", club: "USA", events: "High Jump, Triple Jump" },
+                { name: "David Williams", class: "F11", sex: "M", bib: "302", club: "GBR", events: "High Jump, Triple Jump" },
+                { name: "James Thompson", class: "F11", sex: "M", bib: "303", club: "AUS", events: "High Jump" },
+                { name: "Robert Martinez", class: "F11", sex: "M", bib: "304", club: "ESP", events: "Triple Jump" },
+                { name: "Michael Brown", class: "F12", sex: "M", bib: "305", club: "USA", events: "High Jump, Triple Jump" },
+                { name: "Chris Johnson", class: "F12", sex: "M", bib: "306", club: "GBR", events: "High Jump" },
+                { name: "Daniel Lee", class: "F12", sex: "M", bib: "307", club: "KOR", events: "Triple Jump" },
+                { name: "Thomas Garcia", class: "F12", sex: "M", bib: "308", club: "ESP", events: "High Jump, Triple Jump" },
+                { name: "Paul Wilson", class: "F31", sex: "M", bib: "401", club: "USA", events: "Club Throw" },
+                { name: "Steve Davis", class: "F31", sex: "M", bib: "402", club: "GBR", events: "Club Throw" },
+                { name: "Kevin Chen", class: "F31", sex: "M", bib: "403", club: "CHN", events: "Club Throw" },
+                { name: "Richard Kim", class: "F32", sex: "M", bib: "404", club: "KOR", events: "Shot Put, Club Throw" },
+                { name: "Jose Garcia", class: "F32", sex: "M", bib: "405", club: "ESP", events: "Shot Put, Club Throw" },
+                { name: "Thomas Anderson", class: "F51", sex: "M", bib: "406", club: "USA", events: "Club Throw" },
+                { name: "Peter Smith", class: "F51", sex: "M", bib: "407", club: "GBR", events: "Club Throw" }
+            ];
+            
+            for (const athlete of jumpAthletes) {
+                const result = await fetchAPI('/api/athletes', {
+                    method: 'POST',
+                    body: JSON.stringify(athlete)
+                });
+            }
+            
+            // Register entries
+            const allAthletes = await fetchAPI('/api/athletes');
+            const allEvents = await fetchAPI('/api/events');
+            
+            for (const athlete of jumpAthletes) {
+                const athleteData = allAthletes.find(a => a.name === athlete.name);
+                if (!athleteData) continue;
+                
+                const eventList = athlete.events.split(',').map(e => e.trim());
+                for (const eventName of eventList) {
+                    const matchedEvent = allEvents.find(e => e.discipline === eventName || e.name.includes(eventName));
+                    if (matchedEvent) {
+                        await fetchAPI('/api/entries', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                eventId: matchedEvent.id,
+                                athleteId: athleteData.id
+                            })
+                        });
+                    }
+                }
+            }
+            
+            loadAthletes();
+            alert('✅ Jump athletes (F11, F12, F31, F32, F51) with events loaded!');
+        }
+
+        // Load athletes on page load
+        loadAthletes();
+    </script>
+</body>
+</html>

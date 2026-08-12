@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Results - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #0a0a1a; 
+            color: #fff; 
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #e94560; margin-bottom: 20px; text-align: center; }
+        
+        .card { 
+            background: #1a1a2e; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            border: 1px solid #2a2a4e; 
+        }
+        
+        select { 
+            width: 100%; 
+            padding: 12px; 
+            background: #0a0a1a; 
+            border: 1px solid #2a2a4e; 
+            border-radius: 6px; 
+            color: #fff; 
+            font-size: 16px; 
+        }
+        
+        .event-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .event-detail {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .result-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #0a0a1a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid transparent;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .result-item.rank-1 { border-left-color: #FFD700; background: rgba(255, 215, 0, 0.1); }
+        .result-item.rank-2 { border-left-color: #C0C0C0; background: rgba(192, 192, 192, 0.1); }
+        .result-item.rank-3 { border-left-color: #CD7F32; background: rgba(205, 127, 50, 0.1); }
+        
+        .rank {
+            font-size: 20px;
+            font-weight: bold;
+            width: 50px;
+            text-align: center;
+        }
+        
+        .rank-1-text { color: #FFD700; }
+        .rank-2-text { color: #C0C0C0; }
+        .rank-3-text { color: #CD7F32; }
+        
+        .athlete-info {
+            flex: 1;
+            padding: 0 15px;
+            min-width: 150px;
+        }
+        
+        .athlete-name {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .athlete-detail {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .mark {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 5px 15px;
+            background: #0a0a1a;
+            border-radius: 6px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .mark-dns {
+            color: #666;
+            font-style: italic;
+            font-weight: normal;
+        }
+        
+        .points {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFD700;
+            min-width: 70px;
+            text-align: center;
+            padding: 5px 15px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 6px;
+        }
+        
+        .points-empty {
+            font-size: 14px;
+            color: #666;
+            min-width: 70px;
+            text-align: center;
+            padding: 5px 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status-official { background: #4CAF50; color: #fff; }
+        .status-pending { background: #FF9800; color: #fff; }
+        
+        .guide-badge {
+            background: #2196F3;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+        
+        .refresh-btn {
+            padding: 8px 20px;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .refresh-btn:hover { background: #c73e54; }
+        
+        .auto-refresh {
+            color: #666;
+            font-size: 12px;
+            text-align: right;
+            margin-top: 10px;
+        }
+        
+        .ranking-info {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 15px;
+            padding: 8px 12px;
+            background: #0a0a1a;
+            border-radius: 6px;
+        }
+        
+        .class-badge { display: inline-block; background: #2a2a4e; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; }
+        
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #666;
+            z-index: 999;
+        }
+        .admin-badge a { color: #e94560; text-decoration: none; }
+        .admin-badge a:hover { text-decoration: underline; }
+        
+        @media (max-width: 600px) {
+            .result-item { flex-wrap: wrap; }
+            .rank { width: 40px; font-size: 16px; }
+            .athlete-name { font-size: 15px; }
+            .mark { font-size: 16px; padding: 3px 10px; }
+            .points { font-size: 15px; padding: 3px 10px; }
+            .athlete-detail { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏃 Live Results</h1>
+
+        <div class="card">
+            <select id="eventSelect" onchange="loadResults()">
+                <option value="">-- Select an event --</option>
+            </select>
+        </div>
+        
+        <div id="resultsContainer">
+            <div class="card">
+                <div class="no-results">Select an event to see results</div>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="refresh-btn" onclick="loadResults()">🔄 Refresh</button>
+        </div>
+        <div class="auto-refresh" id="refreshInfo">Auto-refresh: ON (10s)</div>
+    </div>
+
+    <div class="admin-badge">
+        🔐 <a href="/login.html">Admin</a>
+    </div>
+    
+    <script>
+        let autoRefreshInterval = null;
+        let currentEventId = null;
+        
+        async function fetchAPI(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+        
+        async function loadEvents() {
+            try {
+                const events = await fetchAPI('/api/events');
+                const select = document.getElementById('eventSelect');
+                const currentVal = select.value;
+                
+                select.innerHTML = '<option value="">-- Select an event --</option>';
+                events.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = e.id;
+                    const classes = e.classes ? e.classes.join(', ') : e.class || 'Single';
+                    opt.textContent = `${e.name} (${e.discipline}) - ${classes}`;
+                    select.appendChild(opt);
+                });
+                
+                if (currentVal) select.value = currentVal;
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+        
+        async function loadResults() {
+            const eventId = document.getElementById('eventSelect').value;
+            currentEventId = eventId;
+            
+            if (!eventId) {
+                document.getElementById('resultsContainer').innerHTML = `
+                    <div class="card">
+                        <div class="no-results">Select an event to see results</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const data = await fetchAPI(`/api/events/${eventId}/results`);
+                console.log('Results data:', data);
+                displayResults(data);
+            } catch (error) {
+                document.getElementById('resultsContainer').innerHTML = `
+                    <div class="card">
+                        <div class="no-results">Error loading results: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayResults(data) {
+            const container = document.getElementById('resultsContainer');
+            const event = data.event;
+            const results = data.results || [];
+            
+            const hasResults = results.some(r => r.mark && r.mark !== 'DNS' && r.mark !== 'DNF' && r.mark !== 'DQ' && r.mark !== 'NM');
+            const hasPoints = results.some(r => r.points !== null && r.points > 0);
+            const isCombined = data.isCombinedClass || false;
+            
+            let rankingInfo = '';
+            if (isCombined) {
+                rankingInfo = `🏆 Ranking by Raza Points • Combined Classes: ${data.uniqueClasses ? data.uniqueClasses.join(', ') : 'Multiple'}`;
+            } else {
+                rankingInfo = `📊 Ranking by Performance (${event.discipline.includes('m') ? 'Time' : 'Distance'})`;
+            }
+            
+            let html = `
+                <div class="card">
+                    <div class="event-title">${event.name}</div>
+                    <div class="event-detail">
+                        ${event.discipline} • ${event.sex} • ${event.round || 'Final'}
+                        <span class="status-badge ${event.status === 'official' ? 'status-official' : 'status-pending'}">
+                            ${event.status === 'official' ? '✓ OFFICIAL' : '⏳ LIVE'}
+                        </span>
+                    </div>
+                    <div class="ranking-info">${rankingInfo}</div>
+            `;
+            
+            if (results.length === 0) {
+                html += `<div class="no-results">No athletes entered yet</div>`;
+            } else if (!hasResults) {
+                html += `<div class="no-results">⏳ Waiting for marks...</div>`;
+            } else {
+                results.forEach(r => {
+                    const rankClass = r.rank === 1 ? 'rank-1' : 
+                                     r.rank === 2 ? 'rank-2' : 
+                                     r.rank === 3 ? 'rank-3' : '';
+                    const rankText = r.rank === 1 ? 'rank-1-text' : 
+                                    r.rank === 2 ? 'rank-2-text' : 
+                                    r.rank === 3 ? 'rank-3-text' : '';
+                    
+                    const isDNS = ['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark);
+                    const rankDisplay = r.rank === '-' ? '-' : r.rank;
+                    const isGuide = r.hasGuide;
+                    
+                    let pointsDisplay = '';
+                    if (r.points !== null && r.points > 0) {
+                        pointsDisplay = `<div class="points">${r.points}</div>`;
+                    } else if (isDNS) {
+                        pointsDisplay = `<div class="points-empty">—</div>`;
+                    } else {
+                        pointsDisplay = `<div class="points-empty">—</div>`;
+                    }
+                    
+                    html += `
+                        <div class="result-item ${rankClass}">
+                            <div class="rank ${rankText}">${rankDisplay}</div>
+                            <div class="athlete-info">
+                                <div class="athlete-name">
+                                    ${r.name}
+                                    ${isGuide ? '<span class="guide-badge">👁️ Guide</span>' : ''}
+                                    <span class="class-badge">${r.class}</span>
+                                </div>
+                                <div class="athlete-detail">
+                                    ${r.bib ? 'Bib: ' + r.bib : ''} ${r.club ? '• ' + r.club : ''}
+                                </div>
+                            </div>
+                            <div class="mark ${isDNS ? 'mark-dns' : ''}">${r.mark}</div>
+                            ${pointsDisplay}
+                        </div>
+                    `;
+                });
+            }
+            
+            const completed = results.filter(r => r.mark && !['DNS','DNF','DQ','NM'].includes(r.mark)).length;
+            const totalWithPoints = results.filter(r => r.points !== null && r.points > 0).length;
+            
+            html += `
+                    <div style="margin-top: 15px; color: #666; font-size: 13px; display: flex; gap: 20px; flex-wrap: wrap;">
+                        <span>${completed} athletes completed</span>
+                        ${isCombined ? `<span>${totalWithPoints} with Raza Points</span>` : ''}
+                        <span>Updated: ${new Date().toLocaleTimeString()}</span>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(() => {
+                if (currentEventId) loadResults();
+            }, 10000);
+            
+            document.getElementById('refreshInfo').textContent = 'Auto-refresh: ON (10s)';
+        }
+        
+        loadEvents();
+        startAutoRefresh();
+        setInterval(loadEvents, 60000);
+    </script>
+</body>
+</html>

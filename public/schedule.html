@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competition Schedule - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 30px;
+            border-radius: 16px;
+            border: 1px solid #2a2a4e;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .header h1 span { color: #e94560; }
+        .header .subtitle { font-size: 14px; color: #999; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .header-actions button {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .header-actions button:hover {
+            border-color: #e94560;
+            background: #2a2a4e;
+        }
+        .header-actions button.print-btn {
+            background: #e94560;
+            border-color: #e94560;
+        }
+        .header-actions button.print-btn:hover {
+            background: #c73e54;
+        }
+
+        /* Navigation */
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover {
+            border-color: #e94560;
+            background: #2a2a4e;
+        }
+        .nav-links a.active {
+            border-color: #e94560;
+            background: #e94560;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+        }
+        .controls label {
+            color: #999;
+            font-size: 14px;
+        }
+        .controls select {
+            padding: 8px 14px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .controls select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        /* Schedule Grid */
+        .schedule-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .day-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+            overflow: hidden;
+        }
+        .day-card .day-header {
+            background: #2a2a4e;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .day-card .day-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .day-card .day-header .day-meta {
+            color: #999;
+            font-size: 13px;
+        }
+        .day-card .day-header .event-count {
+            background: #e94560;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .event-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            border-bottom: 1px solid #2a2a4e;
+            gap: 15px;
+            transition: background 0.3s;
+            flex-wrap: wrap;
+        }
+        .event-row:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        .event-row:last-child {
+            border-bottom: none;
+        }
+
+        .event-time {
+            min-width: 80px;
+            font-weight: 600;
+            color: #e94560;
+            font-size: 15px;
+        }
+        .event-info {
+            flex: 1;
+            min-width: 200px;
+        }
+        .event-info .name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .event-info .detail {
+            font-size: 13px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .event-classes {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .event-class {
+            background: #2a2a4e;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .event-class.combined {
+            background: #e94560;
+        }
+        .event-status {
+            font-size: 11px;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #FF9800; color: #fff; }
+        .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        .status-official { background: #4CAF50; color: #fff; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .no-events {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+            font-size: 18px;
+        }
+
+        /* Summary Stats */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        .stat-box .number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #e94560;
+        }
+        .stat-box .label {
+            font-size: 13px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .header-actions, .nav-links, .controls, .no-print {
+                display: none !important;
+            }
+            body {
+                background: white;
+                padding: 10px;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .day-card {
+                border: 1px solid #ddd;
+                break-inside: avoid;
+            }
+            .day-card .day-header {
+                background: #f0f0f0;
+                color: #333;
+            }
+            .event-row {
+                border-bottom: 1px solid #eee;
+            }
+            .event-time {
+                color: #e94560;
+            }
+            .event-class {
+                background: #e0e0e0;
+                color: #333;
+            }
+            .header {
+                border: 1px solid #ddd;
+            }
+            .header h1 { color: #333; }
+            .header .subtitle { color: #666; }
+            .stats-row .stat-box {
+                border: 1px solid #ddd;
+            }
+            .stat-box .number { color: #e94560; }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .event-row {
+                padding: 12px 15px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .event-time {
+                min-width: auto;
+            }
+            .header h1 { font-size: 22px; }
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>📋 <span>Competition</span> Schedule</h1>
+                <div class="subtitle" id="meetInfo">Loading...</div>
+            </div>
+            <div class="header-actions">
+                <button onclick="refreshSchedule()">🔄 Refresh</button>
+                <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-links">
+            <a href="/">🏠 Home</a>
+            <a href="/live.html">📺 Live Results</a>
+            <a href="/medals.html">🏅 Medals</a>
+            <a href="/schedule.html" class="active">📋 Schedule</a>
+            <a href="/mobile.html">📱 Mobile</a>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-box">
+                <div class="number" id="totalEvents">0</div>
+                <div class="label">Total Events</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="totalDays">0</div>
+                <div class="label">Competition Days</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="totalClasses">0</div>
+                <div class="label">Classes</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="totalAthletes">0</div>
+                <div class="label">Athletes</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls no-print">
+            <label>Filter by Day:</label>
+            <select id="dayFilter" onchange="filterSchedule()">
+                <option value="all">All Days</option>
+            </select>
+            <label>Filter by Status:</label>
+            <select id="statusFilter" onchange="filterSchedule()">
+                <option value="all">All Status</option>
+                <option value="pending">⏳ Pending</option>
+                <option value="live">🔴 Live</option>
+                <option value="official">✓ Official</option>
+            </select>
+            <button onclick="resetFilters()">Reset Filters</button>
+        </div>
+
+        <!-- Schedule Grid -->
+        <div id="scheduleContainer" class="schedule-grid">
+            <div class="no-events">Loading schedule...</div>
+        </div>
+
+    </div>
+
+    <script>
+        let allEvents = [];
+        let allAthletes = [];
+        let meetData = {};
+        let filteredEvents = [];
+
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadData() {
+            try {
+                const [events, athletes, meet] = await Promise.all([
+                    fetchAPI('/api/events'),
+                    fetchAPI('/api/athletes'),
+                    fetchAPI('/api/meet')
+                ]);
+
+                allEvents = events;
+                allAthletes = athletes;
+                meetData = meet;
+
+                // Sort events by day
+                allEvents.sort((a, b) => (a.day || 0) - (b.day || 0));
+
+                // Update header
+                document.getElementById('meetInfo').textContent =
+                    `${meet.name || 'Para Athletics'} • ${meet.venue || ''} • ${meet.date || ''}`;
+
+                // Update stats
+                const uniqueClasses = new Set();
+                allEvents.forEach(e => {
+                    if (e.classes) e.classes.forEach(c => uniqueClasses.add(c));
+                    else if (e.class) uniqueClasses.add(e.class);
+                });
+
+                document.getElementById('totalEvents').textContent = allEvents.length;
+                document.getElementById('totalDays').textContent = new Set(allEvents.map(e => e.day || 0)).size;
+                document.getElementById('totalClasses').textContent = uniqueClasses.size;
+                document.getElementById('totalAthletes').textContent = athletes.length;
+
+                // Populate day filter
+                populateDayFilter();
+
+                // Render schedule
+                filteredEvents = [...allEvents];
+                renderSchedule();
+
+            } catch (error) {
+                document.getElementById('scheduleContainer').innerHTML = `
+                    <div class="no-events">Error loading schedule: ${error.message}</div>
+                `;
+            }
+        }
+
+        function populateDayFilter() {
+            const select = document.getElementById('dayFilter');
+            const days = [...new Set(allEvents.map(e => e.day || 'TBD'))].sort((a, b) => a - b);
+
+            select.innerHTML = '<option value="all">All Days</option>';
+            days.forEach(day => {
+                const opt = document.createElement('option');
+                opt.value = day;
+                opt.textContent = `Day ${day}`;
+                select.appendChild(opt);
+            });
+        }
+
+        function filterSchedule() {
+            const dayFilter = document.getElementById('dayFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filteredEvents = allEvents.filter(e => {
+                const dayMatch = dayFilter === 'all' || e.day == dayFilter;
+                const statusMatch = statusFilter === 'all' || e.status === statusFilter;
+                return dayMatch && statusMatch;
+            });
+
+            renderSchedule();
+        }
+
+        function resetFilters() {
+            document.getElementById('dayFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            filterSchedule();
+        }
+
+        function renderSchedule() {
+            const container = document.getElementById('scheduleContainer');
+
+            if (filteredEvents.length === 0) {
+                container.innerHTML = `
+                    <div class="no-events">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                        No events found matching your filters.
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by day
+            const grouped = {};
+            filteredEvents.forEach(e => {
+                const day = e.day || 'TBD';
+                if (!grouped[day]) grouped[day] = [];
+                grouped[day].push(e);
+            });
+
+            let html = '';
+            const sortedDays = Object.keys(grouped).sort((a, b) => {
+                if (a === 'TBD') return 1;
+                if (b === 'TBD') return -1;
+                return parseInt(a) - parseInt(b);
+            });
+
+            sortedDays.forEach(day => {
+                const events = grouped[day];
+                const dayEvents = events.length;
+
+                html += `
+                    <div class="day-card">
+                        <div class="day-header">
+                            <h2>📅 Day ${day}</h2>
+                            <div class="day-meta">
+                                ${dayEvents} event${dayEvents > 1 ? 's' : ''}
+                                <span class="event-count">${dayEvents}</span>
+                            </div>
+                        </div>
+                `;
+
+                // Sort events by discipline order (track first, then field)
+                const trackOrder = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon', '4x100m Relay', '4x400m Relay'];
+                events.sort((a, b) => {
+                    const aIndex = trackOrder.indexOf(a.discipline) !== -1 ? trackOrder.indexOf(a.discipline) : 999;
+                    const bIndex = trackOrder.indexOf(b.discipline) !== -1 ? trackOrder.indexOf(b.discipline) : 999;
+                    return aIndex - bIndex || a.name.localeCompare(b.name);
+                });
+
+                let timeSlot = 0;
+                events.forEach(e => {
+                    timeSlot += 30; // 30 minutes between events
+                    const hours = 9 + Math.floor(timeSlot / 60);
+                    const mins = timeSlot % 60;
+                    const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+
+                    const classes = e.classes ? e.classes.join(', ') : e.class || 'Single';
+                    const isCombined = e.classes && e.classes.length > 1;
+                    const statusClass = e.status === 'official' ? 'status-official' :
+                                       e.status === 'live' ? 'status-live' : 'status-pending';
+                    const statusLabel = e.status === 'official' ? '✓ Official' :
+                                       e.status === 'live' ? '🔴 LIVE' : '⏳ Pending';
+
+                    const isRelay = e.discipline && e.discipline.includes('Relay');
+
+                    html += `
+                        <div class="event-row">
+                            <div class="event-time">${timeStr}</div>
+                            <div class="event-info">
+                                <div class="name">${e.name} ${isRelay ? '🏃' : ''}</div>
+                                <div class="detail">${e.discipline} • ${e.sex} • ${e.round || 'Final'}</div>
+                            </div>
+                            <div class="event-classes">
+                                ${isCombined ? `<span class="event-class combined">🔄 Combined</span>` : ''}
+                                ${e.classes ? e.classes.map(c => `<span class="event-class">${c}</span>`).join('') :
+                                    `<span class="event-class">${e.class || 'N/A'}</span>`}
+                            </div>
+                            <span class="event-status ${statusClass}">${statusLabel}</span>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function refreshSchedule() {
+            loadData();
+        }
+
+        // Auto-refresh every 60 seconds
+        let refreshInterval = setInterval(() => {
+            loadData();
+        }, 60000);
+
+        // Load initial data
+        loadData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athletes - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            border-bottom: 2px solid #e94560;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-logo { font-size: 28px; font-weight: 700; color: #fff; }
+        .header-logo span { color: #e94560; }
+        .header-subtitle { font-size: 14px; color: #999; }
+        .header-right { display: flex; gap: 15px; flex-wrap: wrap; }
+        .header-btn {
+            padding: 10px 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .header-btn:hover { background: #e94560; border-color: #e94560; }
+        .header-btn.active { background: #e94560; border-color: #e94560; }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .section-title span { color: #e94560; }
+
+        .search-box {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 12px 16px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            min-width: 200px;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .search-box select {
+            padding: 12px 16px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            min-width: 150px;
+        }
+        .search-box select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .athlete-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .athlete-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s;
+        }
+        .athlete-card:hover {
+            border-color: #e94560;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.15);
+        }
+        .athlete-card .name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .athlete-card .detail {
+            font-size: 14px;
+            color: #999;
+        }
+        .athlete-card .class-badge {
+            display: inline-block;
+            background: #e94560;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .athlete-card .guide-badge {
+            display: inline-block;
+            background: #2196F3;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+            margin-left: 5px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .stats span {
+            color: #999;
+            font-size: 14px;
+        }
+        .stats strong { color: #fff; }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+        }
+
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #666;
+            z-index: 999;
+        }
+        .admin-badge a { color: #e94560; text-decoration: none; }
+        .admin-badge a:hover { text-decoration: underline; }
+
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid #2a2a4e;
+            margin-top: 40px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; }
+            .search-box { flex-direction: column; }
+            .search-box input, .search-box select { width: 100%; }
+            .athlete-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="header-logo">🏃 <span>Para</span> Athletics</div>
+            <div class="header-subtitle" id="meetName">Loading...</div>
+        </div>
+        <div class="header-right">
+            <a href="/" class="header-btn">📋 Schedule</a>
+            <a href="/live.html" class="header-btn">📺 Live Results</a>
+            <a href="/medals.html" class="header-btn">🏅 Medals</a>
+            <a href="/athletes-public.html" class="header-btn active">👤 Athletes</a>
+            <a href="/mobile.html" class="header-btn">📱 Mobile</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="section-title">👤 <span>Athlete</span> Directory</div>
+
+        <div class="stats" id="athleteStats">
+            <span>Total: <strong id="totalAthletes">0</strong></span>
+            <span>Classes: <strong id="totalClasses">0</strong></span>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search by name, class, or country..." oninput="filterAthletes()">
+            <select id="classFilter" onchange="filterAthletes()">
+                <option value="">All Classes</option>
+            </select>
+        </div>
+
+        <div id="athleteContainer">
+            <div class="no-results">Loading athletes...</div>
+        </div>
+    </div>
+
+    <div class="admin-badge">
+        🔐 <a href="/login.html">Admin</a>
+    </div>
+
+    <footer class="footer">
+        <p>🏃 Para Athletics Competition Management System</p>
+    </footer>
+
+    <script>
+        let allAthletes = [];
+        let refreshInterval = null;
+
+        async function fetchAPI(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        }
+
+        async function loadMeetInfo() {
+            try {
+                const meet = await fetchAPI('/api/meet');
+                document.getElementById('meetName').textContent = meet.name || 'Competition';
+            } catch (error) {
+                console.error('Error loading meet info:', error);
+            }
+        }
+
+        async function loadAthletes() {
+            try {
+                allAthletes = await fetchAPI('/api/athletes');
+
+                document.getElementById('totalAthletes').textContent = allAthletes.length;
+                const classes = [...new Set(allAthletes.map(a => a.class).filter(c => c))];
+                document.getElementById('totalClasses').textContent = classes.length;
+
+                const filter = document.getElementById('classFilter');
+                const currentVal = filter.value;
+                filter.innerHTML = '<option value="">All Classes</option>';
+                classes.sort().forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    filter.appendChild(opt);
+                });
+                if (currentVal) filter.value = currentVal;
+
+                renderAthletes();
+
+            } catch (error) {
+                console.error('Error loading athletes:', error);
+                document.getElementById('athleteContainer').innerHTML = `
+                    <div class="no-results">Error loading athletes: ${error.message}</div>
+                `;
+            }
+        }
+
+        function renderAthletes() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const classFilter = document.getElementById('classFilter').value;
+
+            let filtered = allAthletes;
+
+            if (classFilter) {
+                filtered = filtered.filter(a => a.class === classFilter);
+            }
+
+            if (search) {
+                filtered = filtered.filter(a =>
+                    a.name.toLowerCase().includes(search) ||
+                    (a.class && a.class.toLowerCase().includes(search)) ||
+                    (a.club && a.club.toLowerCase().includes(search)) ||
+                    (a.bib && a.bib.includes(search))
+                );
+            }
+
+            const container = document.getElementById('athleteContainer');
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="no-results">No athletes found matching your search.</div>`;
+                return;
+            }
+
+            let html = '<div class="athlete-grid">';
+            filtered.forEach(a => {
+                const isGuide = ['T11', 'T12', 'F11', 'F12'].includes(a.class);
+                html += `
+                    <div class="athlete-card">
+                        <div class="name">${a.name}</div>
+                        <div class="detail">${a.class} • ${a.sex || 'N/A'}</div>
+                        <div class="detail">${a.bib ? 'Bib: ' + a.bib : ''} ${a.club ? '• ' + a.club : ''}</div>
+                        <span class="class-badge">${a.class}</span>
+                        ${isGuide ? '<span class="guide-badge">👁️ Guide</span>' : ''}
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function filterAthletes() {
+            renderAthletes();
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(loadAthletes, 60000);
+        }
+
+        loadMeetInfo();
+        loadAthletes();
+        startAutoRefresh();
+    </script>
+</body>
+</html>
