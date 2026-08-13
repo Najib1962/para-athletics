@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -684,13 +684,121 @@ app.get('/api/reference', (req, res) => {
     res.json(getReference());
 });
 
+// ---------- TEAM ENTRY ENDPOINT ----------
+app.post('/api/team-entry', async (req, res) => {
+    const { club, country, manager, email, phone, athletes } = req.body;
+
+    if (!club || !country || !manager || !email) {
+        return res.status(400).json({ error: 'Missing required team information' });
+    }
+
+    if (!athletes || athletes.length === 0) {
+        return res.status(400).json({ error: 'No athletes provided' });
+    }
+
+    let imported = 0;
+    let errors = 0;
+    const results = [];
+
+    // Get all existing events
+    const events = getEvents();
+
+    for (const athlete of athletes) {
+        try {
+            // Check if athlete already exists (by name and class)
+            const existingAthletes = getAthletes();
+            const existing = existingAthletes.find(a => 
+                a.name === athlete.name && 
+                a.class === athlete.class
+            );
+
+            let athleteId;
+            if (existing) {
+                athleteId = existing.id;
+            } else {
+                // Create new athlete
+                const newAthlete = {
+                    id: generateId(),
+                    name: athlete.name,
+                    class: athlete.class,
+                    sex: athlete.sex || 'M',
+                    bib: athlete.bib || '',
+                    club: club,
+                    createdAt: new Date().toISOString()
+                };
+                existingAthletes.push(newAthlete);
+                writeJSON(ATHLETES_FILE, existingAthletes);
+                athleteId = newAthlete.id;
+            }
+
+            // Register for events
+            const entries = getEntries();
+            let entryCount = 0;
+
+            for (const eventName of athlete.events) {
+                // Find matching event
+                const matchedEvent = events.find(e =>
+                    e.discipline === eventName ||
+                    e.name.includes(eventName) ||
+                    eventName.includes(e.discipline)
+                );
+
+                if (matchedEvent) {
+                    // Check if entry already exists
+                    const existingEntry = entries.find(e => 
+                        e.eventId === matchedEvent.id && 
+                        e.athleteId === athleteId
+                    );
+
+                    if (!existingEntry) {
+                        entries.push({
+                            id: generateId(),
+                            eventId: matchedEvent.id,
+                            athleteId: athleteId,
+                            createdAt: new Date().toISOString()
+                        });
+                        entryCount++;
+                    }
+                }
+            }
+
+            if (entryCount > 0) {
+                writeJSON(ENTRIES_FILE, entries);
+            }
+
+            imported++;
+            results.push({ 
+                name: athlete.name, 
+                status: 'success', 
+                entries: entryCount,
+                newAthlete: !existing
+            });
+
+        } catch (error) {
+            errors++;
+            results.push({ 
+                name: athlete.name, 
+                status: 'error', 
+                error: error.message 
+            });
+        }
+    }
+
+    res.json({
+        success: true,
+        club: club,
+        imported: imported,
+        errors: errors,
+        results: results
+    });
+});
+
 // ---------- SERVER START ----------
 app.listen(PORT, '0.0.0.0', () => {
     console.log('========================================');
     console.log('🚀 Para Athletics System');
     console.log('========================================');
     console.log(`📍 Local: http://localhost:${PORT}`);
-    console.log(`🌐 Public: http://[YOUR_IP]:${PORT}`);
     console.log(`🔐 Admin Password: admin123`);
     console.log('========================================');
 });

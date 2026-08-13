@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Entry Form - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 16px;
+            border: 2px solid #e94560;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .header h1 { font-size: 32px; font-weight: 700; }
+        .header h1 span { color: #e94560; }
+        .header .subtitle { color: #999; font-size: 16px; margin-top: 5px; }
+
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .card h2 .badge {
+            font-size: 12px;
+            background: #e94560;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #999;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        input::placeholder {
+            color: #555;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .athlete-entry {
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .athlete-entry .athlete-number {
+            font-size: 13px;
+            color: #e94560;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 24px;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+        button:hover { background: #c73e54; }
+        button.success { background: #4CAF50; }
+        button.success:hover { background: #45a049; }
+        button.secondary { background: #2a2a4e; }
+        button.secondary:hover { background: #3a3a5e; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button.export-btn { background: #2196F3; }
+        button.export-btn:hover { background: #1976D2; }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .success-msg {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #4CAF50;
+            display: none;
+            margin-top: 15px;
+        }
+        .success-msg.show { display: block; }
+
+        .error-msg {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dc3545;
+            display: none;
+            margin-top: 15px;
+        }
+        .error-msg.show { display: block; }
+
+        .summary-box {
+            background: #0a0a1a;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #999;
+        }
+        .summary-box strong { color: #fff; }
+
+        .remove-athlete {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .remove-athlete:hover { background: #c82333; }
+
+        .hint {
+            font-size: 12px;
+            color: #555;
+            margin-top: -8px;
+            margin-bottom: 12px;
+        }
+
+        select[multiple] {
+            height: 80px;
+            padding: 6px;
+        }
+        select[multiple] option {
+            padding: 4px 8px;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .events-grid label {
+            font-size: 12px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 400;
+            cursor: pointer;
+        }
+        .events-grid label:hover { color: #fff; }
+        .events-grid input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            accent-color: #e94560;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover { border-color: #e94560; background: #2a2a4e; }
+        .nav-links a.active { border-color: #e94560; background: #e94560; }
+
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #666;
+            z-index: 999;
+        }
+        .admin-badge a { color: #e94560; text-decoration: none; }
+
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .form-row-3 { grid-template-columns: 1fr; }
+            .header h1 { font-size: 24px; }
+            .events-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <h1>📋 <span>Team Entry</span> Form</h1>
+            <div class="subtitle">Register your athletes and their events for the competition</div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-links no-print">
+            <a href="/">🏠 Home</a>
+            <a href="/live.html">📺 Live</a>
+            <a href="/team-entry.html" class="active">📋 Team Entry</a>
+            <a href="/mobile.html">📱 Mobile</a>
+        </div>
+
+        <!-- Team Info -->
+        <div class="card">
+            <h2>🏢 Club / Team Information</h2>
+            <div class="form-row">
+                <div>
+                    <label>Club/Team Name *</label>
+                    <input type="text" id="clubName" placeholder="e.g., USA Track & Field">
+                </div>
+                <div>
+                    <label>Country / Region *</label>
+                    <input type="text" id="country" placeholder="e.g., United States">
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>Team Manager *</label>
+                    <input type="text" id="managerName" placeholder="Full name of team manager">
+                </div>
+                <div>
+                    <label>Contact Email *</label>
+                    <input type="email" id="contactEmail" placeholder="manager@team.com">
+                </div>
+            </div>
+            <div>
+                <label>Contact Phone</label>
+                <input type="text" id="contactPhone" placeholder="+1234567890">
+            </div>
+        </div>
+
+        <!-- Athletes -->
+        <div class="card">
+            <h2>
+                👥 Athletes
+                <span class="badge" id="athleteCount">0 athletes</span>
+            </h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                Add each athlete with their class, sex, and events.
+            </p>
+
+            <div id="athletesContainer">
+                <!-- Athletes will be added here -->
+                <div id="noAthletesMsg" style="text-align: center; color: #555; padding: 30px;">
+                    No athletes added yet. Click "Add Athlete" below.
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button onclick="addAthlete()">➕ Add Athlete</button>
+                <button onclick="clearAllAthletes()" class="danger">🗑️ Clear All</button>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="card">
+            <h2>📤 Submit Entry</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                Review your entries before submitting. All fields marked with * are required.
+            </p>
+
+            <div id="successMsg" class="success-msg">
+                ✅ Entry submitted successfully! <span id="submittedCount">0</span> athletes registered.
+            </div>
+            <div id="errorMsg" class="error-msg">
+                ❌ <span id="errorText">Please fix the errors above.</span>
+            </div>
+
+            <div class="btn-group">
+                <button onclick="submitEntries()" class="success">📤 Submit Entries</button>
+                <button onclick="exportData()" class="export-btn">📊 Export CSV</button>
+                <button onclick="resetForm()" class="secondary">🔄 Reset Form</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer" style="text-align: center; padding: 20px; color: #666; font-size: 13px; border-top: 1px solid #2a2a4e; margin-top: 20px;">
+            <span>📋 Team Entry Form &bull; Para Athletics Competition Management System</span>
+        </div>
+
+    </div>
+
+    <!-- Admin Badge -->
+    <div class="admin-badge">
+        🔐 <a href="/login.html">Admin</a>
+    </div>
+
+    <script>
+        let athletes = [];
+        let athleteIdCounter = 0;
+
+        // ---------- EVENTS LIST ----------
+        const allEvents = [
+            // Track
+            '100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon',
+            // Relays
+            '4x100m Relay', '4x400m Relay',
+            // Field
+            'Long Jump', 'Triple Jump', 'High Jump', 'Pole Vault',
+            'Shot Put', 'Discus', 'Javelin', 'Club Throw',
+            // Combined
+            'Pentathlon'
+        ];
+
+        // ---------- CLASSES ----------
+        const allClasses = [
+            'T11', 'T12', 'T13', 'T20', 'T32', 'T33', 'T34', 'T35', 'T36', 'T37', 'T38',
+            'T40', 'T41', 'T42', 'T43', 'T44', 'T45', 'T46', 'T47',
+            'T51', 'T52', 'T53', 'T54', 'T61', 'T62', 'T63', 'T64', 'T72',
+            'F11', 'F12', 'F13', 'F20', 'F31', 'F32', 'F33', 'F34', 'F35', 'F36', 'F37', 'F38',
+            'F40', 'F41', 'F42', 'F43', 'F44', 'F45', 'F46',
+            'F51', 'F52', 'F53', 'F54', 'F55', 'F56', 'F57', 'F61', 'F62', 'F63', 'F64'
+        ];
+
+        // ---------- ADD ATHLETE ----------
+        function addAthlete() {
+            const id = ++athleteIdCounter;
+            athletes.push({
+                id: id,
+                name: '',
+                class: '',
+                sex: 'M',
+                bib: '',
+                events: []
+            });
+            renderAthletes();
+        }
+
+        // ---------- REMOVE ATHLETE ----------
+        function removeAthlete(id) {
+            if (!confirm('Remove this athlete?')) return;
+            athletes = athletes.filter(a => a.id !== id);
+            renderAthletes();
+        }
+
+        // ---------- UPDATE ATHLETE ----------
+        function updateAthlete(id, field, value) {
+            const athlete = athletes.find(a => a.id === id);
+            if (!athlete) return;
+            if (field === 'events') {
+                const eventName = value;
+                const index = athlete.events.indexOf(eventName);
+                if (index > -1) {
+                    athlete.events.splice(index, 1);
+                } else {
+                    athlete.events.push(eventName);
+                }
+            } else {
+                athlete[field] = value;
+            }
+            updateCount();
+        }
+
+        // ---------- RENDER ATHLETES ----------
+        function renderAthletes() {
+            const container = document.getElementById('athletesContainer');
+            const noMsg = document.getElementById('noAthletesMsg');
+
+            if (athletes.length === 0) {
+                container.innerHTML = `
+                    <div id="noAthletesMsg" style="text-align: center; color: #555; padding: 30px;">
+                        No athletes added yet. Click "Add Athlete" below.
+                    </div>
+                `;
+                updateCount();
+                return;
+            }
+
+            let html = '';
+            athletes.forEach((a, index) => {
+                const isGuide = ['T11', 'T12', 'F11', 'F12'].includes(a.class);
+                html += `
+                    <div class="athlete-entry">
+                        <div class="athlete-number">
+                            Athlete #${index + 1}
+                            ${isGuide && a.class ? '<span style="background: #2196F3; padding: 2px 10px; border-radius: 10px; font-size: 11px; margin-left: 10px;">👁️ Guide Required</span>' : ''}
+                        </div>
+                        <div class="form-row">
+                            <div>
+                                <label>Full Name *</label>
+                                <input type="text" value="${a.name}" placeholder="e.g., John Smith" onchange="updateAthlete(${a.id}, 'name', this.value)">
+                            </div>
+                            <div>
+                                <label>Class *</label>
+                                <select onchange="updateAthlete(${a.id}, 'class', this.value)">
+                                    <option value="">Select Class</option>
+                                    ${allClasses.map(c => `<option value="${c}" ${a.class === c ? 'selected' : ''}>${c}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row-3">
+                            <div>
+                                <label>Sex *</label>
+                                <select onchange="updateAthlete(${a.id}, 'sex', this.value)">
+                                    <option value="M" ${a.sex === 'M' ? 'selected' : ''}>Male (M)</option>
+                                    <option value="F" ${a.sex === 'F' ? 'selected' : ''}>Female (F)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Bib Number</label>
+                                <input type="text" value="${a.bib}" placeholder="e.g., 101" onchange="updateAthlete(${a.id}, 'bib', this.value)">
+                            </div>
+                            <div style="display: flex; align-items: flex-end;">
+                                <button class="remove-athlete" onclick="removeAthlete(${a.id})" style="width: 100%;">✕ Remove</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Events (select all that apply) *</label>
+                            <div class="events-grid">
+                                ${allEvents.map(e => `
+                                    <label>
+                                        <input type="checkbox" ${a.events.includes(e) ? 'checked' : ''} onchange="updateAthlete(${a.id}, 'events', '${e}')">
+                                        ${e}
+                                    </label>
+                                `).join('')}
+                            </div>
+                            <div class="hint">${a.events.length} events selected</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateCount();
+        }
+
+        // ---------- UPDATE COUNT ----------
+        function updateCount() {
+            document.getElementById('athleteCount').textContent = `${athletes.length} athletes`;
+        }
+
+        // ---------- CLEAR ALL ----------
+        function clearAllAthletes() {
+            if (!confirm('Remove ALL athletes?')) return;
+            athletes = [];
+            renderAthletes();
+        }
+
+        // ---------- SUBMIT ----------
+        async function submitEntries() {
+            const clubName = document.getElementById('clubName').value.trim();
+            const country = document.getElementById('country').value.trim();
+            const manager = document.getElementById('managerName').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+
+            // Validate team info
+            if (!clubName || !country || !manager || !email) {
+                showError('Please fill in all required team information fields.');
+                return;
+            }
+
+            if (athletes.length === 0) {
+                showError('Please add at least one athlete.');
+                return;
+            }
+
+            // Validate each athlete
+            let hasError = false;
+            athletes.forEach((a, index) => {
+                if (!a.name) { hasError = true; showError(`Athlete #${index + 1}: Name is required.`); return; }
+                if (!a.class) { hasError = true; showError(`Athlete #${index + 1}: Class is required.`); return; }
+                if (a.events.length === 0) { hasError = true; showError(`Athlete #${index + 1}: At least one event is required.`); return; }
+            });
+
+            if (hasError) return;
+
+            // Send to server
+            try {
+                const response = await fetch('/api/team-entry', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        club: clubName,
+                        country: country,
+                        manager: manager,
+                        email: email,
+                        phone: document.getElementById('contactPhone').value.trim(),
+                        athletes: athletes
+                    })
+                });
+
+                if (!response.ok) throw new Error('Server error');
+
+                const result = await response.json();
+                document.getElementById('submittedCount').textContent = athletes.length;
+                document.getElementById('successMsg').classList.add('show');
+                document.getElementById('errorMsg').classList.remove('show');
+
+                // Clear form after successful submission
+                setTimeout(() => {
+                    if (confirm('✅ Entry submitted successfully!\n\nWould you like to reset the form for a new team?')) {
+                        resetForm();
+                    }
+                }, 1000);
+
+            } catch (error) {
+                showError('Error submitting entry: ' + error.message);
+            }
+        }
+
+        // ---------- SHOW ERROR ----------
+        function showError(msg) {
+            document.getElementById('errorText').textContent = msg;
+            document.getElementById('errorMsg').classList.add('show');
+            document.getElementById('successMsg').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('errorMsg').classList.remove('show');
+            }, 5000);
+        }
+
+        // ---------- RESET FORM ----------
+        function resetForm() {
+            document.getElementById('clubName').value = '';
+            document.getElementById('country').value = '';
+            document.getElementById('managerName').value = '';
+            document.getElementById('contactEmail').value = '';
+            document.getElementById('contactPhone').value = '';
+            athletes = [];
+            renderAthletes();
+            document.getElementById('successMsg').classList.remove('show');
+            document.getElementById('errorMsg').classList.remove('show');
+        }
+
+        // ---------- EXPORT CSV ----------
+        function exportData() {
+            if (athletes.length === 0) {
+                alert('No athletes to export.');
+                return;
+            }
+
+            let csv = 'Name,Class,Sex,Bib,Events\n';
+            athletes.forEach(a => {
+                csv += `"${a.name}",${a.class},${a.sex},${a.bib || ''},"${a.events.join(', ')}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `team_entries_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ---------- INIT ----------
+        // Add first athlete automatically
+        addAthlete();
+    </script>
+</body>
+</html>

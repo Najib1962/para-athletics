@@ -157,9 +157,9 @@
         }
         .status-lane { background: #2196F3; color: #fff; }
         .status-order { background: #FF9800; color: #fff; }
-        .status-official { background: #4CAF50; color: #fff; }
         .status-pending { background: #FF9800; color: #fff; }
         .status-live { background: #e94560; color: #fff; animation: pulse 2s infinite; }
+        .status-official { background: #4CAF50; color: #fff; }
 
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
@@ -199,6 +199,15 @@
         }
         .admin-badge a { color: #e94560; text-decoration: none; }
         .admin-badge a:hover { text-decoration: underline; }
+
+        .guide-badge {
+            display: inline-block;
+            background: #2196F3;
+            padding: 1px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
 
         @media print {
             .controls, .nav-links, .no-print { display: none !important; }
@@ -300,9 +309,9 @@
             return response.json();
         }
 
-        // ---------- LOAD DATA ----------
         async function loadData() {
             try {
+                // Only use public endpoints
                 const [events, athletes] = await Promise.all([
                     fetchAPI('/api/events'),
                     fetchAPI('/api/athletes')
@@ -373,7 +382,7 @@
             }
 
             try {
-                // Get event details and entries from the results endpoint
+                // Use the results endpoint which is public and contains all athletes
                 const data = await fetchAPI(`/api/events/${eventId}/results`);
                 const event = data.event;
                 const results = data.results || [];
@@ -404,13 +413,12 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width:40px;">No</th>
-                                ${isTrack ? '<th style="width:50px;">Lane</th>' : '<th style="width:50px;">Order</th>'}
+                                <th style="width:40px;">${isTrack ? 'Lane' : 'Order'}</th>
                                 <th>Name</th>
-                                <th style="width:65px;">Bib</th>
-                                <th>Club</th>
                                 <th style="width:70px;">Class</th>
                                 ${showGuide ? '<th style="width:60px;">Guide</th>' : ''}
+                                <th style="width:60px;">Bib</th>
+                                <th>Club</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -421,13 +429,12 @@
 
                     html += `
                         <tr>
-                            <td>${idx + 1}</td>
                             <td><span class="status-badge ${isTrack ? 'status-lane' : 'status-order'}">${idx + 1}</span></td>
                             <td><strong>${r.name}</strong></td>
+                            <td>${r.class}</td>
+                            ${showGuide ? `<td>${isGuide ? '<span class="guide-badge">Yes</span>' : '-'}</td>` : ''}
                             <td>${r.bib || '-'}</td>
                             <td>${r.club || '-'}</td>
-                            <td>${r.class}</td>
-                            ${showGuide ? `<td>${isGuide ? 'Yes' : '-'}</td>` : ''}
                         </tr>
                     `;
                 });
@@ -444,11 +451,12 @@
                 document.getElementById('tableContainer').innerHTML = html;
 
             } catch (error) {
+                console.error('Error loading event data:', error);
                 document.getElementById('tableContainer').innerHTML = `<div class="no-data"><div class="icon">⚠️</div><p>Error: ${error.message}</p></div>`;
             }
         }
 
-        // Auto-refresh
+        // Auto-refresh every 30 seconds
         let refreshInterval = setInterval(() => {
             loadData();
             if (document.getElementById('eventSelect').value) {
@@ -456,6 +464,7 @@
             }
         }, 30000);
 
+        // Initial load
         loadData();
     </script>
 </body>

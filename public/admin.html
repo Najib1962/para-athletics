@@ -28,6 +28,8 @@
         button.display-btn:hover { background: #5a4bd1; }
         button.startlist-btn { background: #FF9800; }
         button.startlist-btn:hover { background: #e68900; }
+        button.team-btn { background: #00BCD4; }
+        button.team-btn:hover { background: #0097A7; }
         .success { color: #4CAF50; margin-top: 10px; }
         .event-list { margin-top: 10px; }
         .event-item { display: flex; justify-content: space-between; padding: 10px; background: #0a0a1a; border-radius: 6px; margin-bottom: 5px; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -109,6 +111,13 @@
             border-color: #e94560;
             box-shadow: 0 8px 25px rgba(233, 69, 96, 0.2);
         }
+        .nav-item.team {
+            border-color: #00BCD4;
+        }
+        .nav-item.team:hover {
+            border-color: #00BCD4;
+            box-shadow: 0 8px 25px rgba(0, 188, 212, 0.2);
+        }
 
         .nav-section-title {
             color: #999;
@@ -156,6 +165,8 @@
         .quick-btn.resultlist:hover { border-color: #4CAF50; box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2); }
         .quick-btn.referee { border-color: #e94560; }
         .quick-btn.referee:hover { border-color: #e94560; box-shadow: 0 8px 25px rgba(233, 69, 96, 0.2); }
+        .quick-btn.team { border-color: #00BCD4; }
+        .quick-btn.team:hover { border-color: #00BCD4; box-shadow: 0 8px 25px rgba(0, 188, 212, 0.2); }
     </style>
 </head>
 <body>
@@ -187,6 +198,10 @@
                 <a href="/startlists-results.html" class="nav-item startlist">
                     <span class="icon">📋</span>
                     <span class="label">Results Entry</span>
+                </a>
+                <a href="/team-entry.html" class="nav-item team">
+                    <span class="icon">📝</span>
+                    <span class="label">Team Entry</span>
                 </a>
             </div>
 
@@ -440,6 +455,10 @@
                 <a href="/startlist-referee.html" class="quick-btn referee" target="_blank">
                     <span class="icon">✏️</span>
                     Referee Entry
+                </a>
+                <a href="/team-entry.html" class="quick-btn team" target="_blank">
+                    <span class="icon">📝</span>
+                    Team Entry Form
                 </a>
             </div>
         </div>
