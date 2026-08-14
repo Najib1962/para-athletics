@@ -1,0 +1,85 @@
+The Complete Auto-Update Process
+Phase 1: Making Changes (On Your Computer)
+Locate your project: Open your project folder (para-athletics) on your computer.
+
+Edit files: Make your desired changes to the code (e.g., HTML, CSS, JavaScript, server.js).
+
+Test locally (Recommended): Run node server.js and visit http://localhost:3000 to verify your changes work before going live.
+
+Phase 2: Pushing Changes to GitHub (The Trigger)
+Open Command Prompt and navigate to your project:
+
+bash
+cd Desktop\para-athletics
+Check what changed (Optional but helpful):
+
+bash
+git status
+Stage all changes:
+
+bash
+git add .
+Commit the changes with a descriptive message:
+
+bash
+git commit -m "Description of your changes"
+Push to GitHub:
+
+bash
+git push
+Phase 3: Auto-Deployment (Render.com Does This)
+Render detects the push: Within seconds, Render.com automatically notices your new code on GitHub.
+
+Build starts: Render runs the build command (npm install) to prepare your app.
+
+Deploy: Render starts your app with the new code.
+
+Go Live: Once the build is complete (typically 2-5 minutes), your app at https://para-athletics.onrender.com/ is automatically updated.
+
+Quick Reference Commands (Copy & Paste)
+bash
+cd Desktop\para-athletics
+git add .
+git commit -m "Description of your changes"
+git push
+Important: Data vs. Code
+Type of Change	Auto-Updates?	How
+Data (Athletes, Results, Events)	✅ Yes, instantly	Data is stored on the server and is dynamic. Changes made via admin panels appear on refresh.
+Code (HTML, CSS, JS, server.js)	❌ No, requires the Git process	You must complete Steps 2-8 (the Git push) for code changes to go live.
+Visual Flow of the Process
+text
+[You make code changes on your computer]
+              │
+              ▼
+[You run: git add, git commit, git push]
+              │
+              ▼
+[GitHub stores your new code]
+              │
+              ▼
+[Render.com detects the change automatically]
+              │
+              ▼
+[Render builds and deploys the new version]
+              │
+              ▼
+[Your live site at https://para-athletics.onrender.com is updated]
+
+ Summary
+To auto-update your live webpage:
+
+Make changes to your code.
+
+Run the three Git commands (add, commit, push).
+
+Wait 2-5 minutes for Render to deploy.
+
+Refresh your live URL to see the updates.
+
+This is the complete, standard workflow for keeping your live Para Athletics app up-to-date. You are now fully equipped to manage it.
+
+cd Desktop\para-athletics
+git status
+git add .
+git commit -m "Description of changes"
+git push
