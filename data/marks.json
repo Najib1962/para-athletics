@@ -103,5 +103,33 @@
     "athleteId": "msso4q412ec9x",
     "mark": "29",
     "createdAt": "2026-08-14T08:13:09.679Z"
+  },
+  {
+    "id": "mssoxpy140hwn",
+    "eventId": "mspuzp1d0oyoi",
+    "athleteId": "mspv0zohf0s87",
+    "mark": "10.6",
+    "createdAt": "2026-08-14T08:34:12.505Z"
+  },
+  {
+    "id": "mssoxtuc936ak",
+    "eventId": "mspuzp1d0oyoi",
+    "athleteId": "mspv0zpc3821y",
+    "mark": "11",
+    "createdAt": "2026-08-14T08:34:17.556Z"
+  },
+  {
+    "id": "mssoy0z7r3ftj",
+    "eventId": "mspuzp1d0oyoi",
+    "athleteId": "mssoul1hc5ogd",
+    "mark": "10.4",
+    "createdAt": "2026-08-14T08:34:26.803Z"
+  },
+  {
+    "id": "mssp0z7ka5lgq",
+    "eventId": "mspuzp1hd3nsv",
+    "athleteId": "mssp0cnjh4jwf",
+    "mark": "13.6",
+    "createdAt": "2026-08-14T08:36:44.480Z"
   }
 ]
