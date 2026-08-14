@@ -474,5 +474,19 @@
     "athleteId": "msroguxry9a7n",
     "mark": "10.9",
     "createdAt": "2026-08-13T15:33:38.317Z"
+  },
+  {
+    "id": "mssnb9wewijce",
+    "eventId": "mspuzp17fmq2y",
+    "athleteId": "mssna6bsonlpl",
+    "mark": "10.8",
+    "createdAt": "2026-08-14T07:48:45.662Z"
+  },
+  {
+    "id": "mssnbgbwplboi",
+    "eventId": "mspuzp17fmq2y",
+    "athleteId": "mssn60kixeh4u",
+    "mark": "DNS",
+    "createdAt": "2026-08-14T07:48:53.996Z"
   }
 ]
