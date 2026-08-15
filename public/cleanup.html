@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tidy Up - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a; color: #fff; min-height: 100vh; padding: 20px;
+        }
+        .container { max-width: 720px; margin: 0 auto; }
+        h1 { color: #e94560; margin-bottom: 6px; font-size: 26px; }
+        .lead { color: #999; font-size: 14px; margin-bottom: 20px; }
+        .card {
+            background: #1a1a2e; border: 1px solid #2a2a4e; border-radius: 12px;
+            padding: 24px; margin-bottom: 16px;
+        }
+        .card h2 { font-size: 17px; margin-bottom: 6px; }
+        .card .hint { color: #999; font-size: 13px; margin-bottom: 16px; }
+        button {
+            padding: 12px 22px; border: none; border-radius: 8px;
+            font-size: 15px; cursor: pointer; color: #fff; font-family: inherit;
+        }
+        button.primary { background: #2196F3; }
+        button.primary:hover { background: #1976D2; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+        .status { margin-top: 16px; padding: 12px 14px; border-radius: 8px; font-size: 14px; display: none; }
+        .status.good { background: rgba(76,175,80,.15); color: #7ddc82; display: block; }
+        .status.bad { background: rgba(220,53,69,.15); color: #ff8b8b; display: block; }
+        .status.info { background: rgba(33,150,243,.15); color: #7bc3f5; display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+        th { text-align: left; color: #888; font-size: 12px; text-transform: uppercase;
+             padding: 8px; border-bottom: 1px solid #2a2a4e; }
+        td { padding: 8px; border-bottom: 1px solid #22223e; }
+        .back-link { display: inline-block; margin-top: 18px; color: #666;
+                     text-decoration: none; font-size: 13px; }
+        .back-link:hover { color: #e94560; }
+        code { background: #0a0a1a; padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #aaa; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>🧹 Tidy Up</h1>
+    <p class="lead">Finds entries and results left behind by athletes who were deleted.
+       These show as <strong>Unknown</strong> on the public pages and cannot be removed
+       from the entries screen, because that screen hides any row whose athlete is missing.</p>
+
+    <div class="card">
+        <h2>Step 1 — Look for leftovers</h2>
+        <p class="hint">Nothing is changed. This only reports what it finds.</p>
+        <button class="primary" id="scanBtn" onclick="scan()">🔍 Check for leftovers</button>
+        <div id="scanStatus" class="status"></div>
+        <div id="scanTable"></div>
+    </div>
+
+    <div class="card" id="cleanCard" style="display:none">
+        <h2>Step 2 — Remove them</h2>
+        <p class="hint">Only the leftovers listed above are removed. Real athletes,
+           entries and results are untouched.</p>
+        <button class="danger" id="cleanBtn" onclick="cleanUp()">🗑️ Remove the leftovers</button>
+        <div id="cleanStatus" class="status"></div>
+    </div>
+
+    <a href="/admin.html" class="back-link">← Back to Admin</a>
+</div>
+
+<script>
+    // The password comes from the address, or from the cookie the server set
+    // when you logged in, so this page keeps working if the password changes.
+    const password = new URLSearchParams(location.search).get('password') || '';
+
+    let orphanEntries = [];
+    let orphanMarks = [];
+
+    async function api(url, options = {}) {
+        const join = url.includes('?') ? '&' : '?';
+        const full = password ? url + join + 'password=' + encodeURIComponent(password) : url;
+        const res = await fetch(full, {
+            ...options,
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+        });
+        if (res.status === 401) throw new Error('Not logged in. Open this page with the admin password.');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+    }
+
+    function say(id, text, kind) {
+        const el = document.getElementById(id);
+        el.className = 'status ' + kind;
+        el.innerHTML = text;
+    }
+
+    async function scan() {
+        const btn = document.getElementById('scanBtn');
+        btn.disabled = true;
+        say('scanStatus', 'Checking…', 'info');
+        document.getElementById('scanTable').innerHTML = '';
+        document.getElementById('cleanCard').style.display = 'none';
+
+        try {
+            const [athletes, entries, marks, events] = await Promise.all([
+                api('/api/athletes'), api('/api/entries'), api('/api/marks'), api('/api/events')
+            ]);
+
+            const liveAthletes = new Set(athletes.map(a => a.id));
+            const eventName = id => {
+                const e = events.find(x => x.id === id);
+                return e ? e.name : 'a deleted event';
+            };
+
+            orphanEntries = entries.filter(e => !liveAthletes.has(e.athleteId));
+            orphanMarks = marks.filter(m => !liveAthletes.has(m.athleteId));
+
+            if (!orphanEntries.length && !orphanMarks.length) {
+                say('scanStatus',
+                    '✅ Nothing to clean up. Every entry and result belongs to a real athlete.<br>' +
+                    '<span style="color:#888">' + athletes.length + ' athletes, ' +
+                    entries.length + ' entries, ' + marks.length + ' results checked.</span>', 'good');
+                btn.disabled = false;
+                return;
+            }
+
+            say('scanStatus',
+                '⚠️ Found ' + orphanEntries.length + ' leftover entr' +
+                (orphanEntries.length === 1 ? 'y' : 'ies') + ' and ' +
+                orphanMarks.length + ' leftover result' + (orphanMarks.length === 1 ? '' : 's') +
+                '. These are what show as "Unknown".', 'bad');
+
+            let rows = '';
+            orphanEntries.forEach(e => {
+                rows += '<tr><td>Entry</td><td>' + eventName(e.eventId) +
+                        '</td><td><code>' + e.athleteId + '</code></td></tr>';
+            });
+            orphanMarks.forEach(m => {
+                rows += '<tr><td>Result</td><td>' + eventName(m.eventId) +
+                        ' — mark ' + (m.mark || '?') +
+                        '</td><td><code>' + m.athleteId + '</code></td></tr>';
+            });
+
+            document.getElementById('scanTable').innerHTML =
+                '<table><thead><tr><th>Type</th><th>Event</th><th>Missing athlete</th></tr></thead>' +
+                '<tbody>' + rows + '</tbody></table>';
+
+            document.getElementById('cleanCard').style.display = 'block';
+        } catch (err) {
+            say('scanStatus', '❌ ' + err.message, 'bad');
+        }
+        btn.disabled = false;
+    }
+
+    async function cleanUp() {
+        if (!confirm('Remove ' + orphanEntries.length + ' leftover entries and ' +
+                     orphanMarks.length + ' leftover results?\n\nReal athletes are not affected.')) return;
+
+        const btn = document.getElementById('cleanBtn');
+        btn.disabled = true;
+        say('cleanStatus', 'Removing…', 'info');
+
+        let done = 0, failed = 0;
+        for (const e of orphanEntries) {
+            try { await api('/api/entries/' + e.id, { method: 'DELETE' }); done++; }
+            catch (err) { failed++; }
+        }
+        for (const m of orphanMarks) {
+            try { await api('/api/marks/' + m.id, { method: 'DELETE' }); done++; }
+            catch (err) { failed++; }
+        }
+
+        say('cleanStatus',
+            (failed ? '⚠️ ' : '✅ ') + 'Removed ' + done + ' leftover item' + (done === 1 ? '' : 's') +
+            (failed ? ', ' + failed + ' could not be removed.' : '.') +
+            '<br>Check mobile.html again — the Unknown names should be gone.', failed ? 'bad' : 'good');
+
+        btn.disabled = false;
+        setTimeout(scan, 800);
+    }
+
+    // Check as soon as the page opens, so there is nothing to remember to press.
+    window.addEventListener('load', function () { setTimeout(scan, 400); });
+</script>
+</body>
+</html>
