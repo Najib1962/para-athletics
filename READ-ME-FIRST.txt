@@ -1,0 +1,151 @@
+PARA ATHLETICS - FIX PACK
+=========================
+
+Fixes your existing app. No database, no .env file, no new settings.
+Your configuration stays exactly as it is.
+
+
+ELEVEN FILES, TWO PLACES
+------------------------
+
+Into  Desktop\para-athletics\
+    server.js
+    raza.js          (new file)
+    package.json
+
+Into  Desktop\para-athletics\public\
+    admin.html
+    entries.html
+    login.html
+    athletes.html
+    reset-data.html
+    startlist-referee.html
+    startlists-results.html
+    startlists-export.html
+
+The other 17 pages stay exactly as they are. Do not change them.
+
+
+BACK UP FIRST
+-------------
+Easiest way: copy the whole folder. In File Explorer, right-click
+para-athletics, choose Copy, then Paste. You get a copy you can go
+back to if anything goes wrong.
+
+
+TEST ON YOUR COMPUTER
+---------------------
+cd Desktop\para-athletics
+npm install
+node server.js
+
+Open http://localhost:3000
+
+Check these five:
+  1. Remove ONE athlete from an event      - used to fail silently
+  2. Remove ALL athletes from an event     - used to do nothing
+  3. Change a mark, then look at results   - used to show the old value
+  4. Open live.html and medals.html        - used to show nothing
+  5. Leave live.html open in one tab and change a mark in another.
+     The first tab updates by itself within about 3 seconds.
+
+Ctrl+C stops the server.
+
+
+PUT IT LIVE
+-----------
+cd Desktop\para-athletics
+git add .
+git commit -m "Fix entry deletion, mark updates and live refresh"
+git push
+
+Wait 2 to 5 minutes. Your site updates by itself.
+
+
+WHAT WAS WRONG
+--------------
+DELETING ENTRIES
+Your delete buttons put the password in the address twice. Express 5
+reads a repeated setting as a list rather than as text, so the check
+failed and the server answered "not allowed" - silently, because the
+page never looked at the answer. Only those two buttons did this,
+which is exactly what you reported.
+
+PUBLIC PAGES SHOWING NOTHING
+Reading entries and marks required a password. live.html, medals.html
+and the display pages send none, so they were refused their data.
+
+MARKS NOT UPDATING
+Saving a mark added a new row instead of replacing the old one, and
+the results page showed the FIRST row it found - the very first value
+that athlete was ever given. Corrections appeared to do nothing.
+
+DELETE ALL
+"Delete all" came after "delete one" in the code, so the word "all"
+was read as an athlete's ID. It deleted nothing and reported success.
+
+POINTS
+Combined-class events used an invented formula. They now use the
+official World Para Athletics Raza table, taken from their own
+calculator spreadsheets. In a combined F33/F34 shot put the old maths
+put the F34 athlete first; official Raza puts F33 first.
+
+THE PASSWORD WAS INSIDE EIGHT PAGES
+Anyone could read it by viewing the page source, and changing it on
+the server broke those pages. They now take it from the address, or
+from the cookie the server sets when you log in.
+
+TEAM ENTRY STAYED OPEN, ON PURPOSE
+team-entry.html is how visiting clubs submit their squad, and those
+managers have no admin password. It is the one thing a member of the
+public is meant to be able to send in, so it is left open, exactly as
+it was before. It also never auto-refreshes, so a manager typing a
+whole squad does not lose the work.
+
+THREE PAGES HAD NO PROTECTION AT ALL
+Anyone who knew the address could open them:
+  reset-data.html          wipes the entire competition
+  startlist-referee.html   saves marks
+  startlists-results.html  saves marks
+They now ask for the password, like admin, entries and athletes.
+
+
+LIVE UPDATING - NOTHING TO SET UP
+---------------------------------
+Public pages refresh themselves within about 3 seconds of a mark being
+entered. You do not need to edit any page: the server adds the small
+piece of code as each page is sent.
+
+Updating by themselves:
+  index, live, medals, athletes-public, event, mobile, schedule,
+  result-booklet, and all five display pages
+
+Deliberately NOT, so nothing reloads while someone is typing:
+  admin, entries, athletes, login, team-entry, reset-data,
+  startlist-referee, startlists-results
+
+
+CHANGING THE PASSWORD
+---------------------
+Best way, because the password stays out of your code:
+in the Render dashboard go to your service, then Environment, and add
+
+    ADMIN_PASSWORD = your-new-password
+
+Avoid the # character.
+
+To change it for testing on your own computer, open server.js and find
+this line near the top:
+
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
+Replace admin123 with your own. All eight pages follow automatically -
+that was the point of taking the password out of them.
+
+
+ONE THING FOR LATER
+-------------------
+Your data still lives in files that Render erases when the service
+restarts or sleeps after 15 idle minutes. That has always been true of
+this app and is not something this fix pack changes. Keep your entries
+in a spreadsheet as the real record.

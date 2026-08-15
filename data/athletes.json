@@ -329,16 +329,6 @@
     "createdAt": "2026-08-14T08:11:39.697Z"
   },
   {
-    "id": "mssoul0p7aesu",
-    "name": "Sarah Williams",
-    "class": "F11",
-    "sex": "F",
-    "bib": "201",
-    "club": "City AC",
-    "events": "100m, 200m",
-    "createdAt": "2026-08-14T08:31:46.153Z"
-  },
-  {
     "id": "mssoul1hc5ogd",
     "name": "Michael Chen",
     "class": "T12",
@@ -369,16 +359,6 @@
     "createdAt": "2026-08-14T08:31:46.215Z"
   },
   {
-    "id": "mssoul2o3diz1",
-    "name": "Lisa Park",
-    "class": "F11",
-    "sex": "F",
-    "bib": "205",
-    "club": "Southside",
-    "events": "Javelin",
-    "createdAt": "2026-08-14T08:31:46.224Z"
-  },
-  {
     "id": "mssp0cnjh4jwf",
     "name": "Sarah Williams",
     "class": "T11",
@@ -387,26 +367,6 @@
     "club": "City AC",
     "events": "100m, 200m",
     "createdAt": "2026-08-14T08:36:15.247Z"
-  },
-  {
-    "id": "mssp0cnwhn4a6",
-    "name": "Michael Chen",
-    "class": "T12",
-    "sex": "M",
-    "bib": "202",
-    "club": "Westside",
-    "events": "100m, Long Jump",
-    "createdAt": "2026-08-14T08:36:15.260Z"
-  },
-  {
-    "id": "mssp0co7d4fi3",
-    "name": "Emma Rodriguez",
-    "class": "F13",
-    "sex": "F",
-    "bib": "203",
-    "club": "Eastside",
-    "events": "Shot Put, Discus",
-    "createdAt": "2026-08-14T08:36:15.271Z"
   },
   {
     "id": "mssp0coem1zl1",
@@ -419,13 +379,13 @@
     "createdAt": "2026-08-14T08:36:15.278Z"
   },
   {
-    "id": "mssp0col137xd",
-    "name": "Lisa Park",
-    "class": "F11",
+    "id": "mssq89yid5hev",
+    "name": "Anna Sh",
+    "class": "T11",
     "sex": "F",
-    "bib": "205",
-    "club": "Southside",
-    "events": "Javelin",
-    "createdAt": "2026-08-14T08:36:15.285Z"
+    "bib": "303",
+    "club": "khorfakkan",
+    "events": "100m",
+    "createdAt": "2026-08-14T09:10:24.618Z"
   }
 ]

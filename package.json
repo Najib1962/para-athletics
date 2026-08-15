@@ -1,19 +1,21 @@
 {
   "name": "para-athletics",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "1.1.0",
+  "description": "Para Athletics competition management, results and scoreboard system",
+  "main": "server.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
-  "keywords": [],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["para-athletics", "results", "scoreboard"],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "puppeteer": "^25.5.0",
-    "qrcode": "^1.5.4"
+    "express": "^5.2.1"
   }
 }

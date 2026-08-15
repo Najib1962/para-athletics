@@ -337,9 +337,13 @@
         let currentAthletes = [];
 
         async function fetchAPI(url, options = {}) {
-            const password = 'admin123';
+            // FIX: the password used to be written into this file, so anyone
+            // could read it by viewing the page source, and changing it on the
+            // server broke this page. It now comes from the address if present,
+            // and otherwise from the cookie the server sets when you log in.
+            const password = new URLSearchParams(location.search).get('password') || '';
             const separator = url.includes('?') ? '&' : '?';
-            const finalUrl = `${url}${separator}password=${password}`;
+            const finalUrl = password ? `${url}${separator}password=${encodeURIComponent(password)}` : url;
             const response = await fetch(finalUrl, {
                 ...options,
                 headers: { 'Content-Type': 'application/json', ...options.headers }

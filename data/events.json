@@ -39,7 +39,7 @@
     ],
     "class": "T11",
     "day": 1,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:23.813Z"
@@ -54,7 +54,7 @@
     ],
     "class": "T20",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:23.817Z"
@@ -99,7 +99,7 @@
     ],
     "class": "T53",
     "day": 3,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:23.828Z"
@@ -114,7 +114,7 @@
     ],
     "class": "F11",
     "day": 3,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:23.832Z"
@@ -131,7 +131,7 @@
     ],
     "class": "T11",
     "day": 1,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:35.316Z"
@@ -148,7 +148,7 @@
     ],
     "class": "F11",
     "day": 1,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:35.323Z"
@@ -165,7 +165,7 @@
     ],
     "class": "T11",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:35.329Z"
@@ -182,7 +182,7 @@
     ],
     "class": "F32",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:35.334Z"
@@ -198,7 +198,7 @@
     ],
     "class": "T53",
     "day": 3,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:35.340Z"
@@ -213,7 +213,7 @@
     ],
     "class": "F31",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:42.544Z"
@@ -228,7 +228,7 @@
     ],
     "class": "F32",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:42.550Z"
@@ -243,7 +243,7 @@
     ],
     "class": "F51",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:42.555Z"
@@ -263,7 +263,8 @@
     "status": "official",
     "round": "Final",
     "isCombined": true,
-    "createdAt": "2026-08-12T09:00:42.560Z"
+    "createdAt": "2026-08-12T09:00:42.560Z",
+    "updatedAt": "2026-08-15T18:45:18.781Z"
   },
   {
     "id": "mspv0ay6shf6l",
@@ -275,7 +276,7 @@
     ],
     "class": "F11",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:52.206Z"
@@ -290,7 +291,7 @@
     ],
     "class": "F12",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:52.212Z"
@@ -306,7 +307,7 @@
     ],
     "class": "F11",
     "day": 2,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:52.218Z"
@@ -321,7 +322,7 @@
     ],
     "class": "F11",
     "day": 3,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:52.223Z"
@@ -336,7 +337,7 @@
     ],
     "class": "F12",
     "day": 3,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": false,
     "createdAt": "2026-08-12T09:00:52.229Z"
@@ -352,7 +353,7 @@
     ],
     "class": "F11",
     "day": 3,
-    "status": "pending",
+    "status": "official",
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:52.235Z"

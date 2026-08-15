@@ -36,6 +36,25 @@
         .event-item .name { font-weight: 500; }
         .event-item .detail { color: #999; font-size: 13px; }
         .event-item .classes { color: #FFD700; font-size: 12px; }
+        .class-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+        .class-picker label {
+            display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+            background: #0a0a1a; border: 1px solid #2a2a4e; border-radius: 8px;
+            padding: 8px 12px; font-size: 14px; user-select: none; margin: 0;
+        }
+        .class-picker label:hover { border-color: #e94560; }
+        .class-picker label.on { background: #e94560; border-color: #e94560; font-weight: 600; }
+        .class-picker input { margin: 0; width: auto; }
+        .class-picker .none { color: #888; font-size: 14px; }
+        .combo-badge {
+            display: inline-block; background: #2196F3; color: #fff; border-radius: 10px;
+            padding: 1px 8px; font-size: 11px; font-weight: 600; margin-left: 6px;
+        }
+        .btn-small {
+            padding: 4px 10px; font-size: 12px; border-radius: 6px; cursor: pointer;
+            background: #1a1a2e; color: #fff; border: 1px solid #2a2a4e; width: auto;
+        }
+        .btn-small:hover { border-color: #e94560; }
         .delete-btn { background: #dc3545; color: #fff; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .delete-btn:hover { background: #c82333; }
 
@@ -318,72 +337,12 @@
                 <option value="X">Mixed</option>
             </select>
 
-            <label>Classes (hold Ctrl/Cmd to select multiple)</label>
-            <select id="classSelect" multiple>
-                <optgroup label="T Classes (Track)">
-                    <option value="T11">T11</option>
-                    <option value="T12">T12</option>
-                    <option value="T13">T13</option>
-                    <option value="T20">T20</option>
-                    <option value="T32">T32</option>
-                    <option value="T33">T33</option>
-                    <option value="T34">T34</option>
-                    <option value="T35">T35</option>
-                    <option value="T36">T36</option>
-                    <option value="T37">T37</option>
-                    <option value="T38">T38</option>
-                    <option value="T40">T40</option>
-                    <option value="T41">T41</option>
-                    <option value="T42">T42</option>
-                    <option value="T43">T43</option>
-                    <option value="T44">T44</option>
-                    <option value="T45">T45</option>
-                    <option value="T46">T46</option>
-                    <option value="T47">T47</option>
-                    <option value="T51">T51</option>
-                    <option value="T52">T52</option>
-                    <option value="T53">T53</option>
-                    <option value="T54">T54</option>
-                    <option value="T61">T61</option>
-                    <option value="T62">T62</option>
-                    <option value="T63">T63</option>
-                    <option value="T64">T64</option>
-                    <option value="T72">T72</option>
-                </optgroup>
-                <optgroup label="F Classes (Field)">
-                    <option value="F11">F11</option>
-                    <option value="F12">F12</option>
-                    <option value="F13">F13</option>
-                    <option value="F20">F20</option>
-                    <option value="F31">F31</option>
-                    <option value="F32">F32</option>
-                    <option value="F33">F33</option>
-                    <option value="F34">F34</option>
-                    <option value="F35">F35</option>
-                    <option value="F36">F36</option>
-                    <option value="F37">F37</option>
-                    <option value="F38">F38</option>
-                    <option value="F40">F40</option>
-                    <option value="F41">F41</option>
-                    <option value="F42">F42</option>
-                    <option value="F43">F43</option>
-                    <option value="F44">F44</option>
-                    <option value="F45">F45</option>
-                    <option value="F46">F46</option>
-                    <option value="F51">F51</option>
-                    <option value="F52">F52</option>
-                    <option value="F53">F53</option>
-                    <option value="F54">F54</option>
-                    <option value="F55">F55</option>
-                    <option value="F56">F56</option>
-                    <option value="F57">F57</option>
-                    <option value="F61">F61</option>
-                    <option value="F62">F62</option>
-                    <option value="F63">F63</option>
-                    <option value="F64">F64</option>
-                </optgroup>
-            </select>
-            <div class="hint">Hold Ctrl (Windows) or Cmd (Mac) to select multiple classes</div>
+            <label>Classes for this event</label>
+            <div class="hint">Tick every class contesting this event together. One class = ranked on
+                performance. Two or more = combined, ranked on official Raza points.
+                You can change this later once entries are in.</div>
+            <div id="classPicker" class="class-picker">Choose a discipline first…</div>
+            <div id="classPickerNote" class="hint"></div>
 
             <label>Day</label>
             <input type="number" id="day" value="1" min="1" max="7">
@@ -465,15 +424,46 @@
     </div>
 
     <script>
-        async function fetchAPI(url, options = {}) {
-            const password = 'admin123';
-            const separator = url.includes('?') ? '&' : '?';
-            const finalUrl = `${url}${separator}password=${password}`;
+        // ---------- Admin credential (single source of truth) ----------
+        // FIX: read the password from THIS page's URL instead of hard-coding
+        // it. If you change ADMIN_PASSWORD on the server, the page keeps
+        // working - you just open it with ?password=yournewpassword
+        const ADMIN_PASSWORD =
+            new URLSearchParams(location.search).get('password') || '';
 
-            const response = await fetch(finalUrl, {
+        // FIX: the old helper blindly appended "&password=..." even when the
+        // URL already contained one. Express 5 turns a repeated query
+        // parameter into an ARRAY, so req.query.password became
+        // ['admin123','admin123'], the strict comparison on the server failed,
+        // and the request was rejected with 401. That is exactly why deleting
+        // an entry did nothing. This version removes any existing password
+        // first, so it can never be sent twice.
+        async function fetchAPI(url, options = {}) {
+            const u = new URL(url, location.origin);
+            u.searchParams.delete('password');
+            u.searchParams.set('password', ADMIN_PASSWORD);
+
+            const response = await fetch(u.pathname + u.search, {
                 ...options,
-                headers: { 'Content-Type': 'application/json', ...options.headers }
+                cache: 'no-store',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-password': ADMIN_PASSWORD,
+                    ...options.headers
+                }
             });
+
+            // FIX: the old helper returned response.json() without checking
+            // the status, so a 401 or 409 looked like success and the UI said
+            // nothing at all. Failures are now visible.
+            if (!response.ok) {
+                let message = 'HTTP ' + response.status;
+                try {
+                    const body = await response.json();
+                    if (body && body.error) message = body.error;
+                } catch (e) { /* response was not JSON */ }
+                throw new Error(message);
+            }
             return response.json();
         }
 
@@ -495,10 +485,11 @@
                         <div>
                             <div class="name">${e.name} ${isRelay ? '🏃' : ''}</div>
                             <div class="detail">${e.discipline} • ${e.sex} • Day ${e.day || 1}</div>
-                            <div class="classes">${isCombined ? '🔄 Combined: ' : ''}${classes}</div>
+                            <div class="classes">${classes}${isCombined ? '<span class="combo-badge">COMBINED · Raza points</span>' : ''}</div>
                         </div>
                         <div>
                             <span style="color: #999; font-size: 12px; margin-right: 10px;">${e.status || 'pending'}</span>
+                            <button class="btn-small" onclick="editClasses('${e.id}', '${classes}', '${e.discipline}', '${e.sex}')">Classes</button>
                             <button class="delete-btn" onclick="deleteEvent('${e.id}')">Delete</button>
                         </div>
                     </div>
@@ -506,12 +497,144 @@
             }).join('');
         }
 
+        // ---------- Class picker driven by the official Raza table ----------
+        // The old list was hardcoded and offered every class for every event -
+        // you could build a 100m for F53, which has no published constants.
+        // These options come from /api/raza/table, so only classes World Para
+        // Athletics actually publishes for this discipline and sex are offered.
+        let razaTable = null;
+
+        async function loadRazaTable() {
+            try {
+                razaTable = await fetchAPI('/api/raza/table');
+            } catch (err) {
+                console.error('Could not load the Raza table', err);
+            }
+            renderClassPicker();
+        }
+
+        function classesForCurrent() {
+            const discipline = document.getElementById('discipline').value;
+            const sex = document.getElementById('sex').value;
+            if (!razaTable || !razaTable.classes || !razaTable.classes[discipline]) return null;
+            const row = razaTable.classes[discipline];
+            if (sex === 'M') return row.M;
+            if (sex === 'F') return row.W;
+            return [...new Set([...(row.M || []), ...(row.W || [])])].sort(); // Mixed
+        }
+
+        function renderClassPicker(preselected) {
+            const box = document.getElementById('classPicker');
+            const note = document.getElementById('classPickerNote');
+            const chosen = new Set(preselected || selectedClasses());
+            const list = classesForCurrent();
+            const discipline = document.getElementById('discipline').value;
+
+            if (list === null) {
+                // Relays, Marathon, Pentathlon and Pole Vault have no Raza table.
+                box.innerHTML = '<span class="none">No official Raza classes for ' + discipline +
+                    '. Type classes manually, separated by commas:</span>' +
+                    '<input type="text" id="manualClasses" placeholder="e.g. T53, T54" ' +
+                    'value="' + [...chosen].join(', ') + '" style="margin-top:8px">';
+                note.textContent = 'Results for this event will be ranked on performance, not points.';
+                return;
+            }
+            if (!list.length) {
+                box.innerHTML = '<span class="none">No classes published for this discipline and sex.</span>';
+                note.textContent = '';
+                return;
+            }
+
+            box.innerHTML = list.map(function (c) {
+                const on = chosen.has(c) ? ' checked' : '';
+                return '<label class="' + (on ? 'on' : '') + '">' +
+                       '<input type="checkbox" value="' + c + '"' + on + '> ' + c + '</label>';
+            }).join('');
+
+            box.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    cb.parentElement.classList.toggle('on', cb.checked);
+                    updatePickerNote();
+                });
+            });
+            updatePickerNote();
+        }
+
+        function selectedClasses() {
+            const manual = document.getElementById('manualClasses');
+            if (manual) {
+                return manual.value.split(',').map(function (x) { return x.trim().toUpperCase(); })
+                                   .filter(Boolean);
+            }
+            return Array.from(document.querySelectorAll('#classPicker input:checked'))
+                        .map(function (cb) { return cb.value; });
+        }
+
+        function updatePickerNote() {
+            const n = selectedClasses().length;
+            const note = document.getElementById('classPickerNote');
+            if (n === 0) note.textContent = 'Select at least one class.';
+            else if (n === 1) note.textContent = 'Single class - ranked on performance.';
+            else note.textContent = n + ' classes combined - ranked on official Raza points.';
+        }
+
+        document.getElementById('discipline').addEventListener('change', function () { renderClassPicker([]); });
+        document.getElementById('sex').addEventListener('change', function () { renderClassPicker(); });
+
+        // ---------- Change an event's classes after it exists ----------
+        // Combinations are decided once entries are in, so this has to be
+        // editable, not fixed at creation time.
+        async function editClasses(id, currentCsv, discipline, sex) {
+            const current = (currentCsv || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+            let available = null;
+            if (razaTable && razaTable.classes && razaTable.classes[discipline]) {
+                const row = razaTable.classes[discipline];
+                available = sex === 'F' ? row.W : (sex === 'M' ? row.M
+                          : [...new Set([...(row.M || []), ...(row.W || [])])].sort());
+            }
+
+            const prompt_text = available
+                ? 'Classes for this event, separated by commas.\n\nAvailable for ' +
+                  discipline + ' (' + (sex === 'F' ? 'Women' : sex === 'M' ? 'Men' : 'Mixed') + '):\n' +
+                  available.join('  ') + '\n\nTwo or more classes = combined, ranked on Raza points.'
+                : 'Classes for this event, separated by commas:';
+
+            const answer = window.prompt(prompt_text, current.join(', '));
+            if (answer === null) return;
+
+            const classes = answer.split(',').map(function (x) { return x.trim().toUpperCase(); }).filter(Boolean);
+            if (!classes.length) { alert('An event needs at least one class.'); return; }
+
+            if (available) {
+                const unknown = classes.filter(function (c) { return available.indexOf(c) === -1; });
+                if (unknown.length && !confirm(
+                        'These have no published Raza constants for ' + discipline + ':\n  ' +
+                        unknown.join(', ') + '\n\nAthletes in them will show no points. Continue anyway?')) {
+                    return;
+                }
+            }
+
+            try {
+                await fetchAPI('/api/events/' + id, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        classes: classes,
+                        class: classes[0],
+                        isCombined: classes.length > 1
+                    })
+                });
+                loadEvents();
+        loadRazaTable();
+            } catch (err) {
+                alert('Could not update the classes: ' + err.message);
+            }
+        }
+
         async function addEvent() {
             const name = document.getElementById('eventName').value.trim();
             const discipline = document.getElementById('discipline').value;
             const sex = document.getElementById('sex').value;
-            const classSelect = document.getElementById('classSelect');
-            const selectedClasses = Array.from(classSelect.selectedOptions).map(opt => opt.value);
+            const chosenClasses = selectedClasses();
             const day = parseInt(document.getElementById('day').value);
 
             if (!name) {
@@ -519,7 +642,7 @@
                 return;
             }
 
-            if (selectedClasses.length === 0) {
+            if (chosenClasses.length === 0) {
                 document.getElementById('addMessage').innerHTML = '<span style="color: #ff6b6b;">Please select at least one class</span>';
                 return;
             }
@@ -528,12 +651,12 @@
                 name,
                 discipline,
                 sex,
-                classes: selectedClasses,
-                class: selectedClasses[0],
+                classes: chosenClasses,
+                class: chosenClasses[0],
                 day,
                 status: 'pending',
                 round: 'Final',
-                isCombined: selectedClasses.length > 1
+                isCombined: chosenClasses.length > 1
             };
 
             await fetchAPI('/api/events', {
@@ -541,7 +664,7 @@
                 body: JSON.stringify(event)
             });
 
-            document.getElementById('addMessage').innerHTML = `<span class="success">✅ Event added with ${selectedClasses.length} classes!</span>`;
+            document.getElementById('addMessage').innerHTML = `<span class="success">✅ Event added with ${chosenClasses.length} class${chosenClasses.length > 1 ? 'es (combined)' : ''}!</span>`;
             document.getElementById('eventName').value = '';
             loadEvents();
         }
