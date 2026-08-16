@@ -1,73 +1,82 @@
-CHANGE 6 - A LOGIN PAGE THAT ASKS FOR THE PASSWORD
-==================================================
+CHANGE 7 - THE ADMIN PAGES ARE NOW LOCKED
+=========================================
 
-TWO FILES
----------
+ONE FILE
+--------
 Into  Desktop\para-athletics\
     server.js       replace
 
-Into  Desktop\para-athletics\public\
-    login.html      replace
+No pages are edited.
+
+IMPORTANT: this copy has the password set back to 'admin123'. Before you
+push it, change that line to YOUR password again. See below.
 
 
-HOW YOU WILL USE IT
--------------------
-Open this one address:
+WHAT CHANGES
+------------
+Until now anyone who knew the address could open your admin pages. The
+password is written inside admin.html, entries.html and athletes.html,
+so a stranger reading the page source could use them.
 
-    https://para-athletics.onrender.com/login.html
+These pages now require a login. Anyone without one is sent to the
+login page:
 
-It asks for the password. Type it once, and you are taken to the admin
-panel. Every admin page then works for the next 12 hours without the
-password in the address - including when you click between them.
+    admin.html
+    entries.html
+    athletes.html
+    startlist-referee.html
+    startlists-results.html
+    startlists-export.html
+    reset-data.html
 
-No more ?password=admin123 on the end of every address.
+Everything else stays open to the public as before.
 
-Old bookmarks with ?password=admin123 still work, so nothing you have
-saved will break.
-
-
-WHAT WAS WRONG WITH THE OLD LOGIN PAGE
---------------------------------------
-It checked the password inside the page itself, against the word
-admin123 written into the file. Anyone could read it by viewing the
-page source. And changing the password on the server had no effect,
-because the page never asked the server anything.
-
-Now the server decides.
+No page files needed editing. The password written inside those pages
+no longer matters - the server checks it, finds it does not match yours,
+and falls back to your login instead.
 
 
-HONEST LIMITATION - PLEASE READ
--------------------------------
-This gives you a proper login screen, but it does not yet lock the
-admin pages away from strangers.
+BEFORE YOU PUSH - SET YOUR PASSWORD
+-----------------------------------
+1. Open server.js in Notepad
+2. Ctrl+F and search for   ADMIN_PASSWORD
+3. You will find:
 
-Someone who knows the address can still OPEN admin.html and use it,
-because the password is also written inside admin.html, entries.html
-and athletes.html - the same way it used to be inside login.html.
+       const ADMIN_PASSWORD = 'admin123';
 
-Removing it from those three pages is the change that would make the
-login really mean something. Ask for it when you want it and I will
-send it on its own.
+4. Put your own password back between the quotes
+5. Save
 
 
 TESTED BEFORE SENDING
 ---------------------
-Wrong password         refused, nothing remembered
-Correct password       accepted, browser remembered
-Moving between admin pages afterwards, no password in the address:
-                       admin, entries, athletes all work
-A stranger with no login saving a mark:   refused
-Old ?password= bookmarks:                 still work
-Public pages:                             unaffected
-Typing three marks and saving:            all three kept
-Points, deleting, corrections, refresh:   all still work
+A stranger with no login, on all seven admin pages:  sent to the login
+Knowing the old admin123 from the page source:       still sent to the login
+Public pages, displays, team entry, login page:      open as before
+After logging in, all seven admin pages:             open normally
+Saving a mark after logging in:                      works
+Typing three marks one after another:                all three kept
+Deleting, corrections, points, auto-refresh:         all still work
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Login page asks for the password"
+git commit -m "Admin pages now require a login"
 git push
 
-Wait 2 to 5 minutes, then open /login.html
+Wait 2 to 5 minutes.
+
+
+THEN CHECK
+----------
+Open a private browsing window (Ctrl+Shift+N) and go to
+
+    https://para-athletics.onrender.com/admin.html
+
+You should be sent to the login page. That is a stranger's view of your
+site.
+
+Then log in at /login.html with your password and everything opens
+normally.

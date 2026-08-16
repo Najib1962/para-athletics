@@ -9,6 +9,38 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+// ---------- LOCKING THE ADMIN PAGES ----------
+// Until now these pages could be opened by anyone who knew the address. The
+// password sits inside admin.html, entries.html and athletes.html, so a
+// stranger reading the page source could use them.
+//
+// They now require a login. Anyone without one is sent to the login page.
+// The password written inside those pages no longer matters: the server
+// checks it, finds it wrong once you have changed yours, and falls through
+// to your login instead.
+const ADMIN_PAGES = [
+    '/admin.html', '/entries.html', '/athletes.html',
+    '/startlist-referee.html', '/startlists-results.html',
+    '/startlists-export.html', '/reset-data.html'
+];
+
+app.use(function (req, res, next) {
+    if (ADMIN_PAGES.indexOf(req.path) === -1) return next();
+
+    var supplied = req.headers['x-admin-password'] || req.query.password;
+    var password = Array.isArray(supplied) ? supplied[0] : supplied;
+
+    if (password === ADMIN_PASSWORD) {
+        res.set('Set-Cookie',
+            'pa_admin=' + encodeURIComponent(ADMIN_PASSWORD) +
+            '; Path=/; Max-Age=43200; SameSite=Lax');
+        return next();
+    }
+    if (readCookie(req, 'pa_admin') === ADMIN_PASSWORD) return next();
+
+    return res.redirect('/login.html');
+});
+
 // ---------- AUTOMATIC REFRESH ----------
 // Public pages are given this small script as they are sent, so no page file
 // needs editing. Pages where an official is typing are deliberately left out -
