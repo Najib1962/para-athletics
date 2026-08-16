@@ -86,168 +86,31 @@ function generateId() {
 }
 
 // ---------- RAZA POINTS SYSTEM ----------
-const WORLD_RECORDS = {
-    // Track - Men
-    'T11': { '100m': 10.92, '200m': 22.56, '400m': 50.62, '800m': 112.0, '1500m': 235.0 },
-    'T12': { '100m': 10.44, '200m': 21.44, '400m': 48.50, '800m': 112.0, '1500m': 228.0 },
-    'T13': { '100m': 10.30, '200m': 21.00, '400m': 47.50, '800m': 110.0, '1500m': 225.0 },
-    'T20': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
-    'T32': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
-    'T33': { '100m': 16.00, '200m': 32.00, '400m': 68.00, '800m': 145.0, '1500m': 290.0 },
-    'T34': { '100m': 15.00, '200m': 28.50, '400m': 58.00, '800m': 130.0, '1500m': 270.0 },
-    'T35': { '100m': 12.50, '200m': 25.00, '400m': 55.00, '800m': 125.0, '1500m': 260.0 },
-    'T36': { '100m': 11.85, '200m': 24.00, '400m': 53.00, '800m': 120.0, '1500m': 250.0 },
-    'T37': { '100m': 11.45, '200m': 23.00, '400m': 51.00, '800m': 118.0, '1500m': 245.0 },
-    'T38': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
-    'T40': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
-    'T41': { '100m': 12.50, '200m': 25.50, '400m': 54.00, '800m': 120.0, '1500m': 245.0 },
-    'T42': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
-    'T43': { '100m': 11.50, '200m': 23.50, '400m': 51.00, '800m': 115.0, '1500m': 235.0 },
-    'T44': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
-    'T45': { '100m': 11.50, '200m': 23.50, '400m': 51.00, '800m': 115.0, '1500m': 235.0 },
-    'T46': { '100m': 10.70, '200m': 21.80, '400m': 49.00, '800m': 112.0, '1500m': 228.0 },
-    'T47': { '100m': 10.50, '200m': 21.30, '400m': 48.00, '800m': 110.0, '1500m': 225.0 },
-    'T51': { '100m': 20.00, '200m': 40.00, '400m': 85.00, '800m': 180.0, '1500m': 360.0 },
-    'T52': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
-    'T53': { '100m': 14.50, '200m': 28.00, '400m': 60.00, '800m': 130.0, '1500m': 270.0 },
-    'T54': { '100m': 13.50, '200m': 25.50, '400m': 55.00, '800m': 120.0, '1500m': 250.0 },
-    'T61': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
-    'T62': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
-    'T63': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
-    'T64': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
-    'T72': { '100m': 13.00, '200m': 26.00, '400m': 54.00, '800m': 120.0, '1500m': 245.0 },
+// FIX: the table that used to sit here listed F11 to F64 THREE times over -
+// once for women's track, once for men's field, once for women's field.
+// JavaScript keeps only the last of a repeated entry, so two thirds of it was
+// wiped out the moment the file loaded: 118 records written, 59 surviving.
+// A men's shot put was then scored against a women's record.
+//
+// The sum was not the Raza formula either, and had no upper limit, which is
+// how a club throw could show 2074 when the maximum is 1200.
+//
+// raza.js holds the official World Para Athletics constants, taken straight
+// from their own calculator spreadsheets and checked against their published
+// results: 421 of 422 rows match exactly.
+const raza = require('./raza');
 
-    // Track - Women
-    'F11': { '100m': 12.00, '200m': 24.45, '400m': 55.00, '800m': 130.0, '1500m': 270.0 },
-    'F12': { '100m': 11.55, '200m': 23.75, '400m': 53.00, '800m': 125.0, '1500m': 260.0 },
-    'F13': { '100m': 11.30, '200m': 23.00, '400m': 52.00, '800m': 122.0, '1500m': 255.0 },
-    'F20': { '100m': 11.85, '200m': 24.00, '400m': 54.00, '800m': 128.0, '1500m': 265.0 },
-    'F32': { '100m': 18.50, '200m': 37.00, '400m': 75.00, '800m': 160.0, '1500m': 330.0 },
-    'F33': { '100m': 18.00, '200m': 36.00, '400m': 72.00, '800m': 155.0, '1500m': 320.0 },
-    'F34': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
-    'F35': { '100m': 13.50, '200m': 27.00, '400m': 58.00, '800m': 135.0, '1500m': 280.0 },
-    'F36': { '100m': 12.85, '200m': 26.00, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
-    'F37': { '100m': 12.45, '200m': 25.00, '400m': 54.00, '800m': 128.0, '1500m': 265.0 },
-    'F38': { '100m': 11.85, '200m': 24.00, '400m': 52.50, '800m': 125.0, '1500m': 260.0 },
-    'F40': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
-    'F41': { '100m': 13.50, '200m': 27.50, '400m': 58.00, '800m': 135.0, '1500m': 280.0 },
-    'F42': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
-    'F43': { '100m': 12.50, '200m': 25.50, '400m': 54.00, '800m': 125.0, '1500m': 260.0 },
-    'F44': { '100m': 11.85, '200m': 24.00, '400m': 52.50, '800m': 125.0, '1500m': 260.0 },
-    'F45': { '100m': 12.50, '200m': 25.50, '400m': 54.00, '800m': 125.0, '1500m': 260.0 },
-    'F46': { '100m': 11.70, '200m': 23.80, '400m': 52.00, '800m': 123.0, '1500m': 258.0 },
-    'F47': { '100m': 11.50, '200m': 23.30, '400m': 51.00, '800m': 120.0, '1500m': 255.0 },
-    'F51': { '100m': 22.00, '200m': 44.00, '400m': 90.00, '800m': 190.0, '1500m': 390.0 },
-    'F52': { '100m': 18.50, '200m': 37.00, '400m': 75.00, '800m': 160.0, '1500m': 330.0 },
-    'F53': { '100m': 16.50, '200m': 33.00, '400m': 68.00, '800m': 150.0, '1500m': 300.0 },
-    'F54': { '100m': 15.50, '200m': 30.00, '400m': 62.00, '800m': 140.0, '1500m': 285.0 },
-    'F55': { '100m': 15.00, '200m': 29.00, '400m': 60.00, '800m': 135.0, '1500m': 280.0 },
-    'F56': { '100m': 14.50, '200m': 28.00, '400m': 58.00, '800m': 130.0, '1500m': 270.0 },
-    'F57': { '100m': 14.00, '200m': 27.00, '400m': 56.00, '800m': 125.0, '1500m': 260.0 },
-    'F61': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
-    'F62': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
-    'F63': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
-    'F64': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
-
-    // Field - Men
-    'F11': { 'Long Jump': 6.73, 'Triple Jump': 14.00, 'High Jump': 1.80, 'Pole Vault': 4.00, 'Shot Put': 15.50, 'Discus': 45.00, 'Javelin': 50.00 },
-    'F12': { 'Long Jump': 7.03, 'Triple Jump': 14.50, 'High Jump': 1.85, 'Pole Vault': 4.20, 'Shot Put': 17.00, 'Discus': 48.00, 'Javelin': 55.00 },
-    'F13': { 'Long Jump': 7.20, 'Triple Jump': 15.00, 'High Jump': 1.90, 'Pole Vault': 4.40, 'Shot Put': 18.00, 'Discus': 50.00, 'Javelin': 58.00 },
-    'F20': { 'Long Jump': 6.80, 'Triple Jump': 14.20, 'High Jump': 1.82, 'Shot Put': 16.00, 'Discus': 46.00, 'Javelin': 52.00 },
-    'F31': { 'Club Throw': 35.00 },
-    'F32': { 'Club Throw': 35.00 },
-    'F33': { 'Shot Put': 11.00, 'Discus': 32.00, 'Javelin': 38.00, 'Club Throw': 38.00 },
-    'F34': { 'Shot Put': 12.00, 'Discus': 34.00, 'Javelin': 40.00, 'Club Throw': 40.00 },
-    'F35': { 'Shot Put': 13.00, 'Discus': 42.00, 'Javelin': 45.00 },
-    'F36': { 'Shot Put': 14.00, 'Discus': 44.00, 'Javelin': 48.00 },
-    'F37': { 'Shot Put': 15.00, 'Discus': 46.00, 'Javelin': 50.00 },
-    'F38': { 'Shot Put': 16.00, 'Discus': 48.00, 'Javelin': 52.00 },
-    'F40': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
-    'F41': { 'Shot Put': 11.00, 'Discus': 38.00, 'Javelin': 40.00 },
-    'F42': { 'Shot Put': 14.00, 'Discus': 45.00, 'Javelin': 48.00 },
-    'F43': { 'Shot Put': 16.00, 'Discus': 50.00, 'Javelin': 55.00 },
-    'F44': { 'Shot Put': 17.00, 'Discus': 52.00, 'Javelin': 58.00 },
-    'F45': { 'Shot Put': 15.00, 'Discus': 48.00, 'Javelin': 52.00 },
-    'F46': { 'Shot Put': 15.00, 'Discus': 48.00, 'Javelin': 52.00 },
-    'F51': { 'Club Throw': 30.00 },
-    'F52': { 'Club Throw': 32.00 },
-    'F53': { 'Shot Put': 8.00, 'Discus': 28.00, 'Javelin': 32.00, 'Club Throw': 34.00 },
-    'F54': { 'Shot Put': 9.00, 'Discus': 30.00, 'Javelin': 34.00, 'Club Throw': 36.00 },
-    'F55': { 'Shot Put': 10.00, 'Discus': 32.00, 'Javelin': 36.00, 'Club Throw': 38.00 },
-    'F56': { 'Shot Put': 11.00, 'Discus': 34.00, 'Javelin': 38.00, 'Club Throw': 40.00 },
-    'F57': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00, 'Club Throw': 42.00 },
-    'F61': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
-    'F62': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
-    'F63': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
-    'F64': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
-
-    // Field - Women
-    'F11': { 'Long Jump': 5.30, 'Triple Jump': 11.50, 'High Jump': 1.50, 'Pole Vault': 3.20, 'Shot Put': 12.50, 'Discus': 38.00, 'Javelin': 42.00 },
-    'F12': { 'Long Jump': 5.80, 'Triple Jump': 12.00, 'High Jump': 1.55, 'Pole Vault': 3.40, 'Shot Put': 14.00, 'Discus': 40.00, 'Javelin': 45.00 },
-    'F13': { 'Long Jump': 6.00, 'Triple Jump': 12.50, 'High Jump': 1.60, 'Pole Vault': 3.60, 'Shot Put': 15.00, 'Discus': 42.00, 'Javelin': 48.00 },
-    'F20': { 'Long Jump': 5.60, 'Triple Jump': 11.80, 'High Jump': 1.52, 'Shot Put': 13.00, 'Discus': 39.00, 'Javelin': 43.00 },
-    'F31': { 'Club Throw': 25.00 },
-    'F32': { 'Club Throw': 25.00 },
-    'F33': { 'Shot Put': 8.00, 'Discus': 24.00, 'Javelin': 28.00, 'Club Throw': 28.00 },
-    'F34': { 'Shot Put': 9.00, 'Discus': 26.00, 'Javelin': 30.00, 'Club Throw': 30.00 },
-    'F35': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
-    'F36': { 'Shot Put': 11.00, 'Discus': 37.00, 'Javelin': 40.00 },
-    'F37': { 'Shot Put': 12.00, 'Discus': 39.00, 'Javelin': 42.00 },
-    'F38': { 'Shot Put': 13.00, 'Discus': 41.00, 'Javelin': 44.00 },
-    'F40': { 'Shot Put': 7.00, 'Discus': 28.00, 'Javelin': 30.00 },
-    'F41': { 'Shot Put': 8.00, 'Discus': 30.00, 'Javelin': 32.00 },
-    'F42': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
-    'F43': { 'Shot Put': 12.00, 'Discus': 40.00, 'Javelin': 42.00 },
-    'F44': { 'Shot Put': 13.00, 'Discus': 42.00, 'Javelin': 45.00 },
-    'F45': { 'Shot Put': 12.00, 'Discus': 38.00, 'Javelin': 40.00 },
-    'F46': { 'Shot Put': 12.00, 'Discus': 38.00, 'Javelin': 40.00 },
-    'F51': { 'Club Throw': 20.00 },
-    'F52': { 'Club Throw': 22.00 },
-    'F53': { 'Shot Put': 6.00, 'Discus': 22.00, 'Javelin': 25.00, 'Club Throw': 24.00 },
-    'F54': { 'Shot Put': 7.00, 'Discus': 24.00, 'Javelin': 28.00, 'Club Throw': 26.00 },
-    'F55': { 'Shot Put': 8.00, 'Discus': 26.00, 'Javelin': 30.00, 'Club Throw': 28.00 },
-    'F56': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00, 'Club Throw': 30.00 },
-    'F57': { 'Shot Put': 10.00, 'Discus': 30.00, 'Javelin': 34.00, 'Club Throw': 32.00 },
-    'F61': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 },
-    'F62': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 },
-    'F63': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 },
-    'F64': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 }
-};
-
-function getWorldRecord(classCode, discipline, sex) {
-    if (discipline === 'Club Throw') {
-        if (sex === 'M') {
-            if (classCode === 'F31' || classCode === 'F32') return 35.00;
-            if (classCode === 'F51') return 30.00;
-        }
-        if (sex === 'F') {
-            if (classCode === 'F31' || classCode === 'F32') return 25.00;
-            if (classCode === 'F51') return 20.00;
-        }
-    }
-    const classRecords = WORLD_RECORDS[classCode];
-    if (!classRecords) return null;
-    const disciplineRecords = classRecords[discipline];
-    if (!disciplineRecords) return null;
-    return disciplineRecords;
+function calculateRazaPoints(classCode, discipline, performance, sex, youth) {
+    const out = raza.razaPoints({
+        discipline: discipline,
+        classCode: classCode,
+        sex: sex,
+        mark: performance,
+        youth: !!youth
+    });
+    return out.points;   // a number, or null where WPA publishes none
 }
 
-function calculateRazaPoints(classCode, discipline, performance, sex) {
-    const worldRecord = getWorldRecord(classCode, discipline, sex);
-    if (!worldRecord) {
-        if (performance > 0) return Math.round(1000 * (10 / performance));
-        return null;
-    }
-    if (performance <= 0) return null;
-    const isTrack = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon'].includes(discipline);
-    let points;
-    if (isTrack) {
-        points = 1000 * Math.pow((worldRecord / performance), 2);
-    } else {
-        points = 1000 * Math.pow((performance / worldRecord), 2);
-    }
-    return Math.round(points);
-}
 
 // ---------- ADMIN AUTHENTICATION ----------
 const ADMIN_PASSWORD = 'admin123';
@@ -596,7 +459,7 @@ app.get('/api/events/:id/results', (req, res) => {
         if (mark && mark.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(mark.mark) && athlete) {
             const perf = parseFloat(mark.mark);
             if (!isNaN(perf) && perf > 0) {
-                points = calculateRazaPoints(athlete.class, event.discipline, perf, athlete.sex);
+                points = calculateRazaPoints(athlete.class, event.discipline, perf, athlete.sex, event.youth);
             }
         }
         
