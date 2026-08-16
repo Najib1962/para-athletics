@@ -1,0 +1,57 @@
+MARKS DISAPPEARING WHILE YOU TYPE
+=================================
+
+MY MISTAKE, AND I AM SORRY
+--------------------------
+When I moved the points calculation off those two pages and onto the
+server, I left something behind that broke result entry.
+
+As you type a mark, the page works out the points. It now has to ask
+the server for them, and the server takes a moment to answer. My code
+handled that badly: when the answer arrived, it rebuilt the whole
+results table from the server.
+
+Anything you had typed but not yet saved was wiped in that rebuild.
+So marks vanished as you entered them.
+
+
+WHAT IT DOES NOW
+----------------
+Only the points figure is updated - the single number in that one row.
+Nothing else on the page is touched, so what you are typing stays
+exactly where it is.
+
+While the server is answering, the points column briefly shows a dash,
+then the figure appears. Your mark never moves.
+
+
+TWO FILES
+---------
+Into  Desktop\para-athletics\public\
+
+    startlists-results.html
+    startlist-referee.html
+
+Nothing goes in the main folder this time.
+
+
+INSTALL
+-------
+cd Desktop\para-athletics
+git add .
+git commit -m "Stop result entry being wiped while typing"
+git push
+
+Wait 2 to 5 minutes.
+
+
+THEN TEST
+---------
+Open the results entry page on the live site and type a mark for one
+athlete. Then type one for a second athlete.
+
+Both should stay put. The points appear beside each one a moment after
+you finish typing.
+
+For a field event, enter all six attempts for one athlete. Every
+attempt should remain, and the best should update as you go.

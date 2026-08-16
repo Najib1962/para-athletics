@@ -463,17 +463,35 @@
             }
         }
 
-        // Kept so existing calls still work. Returns whatever the server has
-        // already told us; otherwise asks and fills the figure in when it lands.
+        // Kept for compatibility: returns a figure only if we already have it.
+        // It never redraws the page. An earlier version called loadEventData()
+        // when the server replied, which rebuilt the whole table and wiped any
+        // mark that had been typed but not yet saved.
         function calculateRazaPoints(classCode, discipline, performance, sex) {
             const key = razaKey(classCode, discipline, performance, sex);
-            if (razaCache.has(key)) return razaCache.get(key);
+            return razaCache.has(key) ? razaCache.get(key) : null;
+        }
+
+        // Fills one points cell. Shows the figure at once if it is already
+        // known, otherwise a dash until the server answers. Only that single
+        // cell changes, so nothing you are typing is disturbed.
+        function showRazaPoints(pointsEl, classCode, discipline, performance, sex) {
+            if (!pointsEl) return;
+
+            const known = calculateRazaPoints(classCode, discipline, performance, sex);
+            if (known !== null && known !== undefined) {
+                pointsEl.textContent = known;
+                return;
+            }
+
+            pointsEl.textContent = '-';
             calculateRazaPointsAsync(classCode, discipline, performance, sex)
                 .then(function (points) {
-                    // Redraw once the real figure arrives.
-                    if (points !== null && typeof loadEventData === 'function') loadEventData();
+                    // Only write if this cell still relates to the same mark.
+                    if (points !== null && points !== undefined && document.body.contains(pointsEl)) {
+                        pointsEl.textContent = points;
+                    }
                 });
-            return null;
         }
 
         async function loadEventData() {
@@ -729,8 +747,7 @@
 
             const pointsEl = document.getElementById(`points-${athleteId}`);
             if (pointsEl && value > 0) {
-                const points = calculateRazaPoints(classCode, discipline, value, sex);
-                pointsEl.textContent = points || '-';
+                showRazaPoints(pointsEl, classCode, discipline, value, sex);
             } else if (pointsEl) {
                 pointsEl.textContent = '-';
             }
@@ -760,8 +777,7 @@
             if (bestEl && hasValue) {
                 bestEl.textContent = best.toFixed(2);
                 if (pointsEl) {
-                    const points = calculateRazaPoints(classCode, discipline, best, sex);
-                    pointsEl.textContent = points || '-';
+                    showRazaPoints(pointsEl, classCode, discipline, best, sex);
                 }
             } else if (bestEl) {
                 bestEl.textContent = '-';
@@ -869,8 +885,7 @@
                 
                 const pointsEl = document.getElementById(`points-${athleteId}`);
                 if (pointsEl && best !== 'DNS') {
-                    const points = calculateRazaPoints(classCode, discipline, parseFloat(best), sex);
-                    pointsEl.textContent = points || '-';
+                    showRazaPoints(pointsEl, classCode, discipline, parseFloat(best), sex);
                 }
                 
                 setTimeout(calculateFieldRankings, 300);
