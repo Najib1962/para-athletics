@@ -50,6 +50,11 @@
             display: inline-block; background: #2196F3; color: #fff; border-radius: 10px;
             padding: 1px 8px; font-size: 11px; font-weight: 600; margin-left: 6px;
         }
+        .youth-badge {
+            display: inline-block; background: #4CAF50; color: #fff;
+            border-radius: 10px; padding: 1px 8px; font-size: 11px;
+            font-weight: 600; margin-left: 6px;
+        }
         .btn-small {
             padding: 4px 10px; font-size: 12px; border-radius: 6px; cursor: pointer;
             background: #1a1a2e; color: #fff; border: 1px solid #2a2a4e; width: auto;
@@ -347,6 +352,15 @@
             <label>Day</label>
             <input type="number" id="day" value="1" min="1" max="7">
 
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;
+                          background:#0a0a1a;border:1px solid #2a2a4e;border-radius:8px;
+                          padding:12px 14px;margin-top:12px">
+                <input type="checkbox" id="youthEvent" style="width:auto;margin:0">
+                <span>Youth competition
+                    <span style="display:block;color:#888;font-size:12px;font-weight:400">
+                        Uses the World Para Athletics youth point scores</span></span>
+            </label>
+
             <button onclick="addEvent()">Add Event</button>
             <div id="addMessage"></div>
         </div>
@@ -485,11 +499,12 @@
                         <div>
                             <div class="name">${e.name} ${isRelay ? '🏃' : ''}</div>
                             <div class="detail">${e.discipline} • ${e.sex} • Day ${e.day || 1}</div>
-                            <div class="classes">${classes}${isCombined ? '<span class="combo-badge">COMBINED · Raza points</span>' : ''}</div>
+                            <div class="classes">${classes}${isCombined ? '<span class="combo-badge">COMBINED · Raza points</span>' : ''}${e.youth ? '<span class="youth-badge">YOUTH points</span>' : ''}</div>
                         </div>
                         <div>
                             <span style="color: #999; font-size: 12px; margin-right: 10px;">${e.status || 'pending'}</span>
                             <button class="btn-small" onclick="editClasses('${e.id}', '${classes}', '${e.discipline}', '${e.sex}')">Classes</button>
+                            <button class="btn-small" onclick="toggleYouth('${e.id}', ${e.youth ? 'true' : 'false'})">${e.youth ? 'Youth ✓' : 'Youth'}</button>
                             <button class="delete-btn" onclick="deleteEvent('${e.id}')">Delete</button>
                         </div>
                     </div>
@@ -636,6 +651,10 @@
             const sex = document.getElementById('sex').value;
             const chosenClasses = selectedClasses();
             const day = parseInt(document.getElementById('day').value);
+            // Youth competitions use the same World Para Athletics tables with an
+            // adjustment, so the same mark scores differently. Getting this wrong
+            // makes every point in the event wrong.
+            const youth = document.getElementById('youthEvent').checked;
 
             if (!name) {
                 document.getElementById('addMessage').innerHTML = '<span style="color: #ff6b6b;">Please enter an event name</span>';
@@ -656,7 +675,8 @@
                 day,
                 status: 'pending',
                 round: 'Final',
-                isCombined: chosenClasses.length > 1
+                isCombined: chosenClasses.length > 1,
+                youth
             };
 
             await fetchAPI('/api/events', {
@@ -667,6 +687,25 @@
             document.getElementById('addMessage').innerHTML = `<span class="success">✅ Event added with ${chosenClasses.length} class${chosenClasses.length > 1 ? 'es (combined)' : ''}!</span>`;
             document.getElementById('eventName').value = '';
             loadEvents();
+        }
+
+        // Youth events score the same mark differently, so this has to be
+        // changeable after an event is created - not only when adding it.
+        async function toggleYouth(id, currentlyYouth) {
+            const turningOn = !currentlyYouth;
+            if (!confirm(turningOn
+                ? 'Score this event using the World Para Athletics YOUTH point scores?\n\nPoints already shown will change.'
+                : 'Score this event using the standard (open) point scores?\n\nPoints already shown will change.')) return;
+
+            try {
+                await fetchAPI('/api/events/' + id, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ youth: turningOn })
+                });
+                loadEvents();
+            } catch (err) {
+                alert('Could not change it: ' + err.message);
+            }
         }
 
         async function deleteEvent(id) {

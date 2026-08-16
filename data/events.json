@@ -12,7 +12,8 @@
     "status": "official",
     "round": "Final",
     "isCombined": false,
-    "createdAt": "2026-08-12T09:00:23.803Z"
+    "createdAt": "2026-08-12T09:00:23.803Z",
+    "updatedAt": "2026-08-15T19:53:45.779Z"
   },
   {
     "id": "mspuzp1d0oyoi",
@@ -264,7 +265,7 @@
     "round": "Final",
     "isCombined": true,
     "createdAt": "2026-08-12T09:00:42.560Z",
-    "updatedAt": "2026-08-15T18:45:18.781Z"
+    "updatedAt": "2026-08-15T20:06:46.236Z"
   },
   {
     "id": "mspv0ay6shf6l",

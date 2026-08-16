@@ -1,40 +1,5 @@
 [
   {
-    "id": "msso5qpr7km4t",
-    "eventId": "mspv03i8y8dy5",
-    "athleteId": "mspv15zoyavuy",
-    "mark": "23",
-    "createdAt": "2026-08-14T08:12:27.135Z"
-  },
-  {
-    "id": "msso5y4kauq8t",
-    "eventId": "mspv03i8y8dy5",
-    "athleteId": "mspv15zsgquoc",
-    "mark": "22",
-    "createdAt": "2026-08-14T08:12:36.740Z"
-  },
-  {
-    "id": "msso625sjplif",
-    "eventId": "mspv03i8y8dy5",
-    "athleteId": "mspv15zvsfx4j",
-    "mark": "21",
-    "createdAt": "2026-08-14T08:12:41.968Z"
-  },
-  {
-    "id": "msso6dhndctjw",
-    "eventId": "mspv03i8y8dy5",
-    "athleteId": "mspv1605e8rj3",
-    "mark": "26",
-    "createdAt": "2026-08-14T08:12:56.651Z"
-  },
-  {
-    "id": "msso6iltp1583",
-    "eventId": "mspv03i8y8dy5",
-    "athleteId": "mspv1608ahv8b",
-    "mark": "24",
-    "createdAt": "2026-08-14T08:13:03.281Z"
-  },
-  {
     "id": "mssoxpy140hwn",
     "eventId": "mspuzp1d0oyoi",
     "athleteId": "mspv0zohf0s87",
@@ -637,13 +602,6 @@
     "createdAt": "2026-08-15T07:06:06.047Z"
   },
   {
-    "id": "msu189k62q9zz",
-    "eventId": "mspuzp17fmq2y",
-    "athleteId": "mspv0znvrc2mr",
-    "mark": "11",
-    "createdAt": "2026-08-15T07:06:06.054Z"
-  },
-  {
     "id": "msu189kcofmb0",
     "eventId": "mspuzp17fmq2y",
     "athleteId": "mspv0zo1s2pvf",
@@ -665,27 +623,75 @@
     "createdAt": "2026-08-15T07:06:06.077Z"
   },
   {
-    "id": "msuq369efn6go",
-    "eventId": "mspv03i8y8dy5",
-    "athleteId": "msso4q412ec9x",
-    "mark": "31",
+    "id": "msusj18nx56im",
+    "eventId": "mspuzp17fmq2y",
+    "athleteId": "mspv0znvrc2mr",
+    "mark": "10.5",
     "isBest": true,
-    "createdAt": "2026-08-15T18:41:58.898Z"
+    "createdAt": "2026-08-15T19:50:18.119Z"
   },
   {
-    "id": "msuq4os4iop2l",
+    "id": "msut41l515wnr",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv15zoyavuy",
+    "mark": "23",
+    "isBest": true,
+    "createdAt": "2026-08-15T20:06:38.345Z"
+  },
+  {
+    "id": "msut41mhcuumv",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv15zsgquoc",
+    "mark": "22",
+    "isBest": true,
+    "createdAt": "2026-08-15T20:06:38.393Z"
+  },
+  {
+    "id": "msut41nq9yku4",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv15zvsfx4j",
+    "mark": "21",
+    "isBest": true,
+    "createdAt": "2026-08-15T20:06:38.438Z"
+  },
+  {
+    "id": "msut41p1l1fga",
     "eventId": "mspv03i8y8dy5",
     "athleteId": "mspv15zy9rik0",
-    "mark": "33",
+    "mark": "36",
     "isBest": true,
-    "createdAt": "2026-08-15T18:43:09.556Z"
+    "createdAt": "2026-08-15T20:06:38.485Z"
   },
   {
-    "id": "msuq7exp0mwva",
+    "id": "msut41qem54cr",
     "eventId": "mspv03i8y8dy5",
     "athleteId": "mspv1601t70fj",
     "mark": "34",
     "isBest": true,
-    "createdAt": "2026-08-15T18:45:16.765Z"
+    "createdAt": "2026-08-15T20:06:38.534Z"
+  },
+  {
+    "id": "msut41rot287y",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv1605e8rj3",
+    "mark": "26",
+    "isBest": true,
+    "createdAt": "2026-08-15T20:06:38.580Z"
+  },
+  {
+    "id": "msut41sywnoa4",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "mspv1608ahv8b",
+    "mark": "24",
+    "isBest": true,
+    "createdAt": "2026-08-15T20:06:38.626Z"
+  },
+  {
+    "id": "msut41ud2hhx1",
+    "eventId": "mspv03i8y8dy5",
+    "athleteId": "msso4q412ec9x",
+    "mark": "31",
+    "isBest": true,
+    "createdAt": "2026-08-15T20:06:38.677Z"
   }
 ]

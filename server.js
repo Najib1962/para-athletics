@@ -116,11 +116,20 @@ function readJSON(file, fallback) {
 
 let dataVersion = Date.now();
 
+// Pages that want to know about changes register here. The server then
+// pushes to them the moment anything is written, rather than each page
+// asking every few seconds.
+const liveListeners = new Set();
+
 function writeJSON(file, data) {
     const tmp = `${file}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
     fs.renameSync(tmp, file); // atomic on the same filesystem
     dataVersion = Date.now();
+
+    for (const send of liveListeners) {
+        try { send(dataVersion); } catch (_) { /* a dead page must not break a save */ }
+    }
 }
 
 function getAthletes() { return readJSON(ATHLETES_FILE, []); }
@@ -185,7 +194,8 @@ const ADMIN_PAGES = [
     '/admin.html', '/athletes.html', '/entries.html',
     // These write marks or wipe the whole competition, so they need the
     // password too. Previously anyone with the address could reach them.
-    '/reset-data.html', '/startlist-referee.html', '/startlists-results.html'
+    '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
+    '/cleanup.html'
 ];
 const COOKIE_NAME = 'pa_admin';
 
@@ -280,10 +290,10 @@ app.use((req, res, next) => {
 // you are typing marks would be maddening.
 
 const LIVE_SCRIPT = `(function(){
-  var last = null, fails = 0;
+  var last = null;
+
   function refresh() {
-    // These are the real reload functions across the pages, and only ones
-    // that READ. Nothing here writes, so calling extras is harmless.
+    // Only functions that READ. Nothing here saves anything.
     var safe = ['refreshAll','refreshBooklet','refreshSchedule','refreshEvents',
                 'refreshData','loadResults','loadMedals','loadAthletes','loadEvent',
                 'loadStats','loadEvents','loadData','loadEventData'];
@@ -293,22 +303,51 @@ const LIVE_SCRIPT = `(function(){
         try { window[safe[i]](); called++; } catch (e) {}
       }
     }
-    // No known function on this page, so fall back to reloading it.
     if (!called) location.reload();
   }
+
+  function seen(v) {
+    if (last === null) { last = v; return; }
+    if (v !== last) { last = v; refresh(); }
+  }
+
+  // Preferred: the server holds the connection open and tells us the moment
+  // something changes. This keeps working in a background tab, which repeated
+  // asking does not - browsers slow background timers to about once a minute,
+  // so a scoreboard behind another tab used to update late or not at all.
+  var stream = null;
+  function connect() {
+    try { stream = new EventSource('/api/stream'); } catch (e) { return startPolling(); }
+    stream.onmessage = function (e) {
+      try { seen(JSON.parse(e.data).version); } catch (err) {}
+    };
+    stream.onerror = function () {
+      if (stream) { stream.close(); stream = null; }
+      setTimeout(connect, 5000);   // free hosting sleeps; keep trying
+      startPolling();              // meanwhile fall back to asking
+    };
+  }
+
+  // Safety net, in case the open connection is blocked by a network or proxy.
+  var polling = null;
   function poll() {
     fetch('/api/version', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
-      .then(function (d) {
-        fails = 0;
-        if (last === null) { last = d.version; return; }
-        if (d.version !== last) { last = d.version; refresh(); }
-      })
-      .catch(function () { fails++; });
+      .then(function (d) { seen(d.version); })
+      .catch(function () {});
   }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
+  function startPolling() {
+    if (polling) return;
+    polling = setInterval(poll, 5000);
+  }
+
+  // Catch up straight away whenever the tab is brought back to the front.
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) poll();
+  });
+
   poll();
-  setInterval(function () { if (!document.hidden) poll(); }, 3000);
+  connect();
 })();`;
 
 app.get('/auto-refresh.js', (req, res) => {
@@ -321,7 +360,9 @@ const NO_LIVE = [
     '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
     // A visiting manager may spend several minutes typing a whole squad into
     // this form. Refreshing it would throw all of that away.
-    '/team-entry.html'
+    '/team-entry.html',
+    // Refreshing this mid-clean-up would clear the list you are working from.
+    '/cleanup.html'
 ];
 
 app.use((req, res, next) => {
@@ -361,6 +402,30 @@ app.get('/api/health', (req, res) => {
 
 // Front-end pages can poll this every few seconds and only re-fetch when the
 // number changes - far cheaper than reloading the whole results table.
+// Held open by every public page. Nothing is sent until data changes, so an
+// idle connection costs almost nothing.
+app.get('/api/stream', (req, res) => {
+    res.set({
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-store',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no'
+    });
+    if (res.flushHeaders) res.flushHeaders();
+    res.write(`data: ${JSON.stringify({ version: dataVersion })}\n\n`);
+
+    const send = version => res.write(`data: ${JSON.stringify({ version })}\n\n`);
+    liveListeners.add(send);
+
+    // A comment line every 25 seconds stops proxies closing an idle connection.
+    const keepAlive = setInterval(() => res.write(': ping\n\n'), 25000);
+
+    req.on('close', () => {
+        liveListeners.delete(send);
+        clearInterval(keepAlive);
+    });
+});
+
 app.get('/api/version', (req, res) => {
     res.json({ version: dataVersion });
 });
@@ -849,6 +914,11 @@ app.get('/api/events/:id/results', (req, res) => {
         isCombinedClass,
         uniqueClasses,
         declaredClasses: declared,
+        // So the results pages can say WHICH table was used. Youth and open
+        // give different points for the same mark, and silently using the
+        // wrong one is very hard to spot.
+        youth: !!event.youth,
+        pointsTable: event.youth ? 'World Para Athletics Youth' : 'World Para Athletics Open',
         outOfClassCount: results.filter(r => r.outOfClass).length,
         rankingMethod: isCombinedClass ? 'Raza Points' : 'Performance',
         razaTableVersion: isCombinedClass ? raza.TABLE_VERSION : undefined
