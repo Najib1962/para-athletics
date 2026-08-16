@@ -1,82 +1,101 @@
-CHANGE 8 - THE YOUTH SWITCH
-===========================
+CHANGE 9 - AGE CATEGORY PER ATHLETE
+===================================
 
-TWO FILES
----------
+FOUR FILES
+----------
 Into  Desktop\para-athletics\
-    server.js       replace
+    server.js               replace
 
 Into  Desktop\para-athletics\public\
-    youth.html      NEW
+    age-groups.html         NEW
+    medals.html             replace
+    display-medals.html     replace
 
 IMPORTANT: this server.js has the password back at 'admin123'.
 Before pushing, open it in Notepad, search for ADMIN_PASSWORD, and put
 your own password back between the quotes.
 
 
-WHY THIS MATTERS
-----------------
-World Para Athletics publishes TWO sets of point scores - open and
-youth - and the same mark scores very differently under each.
+WHAT IT DOES
+------------
+Each athlete is now marked Youth or Open. Their points come from the
+matching World Para Athletics table.
 
-A men's 100 m T37 in 13.20 seconds:
+Where one event contains both, they are ranked SEPARATELY - each group
+with its own first, second and third, and its own gold, silver and
+bronze.
 
-    Open    430 points
-    Youth   998 points
-
-Your app has always scored everything as open. If you run youth
-competitions, every point has been wrong, and far too low.
-
-The youth tables were already inside your app. There was simply no way
-to switch an event over. Now there is.
+They can run in the same race. Only the scoring is kept apart.
 
 
 HOW TO USE IT
 -------------
 Log in, then open:
 
-    https://para-athletics.onrender.com/youth.html
+    https://para-athletics.onrender.com/age-groups.html
 
-Every event is listed with a badge saying OPEN or YOUTH, and a button
-to switch it. There are also two buttons at the top to set the whole
-competition at once.
+Every athlete is listed with a badge. Press the button to switch one,
+or use the two buttons at the top to set everyone shown at once. There
+is a search box, so you can set a whole club or class in one go.
 
-Points recalculate immediately. No marks need re-entering.
+Everyone counts as Open until you change them, so nothing shifts in a
+competition that is all one age group.
 
-The page sits behind the login, like your other admin pages.
+
+WHY THE TWO GROUPS ARE RANKED APART
+-----------------------------------
+The two tables are not on the same scale. A men's 100 m T37:
+
+    13.20 seconds as youth   998 points
+    11.80 seconds as open    900 points
+
+Ranked together, the slower athlete would beat the faster one by 98
+points. That is not a close call - the tables measure against what is
+outstanding FOR THAT AGE GROUP, so comparing across them is meaningless.
+This is why World Para Athletics publishes them separately.
 
 
-NO EXISTING PAGE WAS EDITED
+NAMES ARE MARKED ON RESULTS
 ---------------------------
-The server already knew how to score a youth event and already knew how
-to save the setting - it was only missing a switch. So this adds one new
-page and changes two short lists in server.js. Nothing else moved.
+In an event with both groups, names show as "Ahmed Khalil (Youth)" or
+"Paul Wilson (Open)", so two athletes both ranked 1st are never
+confused. In an event with only one group, nothing is added.
+
+
+WHY THE MEDAL PAGES CHANGED
+---------------------------
+They used to take the first three rows of an event. With two rankings,
+those three rows are all from one group, and the other group's
+medallists were missed. They now go by the rank itself, which picks up
+first, second and third in every group - and behaves exactly as before
+when there is only one.
 
 
 TESTED BEFORE SENDING
 ---------------------
-Combined event, three athletes, same marks throughout:
-    as OPEN    430 / 353 / 237 points
-    as YOUTH   998 / 958 / 878 points
-    back to OPEN, returns to 430 / 353 / 237
-
-The new page is locked to strangers and opens once logged in.
+One event, three open and three youth athletes:
+    Open   1st 900, 2nd 718, 3rd 353 points
+    Youth  1st 998, 2nd 878, 3rd 874 points
+    six medals awarded, three to each group
+Moving one athlete between groups re-ranks and rescores both.
+An event with nobody marked youth: unchanged, no labels added.
 Typing three marks and saving: all three kept.
-Deleting, corrections, points, auto-refresh, login: all still work.
+Deleting, corrections, points, refresh, login, locked pages: all work.
+The new page is locked; changing an athlete without a login is refused.
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Add the youth and open switch"
+git commit -m "Age category per athlete"
 git push
 
-Wait 2 to 5 minutes, then open /youth.html
+Wait 2 to 5 minutes, then open /age-groups.html
 
 
-ONE THING TO CHECK AFTERWARDS
------------------------------
-Go through the list once and set each event correctly. Anything you
-have already run as a youth competition will have been scored as open,
-so switching it now will change those results.
+A NOTE ON THE EVENT SWITCH
+--------------------------
+/youth.html still works and still sets a whole event. It is now the
+fallback: an athlete with no category of their own follows the event's
+setting. If you set categories on athletes, that is what counts.

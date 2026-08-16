@@ -21,7 +21,8 @@ app.use(express.json({ limit: '10mb' }));
 const ADMIN_PAGES = [
     '/admin.html', '/entries.html', '/athletes.html',
     '/startlist-referee.html', '/startlists-results.html',
-    '/startlists-export.html', '/reset-data.html', '/youth.html'
+    '/startlists-export.html', '/reset-data.html', '/youth.html',
+    '/age-groups.html'
 ];
 
 app.use(function (req, res, next) {
@@ -86,7 +87,8 @@ app.get('/auto-refresh.js', function (req, res) {
 const NO_REFRESH = [
     '/admin.html', '/entries.html', '/athletes.html', '/login.html',
     '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
-    '/startlists-export.html', '/team-entry.html', '/youth.html'
+    '/startlists-export.html', '/team-entry.html', '/youth.html',
+    '/age-groups.html'
 ];
 
 app.use(function (req, res, next) {
@@ -218,8 +220,7 @@ function calculateRazaPoints(classCode, discipline, performance, sex, youth) {
 
 
 // ---------- ADMIN AUTHENTICATION ----------
-const ADMIN_PASSWORD = 'Falcon-Stadium-26
-';
+const ADMIN_PASSWORD = 'admin123';
 
 // Reads one cookie out of the request. Small enough not to need a library.
 function readCookie(req, name) {
@@ -239,6 +240,7 @@ function isAdminRoute(path) {
     const adminPatterns = [
         '/admin.html', '/athletes.html', '/entries.html',
         '/api/entries', '/api/marks', '/api/events/all', '/api/athletes/all',
+        '/api/athletes/',
         '/api/entries/', '/api/marks/', '/api/events/all', '/api/athletes/all'
     ];
     return adminPatterns.some(pattern => path === pattern || path.startsWith(pattern));
@@ -304,6 +306,16 @@ app.post('/api/athletes/bulk', (req, res) => {
     athletes.push(...newAthletes);
     writeJSON(ATHLETES_FILE, athletes);
     res.json(newAthletes);
+});
+
+// Change something about an athlete. Used by the age-category page.
+app.patch('/api/athletes/:id', (req, res) => {
+    const athletes = getAthletes();
+    const index = athletes.findIndex(a => a.id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: 'Athlete not found' });
+    athletes[index] = { ...athletes[index], ...req.body };
+    writeJSON(ATHLETES_FILE, athletes);
+    res.json(athletes[index]);
 });
 
 app.delete('/api/athletes/:id', (req, res) => {
@@ -597,7 +609,13 @@ app.get('/api/events/:id/results', (req, res) => {
         if (mark && mark.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(mark.mark) && athlete) {
             const perf = parseFloat(mark.mark);
             if (!isNaN(perf) && perf > 0) {
-                points = calculateRazaPoints(athlete.class, event.discipline, perf, athlete.sex, event.youth);
+                // Each athlete is scored on their OWN age group. If they have
+                // none set, the event's setting is used, so nothing changes for
+                // competitions that are all one age.
+                const youthAthlete = athlete.ageGroup
+                    ? athlete.ageGroup === 'youth'
+                    : !!event.youth;
+                points = calculateRazaPoints(athlete.class, event.discipline, perf, athlete.sex, youthAthlete);
             }
         }
         
@@ -611,6 +629,8 @@ app.get('/api/events/:id/results', (req, res) => {
             club: athlete ? athlete.club : '',
             mark: performance,
             points: points,
+            ageGroup: (athlete && athlete.ageGroup) ? athlete.ageGroup
+                    : (event.youth ? 'youth' : 'open'),
             hasGuide: athlete ? guideClasses.includes(athlete.class) : false,
             guide: athlete && guideClasses.includes(athlete.class) ? 'Yes' : ''
         };
@@ -632,7 +652,16 @@ app.get('/api/events/:id/results', (req, res) => {
         }
     });
     
+    // Are both age groups present? If so they are ranked separately - the
+    // two point tables are not on the same scale, so comparing across them
+    // would let a slower youth athlete beat a faster open one.
+    const mixedAges = results.some(r => r.ageGroup === 'youth')
+                   && results.some(r => r.ageGroup === 'open');
+
     results.sort((a, b) => {
+        if (mixedAges && a.ageGroup !== b.ageGroup) {
+            return a.ageGroup === 'open' ? -1 : 1;   // open listed first
+        }
         if (a.isDNS && b.isDNS) return 0;
         if (a.isDNS) return 1;
         if (b.isDNS) return -1;
@@ -650,12 +679,22 @@ app.get('/api/events/:id/results', (req, res) => {
     });
     
     let rank = 1;
+    let rankingGroup = null;   // rank starts again at 1 for each age group
+
     results.forEach((r, index) => {
         if (r.isDNS) {
             r.rank = '-';
         } else {
+            if (mixedAges && r.ageGroup !== rankingGroup) {
+                rank = 1;
+                rankingGroup = r.ageGroup;
+            }
+
             let isTie = false;
-            if (index > 0 && !results[index-1].isDNS) {
+            const samePreviousGroup = index > 0 &&
+                (!mixedAges || results[index-1].ageGroup === r.ageGroup);
+
+            if (samePreviousGroup && !results[index-1].isDNS) {
                 if (isCombinedClass && r.points !== null && results[index-1].points !== null) {
                     isTie = r.points === results[index-1].points;
                 } else {
@@ -672,9 +711,19 @@ app.get('/api/events/:id/results', (req, res) => {
         }
     });
     
+    // Existing pages show only the name, so in a mixed event they would show
+    // two athletes ranked 1 with nothing to tell them apart. Marking the name
+    // keeps every page readable without editing any of them.
+    if (mixedAges) {
+        results.forEach(r => {
+            r.name = r.name + (r.ageGroup === 'youth' ? ' (Youth)' : ' (Open)');
+        });
+    }
+
     res.json({ 
         event, 
         results, 
+        mixedAges,
         isCombinedClass, 
         uniqueClasses,
         rankingMethod: isCombinedClass ? 'Raza Points' : 'Performance'

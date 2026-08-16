@@ -252,10 +252,14 @@
                         const data = await fetchAPI(`/api/events/${event.id}/results`);
                         const results = data.results || [];
                         const validResults = results.filter(r => r.rank !== '-' && !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark));
-                        const top3 = validResults.slice(0, 3);
+                        // FIX: taking the first three rows missed the second age
+                        // group's medallists once Youth and Open began to be
+                        // ranked separately. Going by the rank picks up first,
+                        // second and third in every group.
+                        const top3 = validResults.filter(r => r.rank === 1 || r.rank === 2 || r.rank === 3);
 
-                        top3.forEach((r, index) => {
-                            const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+                        top3.forEach((r) => {
+                            const medal = r.rank === 1 ? 'gold' : r.rank === 2 ? 'silver' : 'bronze';
                             const country = r.club || 'Unknown';
                             if (!medalWinners[country]) {
                                 medalWinners[country] = { gold: 0, silver: 0, bronze: 0, total: 0 };

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Categories - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a; color: #fff; min-height: 100vh; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #e94560; font-size: 26px; margin-bottom: 6px; }
+        .lead { color: #999; font-size: 14px; margin-bottom: 20px; line-height: 1.55; }
+        .card {
+            background: #1a1a2e; border: 1px solid #2a2a4e; border-radius: 12px;
+            padding: 20px; margin-bottom: 16px;
+        }
+        .tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+        input[type=text], select {
+            padding: 10px 14px; background: #0a0a1a; border: 1px solid #2a2a4e;
+            border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit;
+        }
+        input[type=text] { flex: 1; min-width: 180px; }
+        button {
+            padding: 10px 16px; border: none; border-radius: 8px; color: #fff;
+            font-size: 14px; cursor: pointer; font-family: inherit;
+        }
+        button.grey { background: #2a2a4e; }
+        button.grey:hover { background: #3a3a5e; }
+        .counts { color: #888; font-size: 13px; margin-bottom: 12px; }
+        .counts b { color: #fff; }
+        .athlete {
+            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+            padding: 12px 14px; background: #0a0a1a; border-radius: 8px;
+            margin-bottom: 7px; border-left: 4px solid #2a2a4e;
+        }
+        .athlete.is-youth { border-left-color: #4CAF50; }
+        .athlete .info { flex: 1; min-width: 190px; }
+        .athlete .name { font-size: 15px; font-weight: 600; }
+        .athlete .detail { font-size: 12px; color: #888; margin-top: 2px; }
+        .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
+        .badge.youth { background: #4CAF50; }
+        .badge.open  { background: #2a2a4e; color: #bbb; }
+        .toggle { padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; }
+        .toggle.on  { background: #4CAF50; }
+        .toggle.off { background: #2a2a4e; }
+        .status { margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 14px; display: none; }
+        .status.good { background: rgba(76,175,80,.15); color: #7ddc82; display: block; }
+        .status.bad  { background: rgba(220,53,69,.15); color: #ff8b8b; display: block; }
+        .back { display: inline-block; margin-top: 16px; color: #666; text-decoration: none; font-size: 13px; }
+        .back:hover { color: #e94560; }
+        .note { font-size: 13px; color: #888; margin-top: 14px; line-height: 1.55; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>👥 Age Categories</h1>
+    <p class="lead">
+        Mark each athlete as <strong>Youth</strong> or <strong>Open</strong>. Their points are
+        then worked out from the matching World Para Athletics table.<br>
+        Where an event contains both, the two are ranked separately &mdash; each with its own
+        first, second and third place, and its own medals. Names show
+        <em>(Youth)</em> or <em>(Open)</em> on results so the two placings are never confused.
+    </p>
+
+    <div class="card">
+        <div class="tools">
+            <input type="text" id="search" placeholder="Search name, club or class…" oninput="render()">
+            <select id="filter" onchange="render()">
+                <option value="">Everyone</option>
+                <option value="open">Open only</option>
+                <option value="youth">Youth only</option>
+            </select>
+            <button class="grey" onclick="setAll('youth')">All shown → Youth</button>
+            <button class="grey" onclick="setAll('open')">All shown → Open</button>
+        </div>
+
+        <div class="counts" id="counts"></div>
+        <div id="list">Loading athletes…</div>
+        <div id="status" class="status"></div>
+
+        <p class="note">
+            Everyone counts as Open until you change them, so nothing shifts in a competition
+            that is all one age group. If your whole meet is youth, use
+            <strong>All shown → Youth</strong> once.
+        </p>
+    </div>
+
+    <a href="/admin.html" class="back">← Back to Admin</a>
+</div>
+
+<script>
+    var password = new URLSearchParams(location.search).get('password') || '';
+    var athletes = [];
+
+    function api(url, options) {
+        options = options || {};
+        var join = url.indexOf('?') > -1 ? '&' : '?';
+        var full = password ? url + join + 'password=' + encodeURIComponent(password) : url;
+        return fetch(full, {
+            method: options.method || 'GET',
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json' },
+            body: options.body
+        }).then(function (r) {
+            if (r.status === 401) throw new Error('Please log in first.');
+            if (!r.ok) throw new Error('Something went wrong (' + r.status + ')');
+            return r.json();
+        });
+    }
+
+    function say(text, kind) {
+        var el = document.getElementById('status');
+        el.className = 'status ' + kind;
+        el.textContent = text;
+    }
+
+    function groupOf(a) { return a.ageGroup === 'youth' ? 'youth' : 'open'; }
+
+    function shown() {
+        var q = document.getElementById('search').value.toLowerCase().trim();
+        var f = document.getElementById('filter').value;
+        return athletes.filter(function (a) {
+            if (f && groupOf(a) !== f) return false;
+            if (!q) return true;
+            return [a.name, a.club, a.class, a.bib].some(function (v) {
+                return v && String(v).toLowerCase().indexOf(q) > -1;
+            });
+        });
+    }
+
+    function render() {
+        var list = shown();
+        var youth = athletes.filter(function (a) { return groupOf(a) === 'youth'; }).length;
+
+        document.getElementById('counts').innerHTML =
+            '<b>' + athletes.length + '</b> athletes &middot; ' +
+            '<b>' + youth + '</b> youth &middot; ' +
+            '<b>' + (athletes.length - youth) + '</b> open' +
+            (list.length !== athletes.length ? ' &middot; showing ' + list.length : '');
+
+        var box = document.getElementById('list');
+        if (!list.length) { box.innerHTML = '<p class="note">Nothing matches.</p>'; return; }
+
+        box.innerHTML = list.map(function (a) {
+            var isYouth = groupOf(a) === 'youth';
+            return '<div class="athlete' + (isYouth ? ' is-youth' : '') + '">' +
+                     '<div class="info">' +
+                       '<div class="name">' + a.name + '</div>' +
+                       '<div class="detail">' + (a.class || '') +
+                         (a.bib ? ' &middot; bib ' + a.bib : '') +
+                         (a.club ? ' &middot; ' + a.club : '') + '</div>' +
+                     '</div>' +
+                     '<span class="badge ' + (isYouth ? 'youth' : 'open') + '">' +
+                       (isYouth ? 'YOUTH' : 'OPEN') + '</span>' +
+                     '<button class="toggle ' + (isYouth ? 'on' : 'off') + '" ' +
+                       'onclick="toggle(\'' + a.id + '\')">' +
+                       (isYouth ? 'Make Open' : 'Make Youth') + '</button>' +
+                   '</div>';
+        }).join('');
+    }
+
+    function load() {
+        return api('/api/athletes').then(function (list) {
+            athletes = list;
+            render();
+        }).catch(function (err) {
+            document.getElementById('list').innerHTML = '';
+            say(err.message, 'bad');
+        });
+    }
+
+    function toggle(id) {
+        var a = athletes.find(function (x) { return x.id === id; });
+        if (!a) return;
+        var wanted = groupOf(a) === 'youth' ? 'open' : 'youth';
+
+        api('/api/athletes/' + id, {
+            method: 'PATCH',
+            body: JSON.stringify({ ageGroup: wanted })
+        }).then(function () {
+            say(a.name + ' is now ' + wanted.toUpperCase() + '. Their points have changed.', 'good');
+            return load();
+        }).catch(function (err) { say(err.message, 'bad'); });
+    }
+
+    function setAll(wanted) {
+        var list = shown();
+        if (!list.length) return;
+        if (!confirm('Set ' + list.length + ' athlete(s) to ' + wanted.toUpperCase() + '?\n\n' +
+                     'Their points will change.')) return;
+
+        var queue = list.slice();
+        var done = 0;
+
+        function next() {
+            if (!queue.length) {
+                say(done + ' athlete(s) set to ' + wanted.toUpperCase() + '.', 'good');
+                return load();
+            }
+            var a = queue.shift();
+            api('/api/athletes/' + a.id, {
+                method: 'PATCH',
+                body: JSON.stringify({ ageGroup: wanted })
+            }).then(function () { done++; next(); })
+              .catch(function (err) { say(err.message, 'bad'); });
+        }
+        next();
+    }
+
+    load();
+</script>
+</body>
+</html>

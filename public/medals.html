@@ -233,11 +233,21 @@
                             !['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark)
                         );
                         
-                        // Get top 3
-                        const top3 = validResults.slice(0, 3);
+                        // FIX: this used to take the first three rows of the event.
+                        // That worked while every event had one set of placings.
+                        // Now that Youth and Open are ranked separately, the first
+                        // three rows are all from one group, and the other group's
+                        // medallists were being missed entirely.
+                        //
+                        // Going by the rank itself picks up first, second and third
+                        // in EVERY group, and behaves exactly as before when there
+                        // is only one.
+                        const top3 = validResults.filter(r => 
+                            r.rank === 1 || r.rank === 2 || r.rank === 3
+                        );
 
-                        top3.forEach((r, index) => {
-                            const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+                        top3.forEach((r) => {
+                            const medal = r.rank === 1 ? 'gold' : r.rank === 2 ? 'silver' : 'bronze';
                             const country = r.club || 'Unknown';
 
                             if (!medalWinners[country]) {
