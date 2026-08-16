@@ -1,0 +1,7 @@
+https://para-athletics.onrender.com/admin.html?password=admin123
+https://para-athletics.onrender.com/entries.html?password=admin123
+https://para-athletics.onrender.com/athletes.html?password=admin123
+https://para-athletics.onrender.com/startlists-results.html?password=admin123
+https://para-athletics.onrender.com/startlist-referee.html?password=admin123
+https://para-athletics.onrender.com/startlists-export.html?password=admin123
+https://para-athletics.onrender.com/reset-data.html?password=admin123

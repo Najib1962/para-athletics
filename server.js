@@ -188,6 +188,20 @@ function calculateRazaPoints(classCode, discipline, performance, sex, youth) {
 // ---------- ADMIN AUTHENTICATION ----------
 const ADMIN_PASSWORD = 'admin123';
 
+// Reads one cookie out of the request. Small enough not to need a library.
+function readCookie(req, name) {
+    const header = req.headers.cookie;
+    if (!header) return null;
+    const parts = header.split(';');
+    for (let i = 0; i < parts.length; i++) {
+        const at = parts[i].indexOf('=');
+        if (at > -1 && parts[i].slice(0, at).trim() === name) {
+            return decodeURIComponent(parts[i].slice(at + 1).trim());
+        }
+    }
+    return null;
+}
+
 function isAdminRoute(path) {
     const adminPatterns = [
         '/admin.html', '/athletes.html', '/entries.html',
@@ -209,7 +223,19 @@ app.use((req, res, next) => {
     // Taking the first value makes it work either way.
     const supplied = req.headers['x-admin-password'] || req.query.password;
     const password = Array.isArray(supplied) ? supplied[0] : supplied;
+
     if (password === ADMIN_PASSWORD) {
+        // Remember it, so the admin pages work when you move between them.
+        // They link to each other without the password in the address, so
+        // without this you would be refused as soon as you clicked a link.
+        res.set('Set-Cookie',
+            'pa_admin=' + encodeURIComponent(ADMIN_PASSWORD) +
+            '; Path=/; Max-Age=43200; SameSite=Lax');
+        return next();
+    }
+
+    // Already logged in on this browser?
+    if (readCookie(req, 'pa_admin') === ADMIN_PASSWORD) {
         return next();
     }
     res.status(401).json({ 

@@ -95,29 +95,41 @@
             <button type="submit">Login</button>
         </form>
         <div class="error" id="errorMessage">❌ Incorrect password. Please try again.</div>
-        <div class="hint">Default password: <strong>admin123</strong></div>
+        <div class="hint">Ask the competition organiser for the password.</div>
         <a href="/" class="back-link">← Back to Public Site</a>
     </div>
 
     <script>
+        // The password used to be checked here, inside this page, against the
+        // word 'admin123' written into the file. Anyone could read it by
+        // viewing the page source, and changing it on the server had no
+        // effect because this page never asked the server anything.
+        //
+        // Now the server checks it. When it accepts, it remembers this browser
+        // for 12 hours, so every admin page works without the password in the
+        // address - including when you click between them.
         function login(event) {
             event.preventDefault();
-            const password = document.getElementById('passwordInput').value;
-            const error = document.getElementById('errorMessage');
-            
-            if (password === 'admin123') {
-                sessionStorage.setItem('adminLoggedIn', 'true');
-                sessionStorage.setItem('adminPassword', password);
-                window.location.href = '/admin.html';
-            } else {
-                error.style.display = 'block';
-                document.getElementById('passwordInput').value = '';
-                document.getElementById('passwordInput').focus();
-            }
-        }
-        
-        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
-            window.location.href = '/admin.html';
+            var box = document.getElementById('passwordInput');
+            var error = document.getElementById('errorMessage');
+            var password = box.value;
+
+            if (!password) { box.focus(); return; }
+            error.style.display = 'none';
+
+            fetch('/api/entries?password=' + encodeURIComponent(password), { cache: 'no-store' })
+                .then(function (r) {
+                    if (r.status === 401) {
+                        error.style.display = 'block';
+                        box.value = '';
+                        box.focus();
+                        return;
+                    }
+                    window.location.href = '/admin.html';
+                })
+                .catch(function () {
+                    error.style.display = 'block';
+                });
         }
     </script>
 </body>

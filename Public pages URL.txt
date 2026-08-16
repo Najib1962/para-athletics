@@ -1,0 +1,7 @@
+https://para-athletics.onrender.com/                        schedule
+https://para-athletics.onrender.com/live.html               live results
+https://para-athletics.onrender.com/medals.html             medal standings
+https://para-athletics.onrender.com/athletes-public.html    athlete list
+https://para-athletics.onrender.com/mobile.html             phone-friendly
+https://para-athletics.onrender.com/result-booklet.html     printable booklet
+https://para-athletics.onrender.com/team-entry.html         clubs submit squads

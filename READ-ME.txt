@@ -1,79 +1,73 @@
-CHANGE 5 - PUBLIC PAGES REFRESH THEMSELVES
-==========================================
+CHANGE 6 - A LOGIN PAGE THAT ASKS FOR THE PASSWORD
+==================================================
 
-ONE FILE
---------
+TWO FILES
+---------
 Into  Desktop\para-athletics\
     server.js       replace
 
-Nothing else changes. No page files are edited.
+Into  Desktop\para-athletics\public\
+    login.html      replace
 
 
-WHAT IT DOES
-------------
-Your public pages already refreshed on a timer, but a slow one - between
-15 and 60 seconds depending on the page. So a result could sit unseen on
-a scoreboard for a minute.
+HOW YOU WILL USE IT
+-------------------
+Open this one address:
 
-They now notice a change within about 3 seconds.
+    https://para-athletics.onrender.com/login.html
 
-You do not need to edit any page. The server adds a small piece of code
-to each public page as it is sent.
+It asks for the password. Type it once, and you are taken to the admin
+panel. Every admin page then works for the next 12 hours without the
+password in the address - including when you click between them.
 
+No more ?password=admin123 on the end of every address.
 
-WHICH PAGES
------------
-Refresh by themselves:
-    the schedule (home page), live, medals, event, mobile,
-    athletes-public, result-booklet, schedule,
-    and all five display screens
-
-Deliberately NOT, so nothing reloads while you are typing:
-    admin, entries, athletes, login, reset-data,
-    startlist-referee, startlists-results, startlists-export,
-    team-entry
+Old bookmarks with ?password=admin123 still work, so nothing you have
+saved will break.
 
 
-HOW IT WORKS
-------------
-The server keeps a number that changes whenever anything is saved. Each
-public page checks that number every 3 seconds - a very small request -
-and only reloads its data when the number has moved. Nothing is sent
-between changes.
+WHAT WAS WRONG WITH THE OLD LOGIN PAGE
+--------------------------------------
+It checked the password inside the page itself, against the word
+admin123 written into the file. Anyone could read it by viewing the
+page source. And changing the password on the server had no effect,
+because the page never asked the server anything.
+
+Now the server decides.
+
+
+HONEST LIMITATION - PLEASE READ
+-------------------------------
+This gives you a proper login screen, but it does not yet lock the
+admin pages away from strangers.
+
+Someone who knows the address can still OPEN admin.html and use it,
+because the password is also written inside admin.html, entries.html
+and athletes.html - the same way it used to be inside login.html.
+
+Removing it from those three pages is the change that would make the
+login really mean something. Ask for it when you want it and I will
+send it on its own.
 
 
 TESTED BEFORE SENDING
 ---------------------
-Every public page receives the refresh code.
-Every page where marks are typed does not.
-The number changes when a result is saved.
-The results-entry page was re-checked for typing: three marks entered
-one after another, all three stayed on screen, all three saved.
-Deleting entries, correcting marks and the points all still work.
+Wrong password         refused, nothing remembered
+Correct password       accepted, browser remembered
+Moving between admin pages afterwards, no password in the address:
+                       admin, entries, athletes all work
+A stranger with no login saving a mark:   refused
+Old ?password= bookmarks:                 still work
+Public pages:                             unaffected
+Typing three marks and saving:            all three kept
+Points, deleting, corrections, refresh:   all still work
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Public pages refresh themselves"
+git commit -m "Login page asks for the password"
 git push
 
-Wait 2 to 5 minutes.
-
-
-THEN TEST
----------
-Open live.html in one browser tab and the results entry page in another.
-Pick the same event in both.
-
-Enter a mark and press Save. Then look at the first tab WITHOUT
-refreshing it. The result should appear within a few seconds.
-
-
-A NOTE ON THE FREE PLAN
------------------------
-Render puts the site to sleep after 15 minutes with no visitors, and the
-first page after that can take up to a minute to appear. With a display
-page left open, the 3-second check keeps the site awake, so this should
-stop happening during a competition.
+Wait 2 to 5 minutes, then open /login.html
