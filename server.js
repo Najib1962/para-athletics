@@ -579,7 +579,12 @@ app.get('/api/events/:id/results', (req, res) => {
     const uniqueClasses = [...new Set([...eventClasses, ...entryClasses])];
     const isCombinedClass = uniqueClasses.length > 1 || event.isCombined || false;
     
-    const results = entries.map(entry => {
+    // FIX: skip entries whose athlete has been deleted. They used to appear
+    // as "Unknown" on results and could not be removed from any screen,
+    // because the entries page hides rows with a missing athlete.
+    const results = entries
+        .filter(entry => athletes.some(a => a.id === entry.athleteId))
+        .map(entry => {
         const athlete = athletes.find(a => a.id === entry.athleteId);
         // Find best mark for this athlete (isBest: true) or any mark
         const mark = marks.find(m => m.athleteId === entry.athleteId && m.isBest === true) || 
