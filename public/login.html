@@ -95,48 +95,29 @@
             <button type="submit">Login</button>
         </form>
         <div class="error" id="errorMessage">❌ Incorrect password. Please try again.</div>
-        <div class="hint">Ask the competition organiser for the password.</div>
+        <div class="hint">Default password: <strong>admin123</strong></div>
         <a href="/" class="back-link">← Back to Public Site</a>
     </div>
 
     <script>
-        // FIX: the password used to be checked here, in the browser, against
-        // the word "admin123" written into this file. Two problems with that:
-        // anyone could read it by viewing the page source, and changing the
-        // password on the server had no effect, because this page never asked
-        // the server anything.
-        //
-        // Now the password goes to the server, which decides. Whatever
-        // ADMIN_PASSWORD is set to is what works.
         function login(event) {
             event.preventDefault();
-            var password = document.getElementById('passwordInput').value;
-            var error = document.getElementById('errorMessage');
-
-            if (!password) {
+            const password = document.getElementById('passwordInput').value;
+            const error = document.getElementById('errorMessage');
+            
+            if (password === 'admin123') {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                sessionStorage.setItem('adminPassword', password);
+                window.location.href = '/admin.html';
+            } else {
+                error.style.display = 'block';
+                document.getElementById('passwordInput').value = '';
                 document.getElementById('passwordInput').focus();
-                return;
             }
-
-            // Ask the server whether this password is accepted. It replies
-            // 401 if not, so a wrong password is caught here rather than
-            // bouncing the user around the admin pages.
-            fetch('/api/entries?password=' + encodeURIComponent(password), { cache: 'no-store' })
-                .then(function (r) {
-                    if (r.status === 401) {
-                        error.style.display = 'block';
-                        document.getElementById('passwordInput').value = '';
-                        document.getElementById('passwordInput').focus();
-                        return;
-                    }
-                    // Correct. Opening an admin page with the password makes
-                    // the server set a cookie, so the rest of the admin pages
-                    // work without it appearing in every address.
-                    window.location.href = '/admin.html?password=' + encodeURIComponent(password);
-                })
-                .catch(function () {
-                    window.location.href = '/admin.html?password=' + encodeURIComponent(password);
-                });
+        }
+        
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            window.location.href = '/admin.html';
         }
     </script>
 </body>

@@ -104,46 +104,22 @@
         let currentEventId = null;
         let currentEvent = null;
 
-        // ---------- Admin credential (single source of truth) ----------
-        // FIX: read the password from THIS page's URL instead of hard-coding
-        // it. If you change ADMIN_PASSWORD on the server, the page keeps
-        // working - you just open it with ?password=yournewpassword
-        const ADMIN_PASSWORD =
-            new URLSearchParams(location.search).get('password') || '';
-
-        // FIX: the old helper blindly appended "&password=..." even when the
-        // URL already contained one. Express 5 turns a repeated query
-        // parameter into an ARRAY, so req.query.password became
-        // ['admin123','admin123'], the strict comparison on the server failed,
-        // and the request was rejected with 401. That is exactly why deleting
-        // an entry did nothing. This version removes any existing password
-        // first, so it can never be sent twice.
+        // ---------- FIXED fetchAPI with password ----------
         async function fetchAPI(url, options = {}) {
-            const u = new URL(url, location.origin);
-            u.searchParams.delete('password');
-            u.searchParams.set('password', ADMIN_PASSWORD);
-
-            const response = await fetch(u.pathname + u.search, {
+            const password = 'admin123';
+            const separator = url.includes('?') ? '&' : '?';
+            
+            // Add password for admin endpoints
+            const adminEndpoints = ['/api/entries', '/api/marks', '/api/events', '/api/athletes'];
+            const isAdmin = adminEndpoints.some(endpoint => url.includes(endpoint));
+            
+            const finalUrl = isAdmin ? `${url}${separator}password=${password}` : url;
+            
+            const response = await fetch(finalUrl, {
                 ...options,
-                cache: 'no-store',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-password': ADMIN_PASSWORD,
-                    ...options.headers
-                }
+                headers: { 'Content-Type': 'application/json', ...options.headers }
             });
-
-            // FIX: the old helper returned response.json() without checking
-            // the status, so a 401 or 409 looked like success and the UI said
-            // nothing at all. Failures are now visible.
-            if (!response.ok) {
-                let message = 'HTTP ' + response.status;
-                try {
-                    const body = await response.json();
-                    if (body && body.error) message = body.error;
-                } catch (e) { /* response was not JSON */ }
-                throw new Error(message);
-            }
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
         }
 
@@ -369,13 +345,16 @@
             }
             
             try {
-                await fetchAPI('/api/entries', {
+                const response = await fetch(`/api/entries?password=admin123`, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        eventId: currentEventId,
-                        athleteId: athleteId
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        eventId: currentEventId, 
+                        athleteId: athleteId 
                     })
                 });
+                
+                if (!response.ok) throw new Error('Failed to add athlete');
                 
                 messageEl.innerHTML = '<span class="success">✅ Athlete added successfully!</span>';
                 await loadEntries();
@@ -391,7 +370,7 @@
 
         async function removeEntry(entryId) {
             if (confirm('Remove this athlete from the event?')) {
-                await fetchAPI(`/api/entries/${entryId}`, { method: 'DELETE' });
+                await fetchAPI(`/api/entries/${entryId}?password=admin123`, { method: 'DELETE' });
                 await loadEntries();
                 await loadAthleteDropdown();
             }
@@ -404,14 +383,17 @@
             const mark = input.value.trim();
             
             try {
-                await fetchAPI('/api/marks', {
+                const response = await fetch(`/api/marks?password=admin123`, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        eventId: currentEventId,
-                        athleteId: athleteId,
-                        mark: mark || 'DNS'
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        eventId: currentEventId, 
+                        athleteId: athleteId, 
+                        mark: mark || 'DNS' 
                     })
                 });
+                
+                if (!response.ok) throw new Error('Failed to save mark');
                 
                 input.style.borderColor = '#4CAF50';
                 setTimeout(() => input.style.borderColor = '', 1000);
@@ -426,7 +408,7 @@
 
         async function clearEntries() {
             if (confirm('Remove ALL athletes from this event?')) {
-                await fetchAPI(`/api/entries/event/${currentEventId}`, { method: 'DELETE' });
+                await fetchAPI(`/api/entries/event/${currentEventId}?password=admin123`, { method: 'DELETE' });
                 await loadEntries();
                 await loadAthleteDropdown();
             }
@@ -455,8 +437,9 @@
                     
                     if (confirm(`⚠️ These athletes have no mark: ${names}\n\nAuto-mark them as DNS?`)) {
                         for (const entry of athletesWithoutMark) {
-                            await fetchAPI('/api/marks', {
+                            await fetch(`/api/marks?password=admin123`, {
                                 method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     eventId: currentEventId,
                                     athleteId: entry.athleteId,
@@ -470,8 +453,9 @@
                     }
                 }
                 
-                await fetchAPI(`/api/events/${currentEventId}`, {
+                await fetch(`/api/events/${currentEventId}?password=admin123`, {
                     method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'official' })
                 });
                 
@@ -485,11 +469,11 @@
         }
 
         function viewStartList() {
-            window.open(`/api/events/${currentEventId}/startlist`, '_blank');
+            window.open(`/api/events/${currentEventId}/startlist?password=admin123`, '_blank');
         }
 
         function viewResults() {
-            window.open(`/api/events/${currentEventId}/results`, '_blank');
+            window.open(`/api/events/${currentEventId}/results?password=admin123`, '_blank');
         }
 
         loadEvents();

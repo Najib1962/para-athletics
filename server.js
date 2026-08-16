@@ -1,24 +1,3 @@
-/**
- * Para Athletics System - server.js
- * Corrected version.
- *
- * Fixes applied (see FIXES.md for the full explanation):
- *  1. /all routes now registered BEFORE /:id routes (delete-all actually works)
- *  2. Auth rewritten: GET is public, writes require the password, admin HTML
- *     pages are actually protected, and a cookie keeps admin pages working
- *     even if a fetch() forgets the password header
- *  3. /api/marks/attempts no longer duplicates old marks (the `filtered`
- *     array was computed and then thrown away)
- *  4. WORLD_RECORDS duplicate keys removed - two thirds of the table was
- *     being silently overwritten by JavaScript
- *  5. Results now use the NEWEST mark, not the first one found
- *  6. API responses send no-store so scoreboards stop showing stale data
- *  7. Atomic writes + safe reads so a crash can't corrupt a JSON file
- *  8. DATA_DIR is configurable, for Render persistent disks
- *  9. PATCH endpoints added for athletes and entries
- * 10. /api/version lets front-end pages poll cheaply for changes
- */
-
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -27,30 +6,13 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// FIX: password should come from the environment in production.
-// Set ADMIN_PASSWORD in the Render dashboard. Falls back to the old default.
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-
-// ---------- MIDDLEWARE ----------
+// Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
-// FIX: never let a browser or proxy cache API data. This is the single most
-// common reason a scoreboard keeps showing an old result after an admin
-// edits it.
-app.use('/api', (req, res, next) => {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    next();
-});
-
-// ---------- DATA STORAGE ----------
-// FIX: allow an external data directory so a Render persistent disk can be
-// mounted at e.g. /var/data. Without this, every deploy wipes all data.
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-
+// Data paths
+const DATA_DIR = path.join(__dirname, 'data');
 const ATHLETES_FILE = path.join(DATA_DIR, 'athletes.json');
 const ENTRIES_FILE = path.join(DATA_DIR, 'entries.json');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
@@ -58,10 +20,12 @@ const MARKS_FILE = path.join(DATA_DIR, 'marks.json');
 const MEET_FILE = path.join(DATA_DIR, 'meet.json');
 const REFERENCE_FILE = path.join(DATA_DIR, 'reference.json');
 
+// Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+// Initialize files if they don't exist
 function initDataFile(filePath, defaultData) {
     if (!fs.existsSync(filePath)) {
         fs.writeFileSync(filePath, JSON.stringify(defaultData, null, 2));
@@ -72,9 +36,9 @@ initDataFile(ATHLETES_FILE, []);
 initDataFile(ENTRIES_FILE, []);
 initDataFile(EVENTS_FILE, []);
 initDataFile(MARKS_FILE, []);
-initDataFile(MEET_FILE, {
-    name: 'Para Athletics Competition',
-    venue: 'Stadium',
+initDataFile(MEET_FILE, { 
+    name: 'Para Athletics Competition', 
+    venue: 'Stadium', 
     date: new Date().toISOString().split('T')[0],
     timezone: 'UTC',
     days: []
@@ -101,356 +65,215 @@ initDataFile(REFERENCE_FILE, {
     guideClasses: ['T11', 'T12', 'F11', 'F12']
 });
 
-// FIX: a half-written file used to crash every request afterwards.
-// Read defensively, write atomically.
-function readJSON(file, fallback) {
-    try {
-        const raw = fs.readFileSync(file, 'utf8');
-        if (!raw.trim()) return fallback;
-        return JSON.parse(raw);
-    } catch (err) {
-        console.error(`[data] Could not read ${path.basename(file)}:`, err.message);
-        return fallback;
-    }
+// Helper functions
+function readJSON(file) {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
-
-let dataVersion = Date.now();
-
-// Pages that want to know about changes register here. The server then
-// pushes to them the moment anything is written, rather than each page
-// asking every few seconds.
-const liveListeners = new Set();
 
 function writeJSON(file, data) {
-    const tmp = `${file}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
-    fs.renameSync(tmp, file); // atomic on the same filesystem
-    dataVersion = Date.now();
-
-    for (const send of liveListeners) {
-        try { send(dataVersion); } catch (_) { /* a dead page must not break a save */ }
-    }
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-function getAthletes() { return readJSON(ATHLETES_FILE, []); }
-function getEntries() { return readJSON(ENTRIES_FILE, []); }
-function getEvents() { return readJSON(EVENTS_FILE, []); }
-function getMarks() { return readJSON(MARKS_FILE, []); }
-function getMeet() { return readJSON(MEET_FILE, {}); }
-function getReference() { return readJSON(REFERENCE_FILE, {}); }
+function getAthletes() { return readJSON(ATHLETES_FILE); }
+function getEntries() { return readJSON(ENTRIES_FILE); }
+function getEvents() { return readJSON(EVENTS_FILE); }
+function getMarks() { return readJSON(MARKS_FILE); }
+function getMeet() { return readJSON(MEET_FILE); }
+function getReference() { return readJSON(REFERENCE_FILE); }
 
 function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-}
-
-// ---------- SELF-REPAIR ----------
-// An entry or mark whose athlete no longer exists shows as "Unknown" on start
-// lists and results, and cannot be removed from any screen. Rather than leave
-// them to be found by eye, clear them at startup and report what went.
-function removeOrphans(reason) {
-    const live = new Set(getAthletes().map(a => a.id));
-    const events = new Set(getEvents().map(e => e.id));
-
-    const entries = getEntries();
-    const marks = getMarks();
-
-    const keptEntries = entries.filter(e => live.has(e.athleteId) && events.has(e.eventId));
-    const keptMarks = marks.filter(m => live.has(m.athleteId) && events.has(m.eventId));
-
-    const removed = (entries.length - keptEntries.length) + (marks.length - keptMarks.length);
-    if (!removed) return 0;
-
-    writeJSON(ENTRIES_FILE, keptEntries);
-    writeJSON(MARKS_FILE, keptMarks);
-    console.log(`[tidy] removed ${removed} orphaned record(s) ${reason}`);
-    return removed;
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
 // ---------- RAZA POINTS SYSTEM ----------
-// The hand-made world-record table that used to live here has been replaced
-// by raza.js, which holds the official World Para Athletics constants
-// extracted straight from WPA's own calculator workbooks.
-//
-// This is not a cosmetic change. The old maths was 1000*(ratio of world
-// records)^2, which is not the Raza formula and produced different rankings.
-// In a combined F33/F34 shot put it placed the F34 athlete first where
-// official Raza places the F33 athlete first.
-const raza = require('./raza');
+const WORLD_RECORDS = {
+    // Track - Men
+    'T11': { '100m': 10.92, '200m': 22.56, '400m': 50.62, '800m': 112.0, '1500m': 235.0 },
+    'T12': { '100m': 10.44, '200m': 21.44, '400m': 48.50, '800m': 112.0, '1500m': 228.0 },
+    'T13': { '100m': 10.30, '200m': 21.00, '400m': 47.50, '800m': 110.0, '1500m': 225.0 },
+    'T20': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
+    'T32': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
+    'T33': { '100m': 16.00, '200m': 32.00, '400m': 68.00, '800m': 145.0, '1500m': 290.0 },
+    'T34': { '100m': 15.00, '200m': 28.50, '400m': 58.00, '800m': 130.0, '1500m': 270.0 },
+    'T35': { '100m': 12.50, '200m': 25.00, '400m': 55.00, '800m': 125.0, '1500m': 260.0 },
+    'T36': { '100m': 11.85, '200m': 24.00, '400m': 53.00, '800m': 120.0, '1500m': 250.0 },
+    'T37': { '100m': 11.45, '200m': 23.00, '400m': 51.00, '800m': 118.0, '1500m': 245.0 },
+    'T38': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
+    'T40': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
+    'T41': { '100m': 12.50, '200m': 25.50, '400m': 54.00, '800m': 120.0, '1500m': 245.0 },
+    'T42': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
+    'T43': { '100m': 11.50, '200m': 23.50, '400m': 51.00, '800m': 115.0, '1500m': 235.0 },
+    'T44': { '100m': 10.85, '200m': 22.00, '400m': 49.50, '800m': 113.0, '1500m': 230.0 },
+    'T45': { '100m': 11.50, '200m': 23.50, '400m': 51.00, '800m': 115.0, '1500m': 235.0 },
+    'T46': { '100m': 10.70, '200m': 21.80, '400m': 49.00, '800m': 112.0, '1500m': 228.0 },
+    'T47': { '100m': 10.50, '200m': 21.30, '400m': 48.00, '800m': 110.0, '1500m': 225.0 },
+    'T51': { '100m': 20.00, '200m': 40.00, '400m': 85.00, '800m': 180.0, '1500m': 360.0 },
+    'T52': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
+    'T53': { '100m': 14.50, '200m': 28.00, '400m': 60.00, '800m': 130.0, '1500m': 270.0 },
+    'T54': { '100m': 13.50, '200m': 25.50, '400m': 55.00, '800m': 120.0, '1500m': 250.0 },
+    'T61': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
+    'T62': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
+    'T63': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
+    'T64': { '100m': 12.00, '200m': 24.50, '400m': 52.50, '800m': 118.0, '1500m': 240.0 },
+    'T72': { '100m': 13.00, '200m': 26.00, '400m': 54.00, '800m': 120.0, '1500m': 245.0 },
 
-const RELAY_DISCIPLINES = ['4x100m Relay', '4x400m Relay'];
+    // Track - Women
+    'F11': { '100m': 12.00, '200m': 24.45, '400m': 55.00, '800m': 130.0, '1500m': 270.0 },
+    'F12': { '100m': 11.55, '200m': 23.75, '400m': 53.00, '800m': 125.0, '1500m': 260.0 },
+    'F13': { '100m': 11.30, '200m': 23.00, '400m': 52.00, '800m': 122.0, '1500m': 255.0 },
+    'F20': { '100m': 11.85, '200m': 24.00, '400m': 54.00, '800m': 128.0, '1500m': 265.0 },
+    'F32': { '100m': 18.50, '200m': 37.00, '400m': 75.00, '800m': 160.0, '1500m': 330.0 },
+    'F33': { '100m': 18.00, '200m': 36.00, '400m': 72.00, '800m': 155.0, '1500m': 320.0 },
+    'F34': { '100m': 16.50, '200m': 33.00, '400m': 70.00, '800m': 150.0, '1500m': 300.0 },
+    'F35': { '100m': 13.50, '200m': 27.00, '400m': 58.00, '800m': 135.0, '1500m': 280.0 },
+    'F36': { '100m': 12.85, '200m': 26.00, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
+    'F37': { '100m': 12.45, '200m': 25.00, '400m': 54.00, '800m': 128.0, '1500m': 265.0 },
+    'F38': { '100m': 11.85, '200m': 24.00, '400m': 52.50, '800m': 125.0, '1500m': 260.0 },
+    'F40': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
+    'F41': { '100m': 13.50, '200m': 27.50, '400m': 58.00, '800m': 135.0, '1500m': 280.0 },
+    'F42': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
+    'F43': { '100m': 12.50, '200m': 25.50, '400m': 54.00, '800m': 125.0, '1500m': 260.0 },
+    'F44': { '100m': 11.85, '200m': 24.00, '400m': 52.50, '800m': 125.0, '1500m': 260.0 },
+    'F45': { '100m': 12.50, '200m': 25.50, '400m': 54.00, '800m': 125.0, '1500m': 260.0 },
+    'F46': { '100m': 11.70, '200m': 23.80, '400m': 52.00, '800m': 123.0, '1500m': 258.0 },
+    'F47': { '100m': 11.50, '200m': 23.30, '400m': 51.00, '800m': 120.0, '1500m': 255.0 },
+    'F51': { '100m': 22.00, '200m': 44.00, '400m': 90.00, '800m': 190.0, '1500m': 390.0 },
+    'F52': { '100m': 18.50, '200m': 37.00, '400m': 75.00, '800m': 160.0, '1500m': 330.0 },
+    'F53': { '100m': 16.50, '200m': 33.00, '400m': 68.00, '800m': 150.0, '1500m': 300.0 },
+    'F54': { '100m': 15.50, '200m': 30.00, '400m': 62.00, '800m': 140.0, '1500m': 285.0 },
+    'F55': { '100m': 15.00, '200m': 29.00, '400m': 60.00, '800m': 135.0, '1500m': 280.0 },
+    'F56': { '100m': 14.50, '200m': 28.00, '400m': 58.00, '800m': 130.0, '1500m': 270.0 },
+    'F57': { '100m': 14.00, '200m': 27.00, '400m': 56.00, '800m': 125.0, '1500m': 260.0 },
+    'F61': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
+    'F62': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
+    'F63': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
+    'F64': { '100m': 13.00, '200m': 26.50, '400m': 56.00, '800m': 130.0, '1500m': 270.0 },
 
-function isTrackDiscipline(d) {
-    return raza.isTrackEvent(d) || RELAY_DISCIPLINES.includes(d);
+    // Field - Men
+    'F11': { 'Long Jump': 6.73, 'Triple Jump': 14.00, 'High Jump': 1.80, 'Pole Vault': 4.00, 'Shot Put': 15.50, 'Discus': 45.00, 'Javelin': 50.00 },
+    'F12': { 'Long Jump': 7.03, 'Triple Jump': 14.50, 'High Jump': 1.85, 'Pole Vault': 4.20, 'Shot Put': 17.00, 'Discus': 48.00, 'Javelin': 55.00 },
+    'F13': { 'Long Jump': 7.20, 'Triple Jump': 15.00, 'High Jump': 1.90, 'Pole Vault': 4.40, 'Shot Put': 18.00, 'Discus': 50.00, 'Javelin': 58.00 },
+    'F20': { 'Long Jump': 6.80, 'Triple Jump': 14.20, 'High Jump': 1.82, 'Shot Put': 16.00, 'Discus': 46.00, 'Javelin': 52.00 },
+    'F31': { 'Club Throw': 35.00 },
+    'F32': { 'Club Throw': 35.00 },
+    'F33': { 'Shot Put': 11.00, 'Discus': 32.00, 'Javelin': 38.00, 'Club Throw': 38.00 },
+    'F34': { 'Shot Put': 12.00, 'Discus': 34.00, 'Javelin': 40.00, 'Club Throw': 40.00 },
+    'F35': { 'Shot Put': 13.00, 'Discus': 42.00, 'Javelin': 45.00 },
+    'F36': { 'Shot Put': 14.00, 'Discus': 44.00, 'Javelin': 48.00 },
+    'F37': { 'Shot Put': 15.00, 'Discus': 46.00, 'Javelin': 50.00 },
+    'F38': { 'Shot Put': 16.00, 'Discus': 48.00, 'Javelin': 52.00 },
+    'F40': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
+    'F41': { 'Shot Put': 11.00, 'Discus': 38.00, 'Javelin': 40.00 },
+    'F42': { 'Shot Put': 14.00, 'Discus': 45.00, 'Javelin': 48.00 },
+    'F43': { 'Shot Put': 16.00, 'Discus': 50.00, 'Javelin': 55.00 },
+    'F44': { 'Shot Put': 17.00, 'Discus': 52.00, 'Javelin': 58.00 },
+    'F45': { 'Shot Put': 15.00, 'Discus': 48.00, 'Javelin': 52.00 },
+    'F46': { 'Shot Put': 15.00, 'Discus': 48.00, 'Javelin': 52.00 },
+    'F51': { 'Club Throw': 30.00 },
+    'F52': { 'Club Throw': 32.00 },
+    'F53': { 'Shot Put': 8.00, 'Discus': 28.00, 'Javelin': 32.00, 'Club Throw': 34.00 },
+    'F54': { 'Shot Put': 9.00, 'Discus': 30.00, 'Javelin': 34.00, 'Club Throw': 36.00 },
+    'F55': { 'Shot Put': 10.00, 'Discus': 32.00, 'Javelin': 36.00, 'Club Throw': 38.00 },
+    'F56': { 'Shot Put': 11.00, 'Discus': 34.00, 'Javelin': 38.00, 'Club Throw': 40.00 },
+    'F57': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00, 'Club Throw': 42.00 },
+    'F61': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
+    'F62': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
+    'F63': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
+    'F64': { 'Shot Put': 12.00, 'Discus': 36.00, 'Javelin': 40.00 },
+
+    // Field - Women
+    'F11': { 'Long Jump': 5.30, 'Triple Jump': 11.50, 'High Jump': 1.50, 'Pole Vault': 3.20, 'Shot Put': 12.50, 'Discus': 38.00, 'Javelin': 42.00 },
+    'F12': { 'Long Jump': 5.80, 'Triple Jump': 12.00, 'High Jump': 1.55, 'Pole Vault': 3.40, 'Shot Put': 14.00, 'Discus': 40.00, 'Javelin': 45.00 },
+    'F13': { 'Long Jump': 6.00, 'Triple Jump': 12.50, 'High Jump': 1.60, 'Pole Vault': 3.60, 'Shot Put': 15.00, 'Discus': 42.00, 'Javelin': 48.00 },
+    'F20': { 'Long Jump': 5.60, 'Triple Jump': 11.80, 'High Jump': 1.52, 'Shot Put': 13.00, 'Discus': 39.00, 'Javelin': 43.00 },
+    'F31': { 'Club Throw': 25.00 },
+    'F32': { 'Club Throw': 25.00 },
+    'F33': { 'Shot Put': 8.00, 'Discus': 24.00, 'Javelin': 28.00, 'Club Throw': 28.00 },
+    'F34': { 'Shot Put': 9.00, 'Discus': 26.00, 'Javelin': 30.00, 'Club Throw': 30.00 },
+    'F35': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
+    'F36': { 'Shot Put': 11.00, 'Discus': 37.00, 'Javelin': 40.00 },
+    'F37': { 'Shot Put': 12.00, 'Discus': 39.00, 'Javelin': 42.00 },
+    'F38': { 'Shot Put': 13.00, 'Discus': 41.00, 'Javelin': 44.00 },
+    'F40': { 'Shot Put': 7.00, 'Discus': 28.00, 'Javelin': 30.00 },
+    'F41': { 'Shot Put': 8.00, 'Discus': 30.00, 'Javelin': 32.00 },
+    'F42': { 'Shot Put': 10.00, 'Discus': 35.00, 'Javelin': 38.00 },
+    'F43': { 'Shot Put': 12.00, 'Discus': 40.00, 'Javelin': 42.00 },
+    'F44': { 'Shot Put': 13.00, 'Discus': 42.00, 'Javelin': 45.00 },
+    'F45': { 'Shot Put': 12.00, 'Discus': 38.00, 'Javelin': 40.00 },
+    'F46': { 'Shot Put': 12.00, 'Discus': 38.00, 'Javelin': 40.00 },
+    'F51': { 'Club Throw': 20.00 },
+    'F52': { 'Club Throw': 22.00 },
+    'F53': { 'Shot Put': 6.00, 'Discus': 22.00, 'Javelin': 25.00, 'Club Throw': 24.00 },
+    'F54': { 'Shot Put': 7.00, 'Discus': 24.00, 'Javelin': 28.00, 'Club Throw': 26.00 },
+    'F55': { 'Shot Put': 8.00, 'Discus': 26.00, 'Javelin': 30.00, 'Club Throw': 28.00 },
+    'F56': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00, 'Club Throw': 30.00 },
+    'F57': { 'Shot Put': 10.00, 'Discus': 30.00, 'Javelin': 34.00, 'Club Throw': 32.00 },
+    'F61': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 },
+    'F62': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 },
+    'F63': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 },
+    'F64': { 'Shot Put': 9.00, 'Discus': 28.00, 'Javelin': 32.00 }
+};
+
+function getWorldRecord(classCode, discipline, sex) {
+    if (discipline === 'Club Throw') {
+        if (sex === 'M') {
+            if (classCode === 'F31' || classCode === 'F32') return 35.00;
+            if (classCode === 'F51') return 30.00;
+        }
+        if (sex === 'F') {
+            if (classCode === 'F31' || classCode === 'F32') return 25.00;
+            if (classCode === 'F51') return 20.00;
+        }
+    }
+    const classRecords = WORLD_RECORDS[classCode];
+    if (!classRecords) return null;
+    const disciplineRecords = classRecords[discipline];
+    if (!disciplineRecords) return null;
+    return disciplineRecords;
 }
-function isFieldDiscipline(d) {
-    return raza.isFieldEvent(d);
-}
 
-/**
- * Returns { points, reason } - points is null when WPA publishes no
- * constants for that class/discipline/sex combination, with a human-readable
- * reason so the results page can explain itself instead of showing a blank.
- */
-function calculateRazaPoints(classCode, discipline, performance, sex, youth) {
-    return raza.razaPoints({
-        discipline,
-        classCode,
-        sex,
-        mark: performance,
-        youth: !!youth
-    });
+function calculateRazaPoints(classCode, discipline, performance, sex) {
+    const worldRecord = getWorldRecord(classCode, discipline, sex);
+    if (!worldRecord) {
+        if (performance > 0) return Math.round(1000 * (10 / performance));
+        return null;
+    }
+    if (performance <= 0) return null;
+    const isTrack = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon'].includes(discipline);
+    let points;
+    if (isTrack) {
+        points = 1000 * Math.pow((worldRecord / performance), 2);
+    } else {
+        points = 1000 * Math.pow((performance / worldRecord), 2);
+    }
+    return Math.round(points);
 }
-
 
 // ---------- ADMIN AUTHENTICATION ----------
-// FIX: the old middleware ran AFTER express.static, so /admin.html was served
-// to anyone, password or not. It also blocked GET /api/entries and
-// GET /api/marks for everyone, which is why public and display pages showed
-// nothing. New rules:
-//   - GET on /api/* is public (scoreboards and public pages need it)
-//   - POST/PATCH/PUT/DELETE on /api/* needs the password
-//   - admin HTML pages need the password
-//   - the password may arrive as ?password=, an x-admin-password header,
-//     a JSON body field, or the cookie set when an admin page is opened
+const ADMIN_PASSWORD = 'admin123';
 
-const ADMIN_PAGES = [
-    '/admin.html', '/athletes.html', '/entries.html',
-    // These write marks or wipe the whole competition, so they need the
-    // password too. Previously anyone with the address could reach them.
-    '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
-    '/cleanup.html'
-];
-const COOKIE_NAME = 'pa_admin';
-
-function readCookie(req, name) {
-    const header = req.headers.cookie;
-    if (!header) return null;
-    for (const part of header.split(';')) {
-        const idx = part.indexOf('=');
-        if (idx === -1) continue;
-        if (part.slice(0, idx).trim() === name) {
-            return decodeURIComponent(part.slice(idx + 1).trim());
-        }
-    }
-    return null;
-}
-
-// FIX: Express 5 turns a repeated query parameter into an ARRAY. A page that
-// sent ?password=admin123&password=admin123 produced ['admin123','admin123'],
-// which never equalled the expected string, so the request was rejected with
-// 401. The pages are fixed too, but the server should not be brittle about it.
-function firstValue(v) {
-    return Array.isArray(v) ? v[0] : v;
-}
-
-function suppliedPassword(req) {
-    return firstValue(req.headers['x-admin-password'])
-        || firstValue(req.query.password)
-        || (req.body && firstValue(req.body.password))
-        || readCookie(req, COOKIE_NAME);
-}
-
-// FIX: check every place a password might arrive, and accept if ANY of them
-// is right. The old version took the first one it found and stopped there.
-// That mattered because several pages still have "admin123" written into
-// them: once you change the password, those pages send the old one, the
-// check stopped at that wrong value, and the cookie set when you logged in
-// was never looked at. Now a valid cookie carries you through regardless.
-function isAuthed(req) {
-    const candidates = [
-        req.headers['x-admin-password'],
-        req.query.password,
-        req.body && req.body.password,
-        readCookie(req, COOKIE_NAME)
+function isAdminRoute(path) {
+    const adminPatterns = [
+        '/admin.html', '/athletes.html', '/entries.html',
+        '/api/entries', '/api/marks', '/api/events/all', '/api/athletes/all',
+        '/api/entries/', '/api/marks/', '/api/events/all', '/api/athletes/all'
     ];
-    return candidates.some(value => firstValue(value) === ADMIN_PASSWORD);
+    return adminPatterns.some(pattern => path === pattern || path.startsWith(pattern));
 }
 
+// Middleware to protect admin routes
 app.use((req, res, next) => {
-    const p = req.path;
-
-    // Admin HTML pages - must run BEFORE express.static
-    if (ADMIN_PAGES.includes(p)) {
-        if (!isAuthed(req)) {
-            return res.redirect('/login.html');
-        }
-        // Remember the password so fetch() calls from this page work even if
-        // they forget to send the header. This is what fixes "cannot delete".
-        res.cookie
-            ? res.cookie(COOKIE_NAME, ADMIN_PASSWORD, { httpOnly: false, sameSite: 'lax' })
-            : res.set('Set-Cookie', `${COOKIE_NAME}=${encodeURIComponent(ADMIN_PASSWORD)}; Path=/; SameSite=Lax`);
+    if (!isAdminRoute(req.path)) {
         return next();
     }
-
-    // API: reads are public, writes are protected
-    if (p.startsWith('/api/')) {
-        if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
-            return next();
-        }
-
-        // Team entry is the one write a member of the public is meant to make.
-        // team-entry.html is how visiting clubs submit their squad, and those
-        // managers have no admin password - requiring one would break the form
-        // completely. It was open in the original app and stays open here.
-        if (p === '/api/team-entry') return next();
-
-        if (isAuthed(req)) return next();
-        return res.status(401).json({
-            error: 'Admin access required',
-            message: 'Send the admin password as ?password=..., an x-admin-password header, or open an admin page first.'
-        });
+    const password = req.headers['x-admin-password'] || req.query.password;
+    if (password === ADMIN_PASSWORD) {
+        return next();
     }
-
-    return next();
-});
-
-// ---------- LIVE AUTO-UPDATE ----------
-// Every public page should refresh itself when a result changes. Rather than
-// asking you to add a <script> tag to a dozen HTML files by hand, the server
-// adds it as each page is served. Nothing in public/ needs editing.
-//
-// Admin pages are deliberately left alone - a page reloading under you while
-// you are typing marks would be maddening.
-
-const LIVE_SCRIPT = `(function(){
-  var last = null;
-
-  function refresh() {
-    // Only functions that READ. Nothing here saves anything.
-    var safe = ['refreshAll','refreshBooklet','refreshSchedule','refreshEvents',
-                'refreshData','loadResults','loadMedals','loadAthletes','loadEvent',
-                'loadStats','loadEvents','loadData','loadEventData'];
-    var called = 0;
-    for (var i = 0; i < safe.length; i++) {
-      if (typeof window[safe[i]] === 'function') {
-        try { window[safe[i]](); called++; } catch (e) {}
-      }
-    }
-    if (!called) location.reload();
-  }
-
-  function seen(v) {
-    if (last === null) { last = v; return; }
-    if (v !== last) { last = v; refresh(); }
-  }
-
-  // Preferred: the server holds the connection open and tells us the moment
-  // something changes. This keeps working in a background tab, which repeated
-  // asking does not - browsers slow background timers to about once a minute,
-  // so a scoreboard behind another tab used to update late or not at all.
-  var stream = null;
-  function connect() {
-    try { stream = new EventSource('/api/stream'); } catch (e) { return startPolling(); }
-    stream.onmessage = function (e) {
-      try { seen(JSON.parse(e.data).version); } catch (err) {}
-    };
-    stream.onerror = function () {
-      if (stream) { stream.close(); stream = null; }
-      setTimeout(connect, 5000);   // free hosting sleeps; keep trying
-      startPolling();              // meanwhile fall back to asking
-    };
-  }
-
-  // Safety net, in case the open connection is blocked by a network or proxy.
-  var polling = null;
-  function poll() {
-    fetch('/api/version', { cache: 'no-store' })
-      .then(function (r) { return r.json(); })
-      .then(function (d) { seen(d.version); })
-      .catch(function () {});
-  }
-  function startPolling() {
-    if (polling) return;
-    polling = setInterval(poll, 5000);
-  }
-
-  // Catch up straight away whenever the tab is brought back to the front.
-  document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) poll();
-  });
-
-  poll();
-  connect();
-})();`;
-
-app.get('/auto-refresh.js', (req, res) => {
-    res.type('application/javascript').set('Cache-Control', 'no-store').send(LIVE_SCRIPT);
-});
-
-const PUBLIC_DIR = path.join(__dirname, 'public');
-const NO_LIVE = [
-    '/admin.html', '/entries.html', '/athletes.html', '/login.html',
-    '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
-    // A visiting manager may spend several minutes typing a whole squad into
-    // this form. Refreshing it would throw all of that away.
-    '/team-entry.html',
-    // Refreshing this mid-clean-up would clear the list you are working from.
-    '/cleanup.html'
-];
-
-app.use((req, res, next) => {
-    // Only intercept page requests; everything else falls through to static.
-    let name = req.path === '/' ? '/index.html' : req.path;
-    if (!name.endsWith('.html')) return next();
-    if (NO_LIVE.includes(name)) return next();
-
-    const file = path.join(PUBLIC_DIR, name);
-    if (!file.startsWith(PUBLIC_DIR) || !fs.existsSync(file)) return next();
-
-    fs.readFile(file, 'utf8', (err, html) => {
-        if (err) return next();
-        const tag = '<script src="/auto-refresh.js"></script>';
-        const out = html.includes('</body>')
-            ? html.replace(/<\/body>/i, tag + '</body>')
-            : html + tag;
-        res.set('Cache-Control', 'no-store, must-revalidate').type('html').send(out);
+    res.status(401).json({ 
+        error: 'Admin access required',
+        message: 'Please provide admin password'
     });
-});
-
-// FIX: __dirname, not a relative path (a relative path breaks whenever the
-// process is started from a different working directory). HTML is served with
-// no-store so a redeployed page is picked up immediately.
-app.use(express.static(path.join(__dirname, 'public'), {
-    setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
-            res.set('Cache-Control', 'no-store, must-revalidate');
-        }
-    }
-}));
-
-// ---------- HEALTH / VERSION ----------
-app.get('/api/health', (req, res) => {
-    res.json({ ok: true, uptime: process.uptime(), dataDir: DATA_DIR });
-});
-
-// Front-end pages can poll this every few seconds and only re-fetch when the
-// number changes - far cheaper than reloading the whole results table.
-// Held open by every public page. Nothing is sent until data changes, so an
-// idle connection costs almost nothing.
-app.get('/api/stream', (req, res) => {
-    res.set({
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-store',
-        Connection: 'keep-alive',
-        'X-Accel-Buffering': 'no'
-    });
-    if (res.flushHeaders) res.flushHeaders();
-    res.write(`data: ${JSON.stringify({ version: dataVersion })}\n\n`);
-
-    const send = version => res.write(`data: ${JSON.stringify({ version })}\n\n`);
-    liveListeners.add(send);
-
-    // A comment line every 25 seconds stops proxies closing an idle connection.
-    const keepAlive = setInterval(() => res.write(': ping\n\n'), 25000);
-
-    req.on('close', () => {
-        liveListeners.delete(send);
-        clearInterval(keepAlive);
-    });
-});
-
-app.get('/api/version', (req, res) => {
-    res.json({ version: dataVersion });
 });
 
 // ---------- ATHLETE ENDPOINTS ----------
@@ -460,103 +283,43 @@ app.get('/api/athletes', (req, res) => {
 
 app.post('/api/athletes', (req, res) => {
     const athletes = getAthletes();
-    const body = { ...req.body };
-    delete body.password; // don't persist the credential
-    const newAthlete = { id: generateId(), ...body, createdAt: new Date().toISOString() };
+    const newAthlete = {
+        id: generateId(),
+        ...req.body,
+        createdAt: new Date().toISOString()
+    };
     athletes.push(newAthlete);
     writeJSON(ATHLETES_FILE, athletes);
     res.json(newAthlete);
 });
 
 app.post('/api/athletes/bulk', (req, res) => {
-    const payload = Array.isArray(req.body) ? req.body : req.body.athletes;
-    if (!Array.isArray(payload)) {
-        return res.status(400).json({ error: 'Expected an array of athletes' });
-    }
     const athletes = getAthletes();
-    const newAthletes = payload.map(a => ({
-        id: generateId(), ...a, createdAt: new Date().toISOString()
+    const newAthletes = req.body.map(a => ({
+        id: generateId(),
+        ...a,
+        createdAt: new Date().toISOString()
     }));
     athletes.push(...newAthletes);
     writeJSON(ATHLETES_FILE, athletes);
     res.json(newAthletes);
 });
 
-// FIX: /all MUST be registered before /:id, otherwise Express matches
-// "all" as an :id, filters nothing, and cheerfully reports success.
-app.delete('/api/athletes/all', (req, res) => {
-    // FIX: this used to empty the athlete list and leave every entry and mark
-    // behind. Each orphan then appeared as "Unknown" on start lists and
-    // results, and could not be removed from any screen - the entries page
-    // hides rows whose athlete is missing. Deleting one athlete already
-    // cleaned up after itself; deleting all did not.
-    const entries = getEntries().length;
-    const marks = getMarks().length;
-
-    writeJSON(ATHLETES_FILE, []);
-    writeJSON(ENTRIES_FILE, []);
-    writeJSON(MARKS_FILE, []);
-
-    res.json({ success: true, deleted: 'all', alsoRemoved: { entries, marks } });
-});
-
-app.patch('/api/athletes/:id', (req, res) => {
-    const athletes = getAthletes();
-    const index = athletes.findIndex(a => a.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Athlete not found' });
-    const body = { ...req.body };
-    delete body.password;
-    delete body.id;
-    athletes[index] = { ...athletes[index], ...body, updatedAt: new Date().toISOString() };
-    writeJSON(ATHLETES_FILE, athletes);
-    res.json(athletes[index]);
-});
-
 app.delete('/api/athletes/:id', (req, res) => {
     const athletes = getAthletes();
     const filtered = athletes.filter(a => a.id !== req.params.id);
-    // FIX: report honestly instead of always saying success
-    if (filtered.length === athletes.length) {
-        return res.status(404).json({ error: 'Athlete not found', id: req.params.id });
-    }
     writeJSON(ATHLETES_FILE, filtered);
+    res.json({ success: true });
+});
 
-    // FIX: also remove that athlete's entries and marks, otherwise the results
-    // page keeps showing orphaned rows.
-    const entries = getEntries().filter(e => e.athleteId !== req.params.id);
-    const marks = getMarks().filter(m => m.athleteId !== req.params.id);
-    writeJSON(ENTRIES_FILE, entries);
-    writeJSON(MARKS_FILE, marks);
-
-    res.json({ success: true, deleted: req.params.id });
+app.delete('/api/athletes/all', (req, res) => {
+    writeJSON(ATHLETES_FILE, []);
+    res.json({ success: true });
 });
 
 // ---------- EVENT ENDPOINTS ----------
 app.get('/api/events', (req, res) => {
     res.json(getEvents());
-});
-
-app.post('/api/events', (req, res) => {
-    const events = getEvents();
-    const body = { ...req.body };
-    delete body.password;
-    const newEvent = {
-        id: generateId(),
-        ...body,
-        status: body.status || 'pending',
-        createdAt: new Date().toISOString()
-    };
-    events.push(newEvent);
-    writeJSON(EVENTS_FILE, events);
-    res.json(newEvent);
-});
-
-// /all before /:id (see note above)
-app.delete('/api/events/all', (req, res) => {
-    writeJSON(EVENTS_FILE, []);
-    writeJSON(ENTRIES_FILE, []);
-    writeJSON(MARKS_FILE, []);
-    res.json({ success: true, deleted: 'all' });
 });
 
 app.get('/api/events/:id', (req, res) => {
@@ -565,54 +328,68 @@ app.get('/api/events/:id', (req, res) => {
     res.json(event);
 });
 
+app.post('/api/events', (req, res) => {
+    const events = getEvents();
+    const newEvent = {
+        id: generateId(),
+        ...req.body,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+    events.push(newEvent);
+    writeJSON(EVENTS_FILE, events);
+    res.json(newEvent);
+});
+
 app.patch('/api/events/:id', (req, res) => {
     const events = getEvents();
     const index = events.findIndex(e => e.id === req.params.id);
     if (index === -1) return res.status(404).json({ error: 'Event not found' });
-    const body = { ...req.body };
-    delete body.password;
-    delete body.id;
-    events[index] = { ...events[index], ...body, updatedAt: new Date().toISOString() };
+    events[index] = { ...events[index], ...req.body };
     writeJSON(EVENTS_FILE, events);
     res.json(events[index]);
 });
 
 app.delete('/api/events/:id', (req, res) => {
     const events = getEvents();
+    const entries = getEntries();
+    const marks = getMarks();
+    
+    const filteredEntries = entries.filter(e => e.eventId !== req.params.id);
+    const filteredMarks = marks.filter(m => m.eventId !== req.params.id);
     const filteredEvents = events.filter(e => e.id !== req.params.id);
-    if (filteredEvents.length === events.length) {
-        return res.status(404).json({ error: 'Event not found', id: req.params.id });
-    }
+    
     writeJSON(EVENTS_FILE, filteredEvents);
-    writeJSON(ENTRIES_FILE, getEntries().filter(e => e.eventId !== req.params.id));
-    writeJSON(MARKS_FILE, getMarks().filter(m => m.eventId !== req.params.id));
-    res.json({ success: true, deleted: req.params.id });
+    writeJSON(ENTRIES_FILE, filteredEntries);
+    writeJSON(MARKS_FILE, filteredMarks);
+    res.json({ success: true });
+});
+
+app.delete('/api/events/all', (req, res) => {
+    writeJSON(EVENTS_FILE, []);
+    writeJSON(ENTRIES_FILE, []);
+    writeJSON(MARKS_FILE, []);
+    res.json({ success: true });
 });
 
 // ---------- ENTRY ENDPOINTS ----------
 app.get('/api/entries', (req, res) => {
     const entries = getEntries();
-    const { eventId, athleteId } = req.query;
-    let out = entries;
-    if (eventId) out = out.filter(e => e.eventId === eventId);
-    if (athleteId) out = out.filter(e => e.athleteId === athleteId);
-    res.json(out);
+    const eventId = req.query.eventId;
+    if (eventId) {
+        res.json(entries.filter(e => e.eventId === eventId));
+    } else {
+        res.json(entries);
+    }
 });
 
 app.post('/api/entries', (req, res) => {
     const entries = getEntries();
-    const body = { ...req.body };
-    delete body.password;
-
-    if (!body.eventId || !body.athleteId) {
-        return res.status(400).json({ error: 'eventId and athleteId are required' });
-    }
-    // FIX: block duplicate entries, which used to pile up silently and make
-    // the same athlete appear several times in a start list.
-    const dupe = entries.find(e => e.eventId === body.eventId && e.athleteId === body.athleteId);
-    if (dupe) return res.status(409).json({ error: 'Athlete already entered in this event', entry: dupe });
-
-    const newEntry = { id: generateId(), ...body, createdAt: new Date().toISOString() };
+    const newEntry = {
+        id: generateId(),
+        ...req.body,
+        createdAt: new Date().toISOString()
+    };
     entries.push(newEntry);
     writeJSON(ENTRIES_FILE, entries);
     res.json(newEntry);
@@ -621,109 +398,53 @@ app.post('/api/entries', (req, res) => {
 app.post('/api/entries/bulk', (req, res) => {
     const entries = getEntries();
     const { eventId, athleteIds } = req.body;
-    if (!eventId || !Array.isArray(athleteIds)) {
-        return res.status(400).json({ error: 'eventId and athleteIds[] are required' });
-    }
-    const newEntries = [];
-    for (const athleteId of athleteIds) {
-        if (entries.some(e => e.eventId === eventId && e.athleteId === athleteId)) continue;
-        const entry = { id: generateId(), eventId, athleteId, createdAt: new Date().toISOString() };
-        entries.push(entry);
-        newEntries.push(entry);
-    }
+    const newEntries = athleteIds.map(athleteId => ({
+        id: generateId(),
+        eventId,
+        athleteId,
+        createdAt: new Date().toISOString()
+    }));
+    entries.push(...newEntries);
     writeJSON(ENTRIES_FILE, entries);
     res.json(newEntries);
 });
 
-// specific routes before /:id
-app.delete('/api/entries/all', (req, res) => {
-    writeJSON(ENTRIES_FILE, []);
-    res.json({ success: true, deleted: 'all' });
+app.delete('/api/entries/:id', (req, res) => {
+    const entries = getEntries();
+    const filtered = entries.filter(e => e.id !== req.params.id);
+    writeJSON(ENTRIES_FILE, filtered);
+    res.json({ success: true });
 });
 
 app.delete('/api/entries/event/:eventId', (req, res) => {
     const entries = getEntries();
     const filtered = entries.filter(e => e.eventId !== req.params.eventId);
     writeJSON(ENTRIES_FILE, filtered);
-    // marks for that event become meaningless too
-    writeJSON(MARKS_FILE, getMarks().filter(m => m.eventId !== req.params.eventId));
-    res.json({ success: true, removed: entries.length - filtered.length });
-});
-
-app.patch('/api/entries/:id', (req, res) => {
-    const entries = getEntries();
-    const index = entries.findIndex(e => e.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Entry not found' });
-    const body = { ...req.body };
-    delete body.password;
-    delete body.id;
-    entries[index] = { ...entries[index], ...body, updatedAt: new Date().toISOString() };
-    writeJSON(ENTRIES_FILE, entries);
-    res.json(entries[index]);
-});
-
-app.delete('/api/entries/:id', (req, res) => {
-    const entries = getEntries();
-    const target = entries.find(e => e.id === req.params.id);
-    if (!target) {
-        return res.status(404).json({ error: 'Entry not found', id: req.params.id });
-    }
-    writeJSON(ENTRIES_FILE, entries.filter(e => e.id !== req.params.id));
-
-    // FIX: remove the athlete's marks for that event too. Leaving them behind
-    // meant a deleted athlete reappeared in the results as soon as the page
-    // refreshed - which looks exactly like "the delete didn't work".
-    const marks = getMarks().filter(
-        m => !(m.eventId === target.eventId && m.athleteId === target.athleteId)
-    );
-    writeJSON(MARKS_FILE, marks);
-
-    res.json({ success: true, deleted: req.params.id });
+    res.json({ success: true });
 });
 
 // ---------- MARK ENDPOINTS ----------
 app.get('/api/marks', (req, res) => {
     const marks = getMarks();
-    const { eventId, athleteId } = req.query;
-    let out = marks;
-    if (eventId) out = out.filter(m => m.eventId === eventId);
-    if (athleteId) out = out.filter(m => m.athleteId === athleteId);
-    res.json(out);
-});
-
-// Get attempts for a specific athlete/event.
-// Registered before /api/marks/:id so "attempts" is never read as an id.
-app.get('/api/marks/attempts', (req, res) => {
-    const marks = getMarks();
-    const { eventId, athleteId } = req.query;
-    if (!eventId || !athleteId) {
-        return res.status(400).json({ error: 'eventId and athleteId required' });
+    const eventId = req.query.eventId;
+    if (eventId) {
+        res.json(marks.filter(m => m.eventId === eventId));
+    } else {
+        res.json(marks);
     }
-    const attempts = marks
-        .filter(m => m.eventId === eventId && m.athleteId === athleteId && m.attempt !== undefined && !m.isBest)
-        .sort((a, b) => a.attempt - b.attempt);
-
-    const best = marks.find(m => m.eventId === eventId && m.athleteId === athleteId && m.isBest === true);
-    res.json({ attempts, best: best ? best.mark : null });
 });
 
 app.post('/api/marks', (req, res) => {
     const marks = getMarks();
     const { eventId, athleteId, mark } = req.body;
-    if (!eventId || !athleteId) {
-        return res.status(400).json({ error: 'eventId and athleteId are required' });
-    }
-
-    // replace any previous mark for this athlete in this event
+    
     const filtered = marks.filter(m => !(m.eventId === eventId && m.athleteId === athleteId));
-
+    
     const newMark = {
         id: generateId(),
         eventId,
         athleteId,
         mark,
-        isBest: true,           // FIX: single marks are now flagged too, so the
-                                // results endpoint finds them consistently
         createdAt: new Date().toISOString()
     };
     filtered.push(newMark);
@@ -731,37 +452,41 @@ app.post('/api/marks', (req, res) => {
     res.json(newMark);
 });
 
-// FIX: THIS IS THE BIG ONE. The original built a `filtered` array with the old
-// marks removed... then pushed onto the ORIGINAL `marks` array and saved that.
-// The old attempts were never deleted. Every re-entry added another full set,
-// and because the results endpoint picked the FIRST matching mark it kept
-// showing the very first value the athlete was ever given. That is the "I edit
-// a mark and the front end doesn't change" bug.
+app.delete('/api/marks/:id', (req, res) => {
+    const marks = getMarks();
+    const filtered = marks.filter(m => m.id !== req.params.id);
+    writeJSON(MARKS_FILE, filtered);
+    res.json({ success: true });
+});
+
+// ---------- FIELD EVENT ATTEMPTS ENDPOINTS ----------
+// Save multiple attempts for a field event
 app.post('/api/marks/attempts', (req, res) => {
     const marks = getMarks();
     const { eventId, athleteId, attempts } = req.body;
-
-    if (!eventId || !athleteId || !Array.isArray(attempts)) {
-        return res.status(400).json({ error: 'eventId, athleteId and attempts[] are required' });
-    }
-
-    const kept = marks.filter(m => !(m.eventId === eventId && m.athleteId === athleteId));
-
+    
+    // Remove existing marks for this athlete/event
+    const filtered = marks.filter(m => !(m.eventId === eventId && m.athleteId === athleteId));
+    
+    // Save each attempt as a separate mark with attempt number
     const newMarks = attempts.map((attempt, index) => ({
         id: generateId(),
         eventId,
         athleteId,
-        mark: (attempt === null || attempt === undefined || attempt === '') ? 'DNS' : attempt,
+        mark: attempt || 'DNS',
         attempt: index + 1,
         createdAt: new Date().toISOString()
     }));
-
-    const validAttempts = attempts.filter(a => a !== null && a !== '' && !isNaN(parseFloat(a)) && parseFloat(a) > 0);
+    
+    // Also save the best attempt as the main mark
+    const validAttempts = attempts.filter(a => a && !isNaN(parseFloat(a)) && parseFloat(a) > 0);
     let best = 'DNS';
     if (validAttempts.length > 0) {
-        best = Math.max(...validAttempts.map(a => parseFloat(a))).toString();
+        const bestValue = Math.max(...validAttempts.map(a => parseFloat(a)));
+        best = bestValue.toString();
     }
-
+    
+    // Add the best as the main mark
     newMarks.push({
         id: generateId(),
         eventId,
@@ -770,34 +495,36 @@ app.post('/api/marks/attempts', (req, res) => {
         isBest: true,
         createdAt: new Date().toISOString()
     });
-
-    kept.push(...newMarks);        // <-- was `marks.push(...)`
-    writeJSON(MARKS_FILE, kept);   // <-- was `writeJSON(MARKS_FILE, marks)`
+    
+    // Add all new marks
+    marks.push(...newMarks);
+    writeJSON(MARKS_FILE, marks);
     res.json({ success: true, marks: newMarks });
 });
 
-app.delete('/api/marks/all', (req, res) => {
-    writeJSON(MARKS_FILE, []);
-    res.json({ success: true, deleted: 'all' });
-});
-
-// Clear one athlete's marks in one event (all attempts plus the best)
-app.delete('/api/marks/event/:eventId/athlete/:athleteId', (req, res) => {
+// Get attempts for a specific athlete/event
+app.get('/api/marks/attempts', (req, res) => {
     const marks = getMarks();
-    const { eventId, athleteId } = req.params;
-    const filtered = marks.filter(m => !(m.eventId === eventId && m.athleteId === athleteId));
-    writeJSON(MARKS_FILE, filtered);
-    res.json({ success: true, removed: marks.length - filtered.length });
-});
-
-app.delete('/api/marks/:id', (req, res) => {
-    const marks = getMarks();
-    const filtered = marks.filter(m => m.id !== req.params.id);
-    if (filtered.length === marks.length) {
-        return res.status(404).json({ error: 'Mark not found', id: req.params.id });
+    const { eventId, athleteId } = req.query;
+    
+    if (!eventId || !athleteId) {
+        return res.status(400).json({ error: 'eventId and athleteId required' });
     }
-    writeJSON(MARKS_FILE, filtered);
-    res.json({ success: true, deleted: req.params.id });
+    
+    const attempts = marks.filter(m => 
+        m.eventId === eventId && 
+        m.athleteId === athleteId &&
+        m.attempt !== undefined &&
+        !m.isBest
+    ).sort((a, b) => a.attempt - b.attempt);
+    
+    const best = marks.find(m => 
+        m.eventId === eventId && 
+        m.athleteId === athleteId &&
+        m.isBest === true
+    );
+    
+    res.json({ attempts, best: best ? best.mark : null });
 });
 
 // ---------- RESULTS ENDPOINTS ----------
@@ -805,14 +532,18 @@ app.get('/api/events/:id/startlist', (req, res) => {
     const eventId = req.params.id;
     const event = getEvents().find(e => e.id === eventId);
     if (!event) return res.status(404).json({ error: 'Event not found' });
-
+    
     const entries = getEntries().filter(e => e.eventId === eventId);
     const athletes = getAthletes();
-
-    const startList = entries
-        .map(entry => ({ ...entry, athlete: athletes.find(a => a.id === entry.athleteId) || null }))
-        .filter(s => s.athlete);
-
+    
+    const startList = entries.map(entry => {
+        const athlete = athletes.find(a => a.id === entry.athleteId);
+        return {
+            ...entry,
+            athlete: athlete || null
+        };
+    }).filter(s => s.athlete);
+    
     res.json({ event, startList });
 });
 
@@ -820,62 +551,44 @@ app.get('/api/events/:id/results', (req, res) => {
     const eventId = req.params.id;
     const event = getEvents().find(e => e.id === eventId);
     if (!event) return res.status(404).json({ error: 'Event not found' });
-
+    
     const entries = getEntries().filter(e => e.eventId === eventId);
     const marks = getMarks().filter(m => m.eventId === eventId);
     const athletes = getAthletes();
     const reference = getReference();
     const guideClasses = reference.guideClasses || [];
-
+    
     let eventClasses = [];
-    if (event.classes && event.classes.length > 0) eventClasses = event.classes;
-    else if (event.class) eventClasses = [event.class];
-
-    const entryClasses = entries
-        .map(e => { const a = athletes.find(x => x.id === e.athleteId); return a ? a.class : null; })
-        .filter(Boolean);
-
-    // The classes DECLARED on the event decide whether this is a combined
-    // event - not whoever happens to be entered. Otherwise one athlete entered
-    // in the wrong class silently flips a single-class event onto Raza points
-    // and changes every placing.
-    const declared = eventClasses.map(c => String(c).toUpperCase());
-    const isCombinedClass = declared.length > 1
-        || event.isCombined === true
-        || (declared.length === 0 && new Set(entryClasses).size > 1);
-
-    const uniqueClasses = declared.length ? declared
-                                          : [...new Set(entryClasses)];
-
-    // FIX: pick the NEWEST mark. The old code took the first match in file
-    // order, so once duplicates existed it displayed the oldest value forever.
-    function markFor(athleteId) {
-        const mine = marks
-            .filter(m => m.athleteId === athleteId)
-            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        return mine.find(m => m.isBest === true) || mine[0] || null;
+    if (event.classes && event.classes.length > 0) {
+        eventClasses = event.classes;
+    } else if (event.class) {
+        eventClasses = [event.class];
     }
-
+    
+    const entryClasses = entries.map(e => {
+        const athlete = athletes.find(a => a.id === e.athleteId);
+        return athlete ? athlete.class : null;
+    }).filter(c => c);
+    
+    const uniqueClasses = [...new Set([...eventClasses, ...entryClasses])];
+    const isCombinedClass = uniqueClasses.length > 1 || event.isCombined || false;
+    
     const results = entries.map(entry => {
         const athlete = athletes.find(a => a.id === entry.athleteId);
-        const mark = markFor(entry.athleteId);
-
+        // Find best mark for this athlete (isBest: true) or any mark
+        const mark = marks.find(m => m.athleteId === entry.athleteId && m.isBest === true) || 
+                     marks.find(m => m.athleteId === entry.athleteId);
+        
         let points = null;
-        let pointsNote = null;
-        const performance = mark && mark.mark ? mark.mark : 'DNS';
-
-        // Pass the mark through as typed. raza.js handles "11.10", "2:05.43"
-        // and "1:02:33.5" - parseFloat used to turn "2:05.43" into 2.
-        if (mark && mark.mark && athlete) {
-            const scored = calculateRazaPoints(
-                athlete.class, event.discipline, mark.mark, athlete.sex, event.youth
-            );
-            points = scored.points;
-            if (points === null && scored.reason && scored.reason !== 'no valid performance') {
-                pointsNote = scored.reason;
+        let performance = mark ? mark.mark : 'DNS';
+        
+        if (mark && mark.mark && !['DNS', 'DNF', 'DQ', 'NM'].includes(mark.mark) && athlete) {
+            const perf = parseFloat(mark.mark);
+            if (!isNaN(perf) && perf > 0) {
+                points = calculateRazaPoints(athlete.class, event.discipline, perf, athlete.sex);
             }
         }
-
+        
         return {
             entryId: entry.id,
             athleteId: entry.athleteId,
@@ -885,118 +598,74 @@ app.get('/api/events/:id/results', (req, res) => {
             bib: athlete ? athlete.bib : '',
             club: athlete ? athlete.club : '',
             mark: performance,
-            points,
-            pointsNote,
-            outOfClass: !!(athlete && declared.length &&
-                           !declared.includes(String(athlete.class).toUpperCase())),
+            points: points,
             hasGuide: athlete ? guideClasses.includes(athlete.class) : false,
             guide: athlete && guideClasses.includes(athlete.class) ? 'Yes' : ''
         };
     });
-
-    const isTrack = isTrackDiscipline(event.discipline);
-    const isRelay = RELAY_DISCIPLINES.includes(event.discipline);
-    const isField = isFieldDiscipline(event.discipline);
-
+    
+    const isTrack = ['100m', '200m', '400m', '800m', '1500m', '5000m', '10000m', 'Marathon'].includes(event.discipline);
+    const isRelay = ['4x100m Relay', '4x400m Relay'].includes(event.discipline);
+    const isField = ['Long Jump', 'Triple Jump', 'High Jump', 'Pole Vault', 'Shot Put', 'Discus', 'Javelin', 'Club Throw'].includes(event.discipline);
+    
     results.forEach(r => {
-        if (['DNS', 'DNF', 'DQ', 'NM'].includes(r.mark)) {
+        if (r.mark === 'DNS' || r.mark === 'DNF' || r.mark === 'DQ' || r.mark === 'NM') {
             r.value = null;
             r.isDNS = true;
             r.points = null;
         } else {
-            const v = parseFloat(r.mark);
-            r.value = isNaN(v) ? null : v;
-            r.isDNS = isNaN(v);   // FIX: an unparseable mark is now treated as
-                                  // no-result instead of poisoning the sort
-            if (r.isDNS) r.points = null;
+            const time = parseFloat(r.mark);
+            r.value = isNaN(time) ? null : time;
+            r.isDNS = false;
         }
     });
-
+    
     results.sort((a, b) => {
         if (a.isDNS && b.isDNS) return 0;
         if (a.isDNS) return 1;
         if (b.isDNS) return -1;
-
-        if (isCombinedClass && a.points !== null && b.points !== null) return b.points - a.points;
+        
+        if (isCombinedClass && a.points !== null && b.points !== null) {
+            return b.points - a.points;
+        }
+        
         if (isCombinedClass && a.points !== null && b.points === null) return -1;
         if (isCombinedClass && a.points === null && b.points !== null) return 1;
-
+        
         if (isTrack || isRelay) return a.value - b.value;
         if (isField) return b.value - a.value;
         return 0;
     });
-
+    
     let rank = 1;
     results.forEach((r, index) => {
         if (r.isDNS) {
             r.rank = '-';
-            return;
+        } else {
+            let isTie = false;
+            if (index > 0 && !results[index-1].isDNS) {
+                if (isCombinedClass && r.points !== null && results[index-1].points !== null) {
+                    isTie = r.points === results[index-1].points;
+                } else {
+                    isTie = r.value === results[index-1].value;
+                }
+            }
+            
+            if (isTie) {
+                r.rank = results[index-1].rank;
+            } else {
+                r.rank = rank;
+            }
+            rank++;
         }
-        let isTie = false;
-        if (index > 0 && !results[index - 1].isDNS) {
-            isTie = (isCombinedClass && r.points !== null && results[index - 1].points !== null)
-                ? r.points === results[index - 1].points
-                : r.value === results[index - 1].value;
-        }
-        r.rank = isTie ? results[index - 1].rank : rank;
-        rank++;
     });
-
-    res.json({
-        event,
-        results,
-        isCombinedClass,
+    
+    res.json({ 
+        event, 
+        results, 
+        isCombinedClass, 
         uniqueClasses,
-        declaredClasses: declared,
-        // So the results pages can say WHICH table was used. Youth and open
-        // give different points for the same mark, and silently using the
-        // wrong one is very hard to spot.
-        youth: !!event.youth,
-        pointsTable: event.youth ? 'World Para Athletics Youth' : 'World Para Athletics Open',
-        outOfClassCount: results.filter(r => r.outOfClass).length,
-        rankingMethod: isCombinedClass ? 'Raza Points' : 'Performance',
-        razaTableVersion: isCombinedClass ? raza.TABLE_VERSION : undefined
-    });
-});
-
-// ---------- RAZA LOOKUP ENDPOINTS ----------
-// Public reads, so a results page or a coach on a phone can use them.
-
-// Score one performance. e.g. /api/raza?discipline=Shot Put&class=F33&sex=M&mark=12.00
-app.get('/api/raza', (req, res) => {
-    const { discipline, class: classCode, sex, mark, youth } = req.query;
-    const out = raza.razaPoints({
-        discipline, classCode, sex, mark, youth: youth === 'true' || youth === '1'
-    });
-    res.json({ ...out, tableVersion: raza.TABLE_VERSION });
-});
-
-// What performance is needed for a given points total (qualifying standards)?
-app.get('/api/raza/required', (req, res) => {
-    const { discipline, class: classCode, sex, points, youth } = req.query;
-    const required = raza.performanceForPoints({
-        discipline, classCode, sex,
-        points: parseFloat(points),
-        youth: youth === 'true' || youth === '1'
-    });
-    res.json({
-        required,
-        reference: raza.referencePerformance(discipline, classCode, sex),
-        tableVersion: raza.TABLE_VERSION
-    });
-});
-
-// Which events and classes the official table actually covers.
-app.get('/api/raza/table', (req, res) => {
-    res.json({
-        tableVersion: raza.TABLE_VERSION,
-        maxPoints: raza.A,
-        track: raza.TRACK_EVENTS,
-        field: raza.FIELD_EVENTS,
-        classes: [...raza.TRACK_EVENTS, ...raza.FIELD_EVENTS].reduce((acc, ev) => {
-            acc[ev] = { M: raza.classesFor(ev, 'M'), W: raza.classesFor(ev, 'F') };
-            return acc;
-        }, {})
+        rankingMethod: isCombinedClass ? 'Raza Points' : 'Performance'
     });
 });
 
@@ -1006,13 +675,8 @@ app.get('/api/meet', (req, res) => {
 });
 
 app.post('/api/meet', (req, res) => {
-    const body = { ...req.body };
-    delete body.password;
-    // FIX: merge instead of replacing wholesale, so a partial save from one
-    // form no longer wipes fields owned by another form.
-    const merged = { ...getMeet(), ...body };
-    writeJSON(MEET_FILE, merged);
-    res.json(merged);
+    writeJSON(MEET_FILE, req.body);
+    res.json(req.body);
 });
 
 // ---------- REFERENCE ENDPOINTS ----------
@@ -1021,117 +685,120 @@ app.get('/api/reference', (req, res) => {
 });
 
 // ---------- TEAM ENTRY ENDPOINT ----------
-app.post('/api/team-entry', (req, res) => {
-    const { club, country, manager, email, athletes } = req.body;
+app.post('/api/team-entry', async (req, res) => {
+    const { club, country, manager, email, phone, athletes } = req.body;
 
     if (!club || !country || !manager || !email) {
         return res.status(400).json({ error: 'Missing required team information' });
     }
-    if (!Array.isArray(athletes) || athletes.length === 0) {
+
+    if (!athletes || athletes.length === 0) {
         return res.status(400).json({ error: 'No athletes provided' });
     }
-
-    const events = getEvents();
-    // FIX: read once, write once. The original re-read and re-wrote both files
-    // inside the loop, which is slow and can lose entries under concurrency.
-    const allAthletes = getAthletes();
-    const allEntries = getEntries();
 
     let imported = 0;
     let errors = 0;
     const results = [];
 
+    // Get all existing events
+    const events = getEvents();
+
     for (const athlete of athletes) {
         try {
-            const existing = allAthletes.find(a => a.name === athlete.name && a.class === athlete.class);
+            // Check if athlete already exists (by name and class)
+            const existingAthletes = getAthletes();
+            const existing = existingAthletes.find(a => 
+                a.name === athlete.name && 
+                a.class === athlete.class
+            );
 
             let athleteId;
             if (existing) {
                 athleteId = existing.id;
             } else {
+                // Create new athlete
                 const newAthlete = {
                     id: generateId(),
                     name: athlete.name,
                     class: athlete.class,
                     sex: athlete.sex || 'M',
                     bib: athlete.bib || '',
-                    club,
-                    country,
+                    club: club,
                     createdAt: new Date().toISOString()
                 };
-                allAthletes.push(newAthlete);
+                existingAthletes.push(newAthlete);
+                writeJSON(ATHLETES_FILE, existingAthletes);
                 athleteId = newAthlete.id;
             }
 
+            // Register for events
+            const entries = getEntries();
             let entryCount = 0;
-            for (const eventName of (athlete.events || [])) {
+
+            for (const eventName of athlete.events) {
+                // Find matching event
                 const matchedEvent = events.find(e =>
                     e.discipline === eventName ||
-                    (e.name && e.name.includes(eventName)) ||
-                    (e.discipline && eventName.includes(e.discipline))
+                    e.name.includes(eventName) ||
+                    eventName.includes(e.discipline)
                 );
-                if (!matchedEvent) continue;
 
-                const exists = allEntries.find(e => e.eventId === matchedEvent.id && e.athleteId === athleteId);
-                if (exists) continue;
+                if (matchedEvent) {
+                    // Check if entry already exists
+                    const existingEntry = entries.find(e => 
+                        e.eventId === matchedEvent.id && 
+                        e.athleteId === athleteId
+                    );
 
-                allEntries.push({
-                    id: generateId(),
-                    eventId: matchedEvent.id,
-                    athleteId,
-                    createdAt: new Date().toISOString()
-                });
-                entryCount++;
+                    if (!existingEntry) {
+                        entries.push({
+                            id: generateId(),
+                            eventId: matchedEvent.id,
+                            athleteId: athleteId,
+                            createdAt: new Date().toISOString()
+                        });
+                        entryCount++;
+                    }
+                }
+            }
+
+            if (entryCount > 0) {
+                writeJSON(ENTRIES_FILE, entries);
             }
 
             imported++;
-            results.push({ name: athlete.name, status: 'success', entries: entryCount, newAthlete: !existing });
+            results.push({ 
+                name: athlete.name, 
+                status: 'success', 
+                entries: entryCount,
+                newAthlete: !existing
+            });
+
         } catch (error) {
             errors++;
-            results.push({ name: athlete.name, status: 'error', error: error.message });
+            results.push({ 
+                name: athlete.name, 
+                status: 'error', 
+                error: error.message 
+            });
         }
     }
 
-    writeJSON(ATHLETES_FILE, allAthletes);
-    writeJSON(ENTRIES_FILE, allEntries);
-
-    res.json({ success: true, club, imported, errors, results });
+    res.json({
+        success: true,
+        club: club,
+        imported: imported,
+        errors: errors,
+        results: results
+    });
 });
-
-// ---------- ERROR HANDLING ----------
-// FIX: unknown API paths used to fall through to express.static and return the
-// HTML index page, so the front end tried to JSON.parse("<!DOCTYPE html>") and
-// showed a confusing parse error instead of "not found".
-app.use('/api', (req, res) => {
-    res.status(404).json({ error: 'Unknown API endpoint', path: req.originalUrl });
-});
-
-// FIX: any thrown error used to kill the process. Now it returns JSON.
-app.use((err, req, res, next) => {
-    console.error('[error]', err);
-    if (res.headersSent) return next(err);
-    res.status(500).json({ error: 'Server error', message: err.message });
-});
-
-process.on('unhandledRejection', err => console.error('[unhandledRejection]', err));
-process.on('uncaughtException', err => console.error('[uncaughtException]', err));
 
 // ---------- SERVER START ----------
-removeOrphans('at startup');
-
 app.listen(PORT, '0.0.0.0', () => {
     console.log('========================================');
-    console.log('Para Athletics System');
+    console.log('🚀 Para Athletics System');
     console.log('========================================');
-    console.log(`Local:    http://localhost:${PORT}`);
-    console.log(`Data dir: ${DATA_DIR}`);
-    if (!process.env.DATA_DIR && process.env.RENDER) {
-        console.warn('WARNING: DATA_DIR is not set and this looks like Render.');
-        console.warn('         Data will be ERASED on every deploy and restart.');
-        console.warn('         Attach a persistent disk and set DATA_DIR to its mount path.');
-    }
-    if (ADMIN_PASSWORD === 'admin123') {
-        console.warn('WARNING: using the default admin password. Set ADMIN_PASSWORD.');
-    }
+    console.log(`📍 Local: http://localhost:${PORT}`);
+    console.log(`🔐 Admin Password: admin123`);
     console.log('========================================');
 });

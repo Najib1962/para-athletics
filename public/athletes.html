@@ -87,13 +87,9 @@
 
     <script>
         async function fetchAPI(url, options = {}) {
-            // FIX: the password used to be written into this file, so anyone
-            // could read it by viewing the page source, and changing it on the
-            // server broke this page. It now comes from the address if present,
-            // and otherwise from the cookie the server sets when you log in.
-            const password = new URLSearchParams(location.search).get('password') || '';
+            const password = 'admin123';
             const separator = url.includes('?') ? '&' : '?';
-            const finalUrl = password ? `${url}${separator}password=${encodeURIComponent(password)}` : url;
+            const finalUrl = `${url}${separator}password=${password}`;
             
             const response = await fetch(finalUrl, {
                 ...options,
@@ -287,7 +283,7 @@
 
         async function deleteAllAthletes() {
             if (confirm('Delete ALL athletes? This cannot be undone!')) {
-                const response = await fetchAPI('/api/athletes/all', { method: 'DELETE' });
+                const response = await fetch(`/api/athletes/all?password=admin123`, { method: 'DELETE' });
                 if (response.ok) {
                     loadAthletes();
                     alert('✅ All athletes deleted!');
