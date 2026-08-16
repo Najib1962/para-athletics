@@ -365,9 +365,15 @@ app.post('/api/marks/attempts', (req, res) => {
         createdAt: new Date().toISOString()
     });
     
-    // Add all new marks
-    marks.push(...newMarks);
-    writeJSON(MARKS_FILE, marks);
+    // FIX: 'filtered' above is the list with this athlete's old attempts
+    // removed - but the next two lines used to push onto 'marks', the
+    // ORIGINAL list, and save that. So nothing was ever removed. Every
+    // correction added another full set of attempts on top of the old
+    // ones, and because the results page takes the FIRST match it found,
+    // it kept showing the very first value the athlete was ever given.
+    // That is why corrections appeared to do nothing.
+    filtered.push(...newMarks);
+    writeJSON(MARKS_FILE, filtered);
     res.json({ success: true, marks: newMarks });
 });
 
