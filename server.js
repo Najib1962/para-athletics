@@ -266,7 +266,13 @@ app.use((req, res, next) => {
     if (!isAdminRoute(req.path)) {
         return next();
     }
-    const password = req.headers['x-admin-password'] || req.query.password;
+    // FIX: entries.html sends the password twice in the address when you
+    // delete an entry. Express 5 reads a repeated setting as a LIST
+    // rather than as text, so this comparison failed and the delete was
+    // refused - silently, because the page never checks the answer.
+    // Taking the first value makes it work either way.
+    const supplied = req.headers['x-admin-password'] || req.query.password;
+    const password = Array.isArray(supplied) ? supplied[0] : supplied;
     if (password === ADMIN_PASSWORD) {
         return next();
     }
