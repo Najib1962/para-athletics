@@ -9,6 +9,73 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+// ---------- AUTOMATIC REFRESH ----------
+// Public pages are given this small script as they are sent, so no page file
+// needs editing. Pages where an official is typing are deliberately left out -
+// a page reloading under you while entering marks would lose your work.
+const LIVE_SCRIPT = `(function(){
+  var last = null;
+  function refresh() {
+    // Only functions that READ. Nothing here saves anything.
+    var safe = ['refreshAll','refreshBooklet','refreshSchedule','refreshEvents',
+                'refreshData','loadResults','loadMedals','loadAthletes','loadEvent',
+                'loadStats','loadEvents','loadData','loadEventData'];
+    var called = 0;
+    for (var i = 0; i < safe.length; i++) {
+      if (typeof window[safe[i]] === 'function') {
+        try { window[safe[i]](); called++; } catch (e) {}
+      }
+    }
+    if (!called) location.reload();
+  }
+  function poll() {
+    fetch('/api/version', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (last === null) { last = d.version; return; }
+        if (d.version !== last) { last = d.version; refresh(); }
+      })
+      .catch(function () {});
+  }
+  poll();
+  setInterval(poll, 3000);
+})();`;
+
+app.get('/api/version', function (req, res) {
+    res.set('Cache-Control', 'no-store');
+    res.json({ version: dataVersion });
+});
+
+app.get('/auto-refresh.js', function (req, res) {
+    res.type('application/javascript').set('Cache-Control', 'no-store').send(LIVE_SCRIPT);
+});
+
+// Pages where marks are typed, or a squad is entered. Never auto-refreshed.
+const NO_REFRESH = [
+    '/admin.html', '/entries.html', '/athletes.html', '/login.html',
+    '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
+    '/startlists-export.html', '/team-entry.html'
+];
+
+app.use(function (req, res, next) {
+    var name = req.path === '/' ? '/index.html' : req.path;
+    if (!name.endsWith('.html')) return next();
+    if (NO_REFRESH.indexOf(name) !== -1) return next();
+
+    var file = path.join(__dirname, 'public', name);
+    if (!file.startsWith(path.join(__dirname, 'public'))) return next();
+    if (!fs.existsSync(file)) return next();
+
+    fs.readFile(file, 'utf8', function (err, html) {
+        if (err) return next();
+        var tag = '<script src="/auto-refresh.js"></script>';
+        var out = html.indexOf('</body>') !== -1
+            ? html.replace('</body>', tag + '</body>')
+            : html + tag;
+        res.set('Cache-Control', 'no-store').type('html').send(out);
+    });
+});
+
 app.use(express.static('public'));
 
 // Data paths
@@ -70,8 +137,14 @@ function readJSON(file) {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
+// A number that changes whenever anything is saved. Public pages check it
+// and refresh themselves when it moves, so results appear within a few
+// seconds instead of waiting up to a minute for the page's own timer.
+let dataVersion = Date.now();
+
 function writeJSON(file, data) {
     fs.writeFileSync(file, JSON.stringify(data, null, 2));
+    dataVersion = Date.now();
 }
 
 function getAthletes() { return readJSON(ATHLETES_FILE); }
