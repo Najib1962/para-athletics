@@ -66,10 +66,19 @@
                 <div id="eventDetails" style="color: #999; font-size: 14px; margin-bottom: 10px;"></div>
                 
                 <div class="flex-wrap">
-                    <select id="athleteSelect" style="flex: 1; min-width: 200px;">
+                    <select id="athleteSelect" style="flex: 1; min-width: 200px;" onchange="showAgeGroup()">
                         <option value="">Select athlete...</option>
                     </select>
+                    <select id="ageGroupSelect" style="width: auto; min-width: 130px; margin-bottom: 0;"
+                            title="Which point scores to use for this athlete">
+                        <option value="open">Open</option>
+                        <option value="youth">Youth</option>
+                    </select>
                     <button class="success" onclick="addEntry()">➕ Add Athlete</button>
+                </div>
+                <div style="color:#888;font-size:12px;margin-top:6px">
+                    The age group belongs to the athlete, so it applies in every event they enter.
+                    Where one event holds both, the two are ranked separately.
                 </div>
                 <div id="entryMessage"></div>
             </div>
@@ -103,6 +112,7 @@
     <script>
         let currentEventId = null;
         let currentEvent = null;
+        let allAthletes = [];   // kept so the age group can be shown as you choose
 
         // ---------- FIXED fetchAPI with password ----------
         async function fetchAPI(url, options = {}) {
@@ -197,6 +207,7 @@
                 const container = document.getElementById('entryList');
                 const countEl = document.getElementById('entryCount');
                 
+                allAthletes = athletes;
                 countEl.textContent = entries.length;
                 
                 document.getElementById('debugContent').innerHTML += `
@@ -237,6 +248,13 @@
                                         <span class="class-badge">${athlete.class}</span>
                                     </div>
                                     <div class="detail">Bib: ${athlete.bib || 'N/A'} • ${athlete.club || 'No club'}</div>
+                                    <div class="detail" style="margin-top:4px">
+                                        <span style="background:${athlete.ageGroup === 'youth' ? '#4CAF50' : '#2a2a4e'};
+                                                     padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#fff">
+                                            ${athlete.ageGroup === 'youth' ? 'YOUTH' : 'OPEN'}</span>
+                                        <a href="#" onclick="switchAgeGroup('${athlete.id}');return false;"
+                                           style="color:#e94560;font-size:11px;margin-left:8px;text-decoration:none">change</a>
+                                    </div>
                                 </div>
                                 <div class="flex" style="gap: 10px; align-items: center;">
                                     <input class="mark-input" id="mark-${athlete.id}" placeholder="Mark" value="${mark ? mark.mark : ''}" onchange="saveMark('${athlete.id}')">
@@ -297,6 +315,7 @@
                     fetchAPI(`/api/entries?eventId=${currentEventId}`)
                 ]);
                 
+                allAthletes = athletes;
                 const enteredIds = entries.map(e => e.athleteId);
                 
                 const allowedClasses = currentEvent.classes || [currentEvent.class];
@@ -326,13 +345,23 @@
                     available.forEach(a => {
                         const opt = document.createElement('option');
                         opt.value = a.id;
-                        opt.textContent = `${a.name} (${a.class})`;
+                        const group = a.ageGroup === 'youth' ? ' · Youth' : '';
+                        opt.textContent = `${a.name} (${a.class})${group}`;
                         select.appendChild(opt);
                     });
                 }
             } catch (error) {
                 console.error('Error loading athlete dropdown:', error);
             }
+        }
+
+        // When you pick an athlete, show the age group they already have, so
+        // you only change it when it is actually wrong.
+        function showAgeGroup() {
+            const id = document.getElementById('athleteSelect').value;
+            const athlete = allAthletes.find(a => a.id === id);
+            document.getElementById('ageGroupSelect').value =
+                (athlete && athlete.ageGroup === 'youth') ? 'youth' : 'open';
         }
 
         async function addEntry() {
@@ -355,8 +384,24 @@
                 });
                 
                 if (!response.ok) throw new Error('Failed to add athlete');
-                
-                messageEl.innerHTML = '<span class="success">✅ Athlete added successfully!</span>';
+
+                // Record the age group on the ATHLETE, so it applies wherever
+                // they compete. Their points then come from the matching
+                // World Para Athletics table.
+                const wanted = document.getElementById('ageGroupSelect').value;
+                const athlete = allAthletes.find(a => a.id === athleteId);
+                const current = (athlete && athlete.ageGroup === 'youth') ? 'youth' : 'open';
+
+                if (wanted !== current) {
+                    await fetch(`/api/athletes/${athleteId}?password=admin123`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ageGroup: wanted })
+                    });
+                }
+
+                messageEl.innerHTML = '<span class="success">✅ Athlete added as ' +
+                    (wanted === 'youth' ? 'YOUTH' : 'OPEN') + '!</span>';
                 await loadEntries();
                 await loadAthleteDropdown();
                 
@@ -365,6 +410,28 @@
                 }, 3000);
             } catch (error) {
                 messageEl.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Change an athlete's age group from the list, without removing and
+        // re-adding them. Their points change straight away.
+        async function switchAgeGroup(athleteId) {
+            const athlete = allAthletes.find(a => a.id === athleteId);
+            const now = (athlete && athlete.ageGroup === 'youth') ? 'youth' : 'open';
+            const wanted = now === 'youth' ? 'open' : 'youth';
+
+            if (!confirm('Score ' + (athlete ? athlete.name : 'this athlete') +
+                         ' as ' + wanted.toUpperCase() + '?\n\nThis applies in every event they enter.')) return;
+
+            try {
+                await fetch(`/api/athletes/${athleteId}?password=admin123`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ageGroup: wanted })
+                });
+                await loadEventData();
+            } catch (error) {
+                alert('Could not change it: ' + error.message);
             }
         }
 

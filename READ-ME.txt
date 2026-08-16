@@ -1,101 +1,68 @@
-CHANGE 9 - AGE CATEGORY PER ATHLETE
-===================================
+CHANGE 10 - SET THE AGE GROUP AS YOU ADD ATHLETES
+=================================================
 
-FOUR FILES
-----------
-Into  Desktop\para-athletics\
-    server.js               replace
-
+ONE FILE
+--------
 Into  Desktop\para-athletics\public\
-    age-groups.html         NEW
-    medals.html             replace
-    display-medals.html     replace
+    entries.html      replace
 
-IMPORTANT: this server.js has the password back at 'admin123'.
-Before pushing, open it in Notepad, search for ADMIN_PASSWORD, and put
-your own password back between the quotes.
+Nothing goes in the main folder. server.js is unchanged.
 
 
-WHAT IT DOES
-------------
-Each athlete is now marked Youth or Open. Their points come from the
-matching World Para Athletics table.
+WHAT IS NEW
+-----------
+On the Entries page, next to the athlete picker there is now a small
+box saying Open or Youth. Choose it and press Add Athlete. That is all.
 
-Where one event contains both, they are ranked SEPARATELY - each group
-with its own first, second and third, and its own gold, silver and
-bronze.
+When you pick an athlete, the box shows the group they already have, so
+you only change it when it is actually wrong.
 
-They can run in the same race. Only the scoring is kept apart.
+Athletes already marked Youth show as "Ahmed (T37) . Youth" in the
+picker, so you can see at a glance.
 
-
-HOW TO USE IT
--------------
-Log in, then open:
-
-    https://para-athletics.onrender.com/age-groups.html
-
-Every athlete is listed with a badge. Press the button to switch one,
-or use the two buttons at the top to set everyone shown at once. There
-is a search box, so you can set a whole club or class in one go.
-
-Everyone counts as Open until you change them, so nothing shifts in a
-competition that is all one age group.
+Each athlete in the list below now shows an OPEN or YOUTH badge, with a
+small "change" link beside it if you need to correct one afterwards -
+no need to remove and re-add them.
 
 
-WHY THE TWO GROUPS ARE RANKED APART
------------------------------------
-The two tables are not on the same scale. A men's 100 m T37:
+THE AGE GROUP BELONGS TO THE ATHLETE
+------------------------------------
+As you asked: it is set once and applies in every event that athlete
+enters. Their age does not change between events.
 
-    13.20 seconds as youth   998 points
-    11.80 seconds as open    900 points
-
-Ranked together, the slower athlete would beat the faster one by 98
-points. That is not a close call - the tables measure against what is
-outstanding FOR THAT AGE GROUP, so comparing across them is meaningless.
-This is why World Para Athletics publishes them separately.
-
-
-NAMES ARE MARKED ON RESULTS
----------------------------
-In an event with both groups, names show as "Ahmed Khalil (Youth)" or
-"Paul Wilson (Open)", so two athletes both ranked 1st are never
-confused. In an event with only one group, nothing is added.
-
-
-WHY THE MEDAL PAGES CHANGED
----------------------------
-They used to take the first three rows of an event. With two rankings,
-those three rows are all from one group, and the other group's
-medallists were missed. They now go by the rank itself, which picks up
-first, second and third in every group - and behaves exactly as before
-when there is only one.
+Where a single event holds both groups, the two are ranked separately -
+each with its own first, second and third, and its own medals.
 
 
 TESTED BEFORE SENDING
 ---------------------
-One event, three open and three youth athletes:
-    Open   1st 900, 2nd 718, 3rd 353 points
-    Youth  1st 998, 2nd 878, 3rd 874 points
-    six medals awarded, three to each group
-Moving one athlete between groups re-ranks and rescores both.
-An event with nobody marked youth: unchanged, no labels added.
-Typing three marks and saving: all three kept.
-Deleting, corrections, points, refresh, login, locked pages: all work.
-The new page is locked; changing an athlete without a login is refused.
+The selector appears, offering Open and Youth.
+Picking an athlete shows their current group.
+Choosing Youth and pressing Add: the server recorded ageGroup "youth",
+and the athlete was entered in the event.
+
+A mixed event then ranked as:
+    rank 1  Bilal (Open)    11.80  ->  900 points
+    rank 2  Karim (Open)    12.40  ->  718 points
+    rank 1  Ahmed (Youth)   13.20  ->  998 points
+
+An event where everyone is the same group: no labels added, unchanged.
+Typing marks, corrections, deleting, the login and the page lock: all
+still work.
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Age category per athlete"
+git commit -m "Choose the age group when adding an athlete"
 git push
 
-Wait 2 to 5 minutes, then open /age-groups.html
+Wait 2 to 5 minutes.
 
 
-A NOTE ON THE EVENT SWITCH
---------------------------
-/youth.html still works and still sets a whole event. It is now the
-fallback: an athlete with no category of their own follows the event's
-setting. If you set categories on athletes, that is what counts.
+THE OTHER PAGE IS STILL THERE
+-----------------------------
+/age-groups.html still works, and is quicker when you want to set a
+whole club or class at once - it has a search box and two buttons that
+set everyone shown. Use whichever suits the moment.
