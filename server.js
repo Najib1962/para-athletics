@@ -21,7 +21,7 @@ app.use(express.json({ limit: '10mb' }));
 const ADMIN_PAGES = [
     '/admin.html', '/entries.html', '/athletes.html',
     '/startlist-referee.html', '/startlists-results.html',
-    '/startlists-export.html', '/reset-data.html'
+    '/startlists-export.html', '/reset-data.html', '/youth.html'
 ];
 
 app.use(function (req, res, next) {
@@ -86,7 +86,7 @@ app.get('/auto-refresh.js', function (req, res) {
 const NO_REFRESH = [
     '/admin.html', '/entries.html', '/athletes.html', '/login.html',
     '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
-    '/startlists-export.html', '/team-entry.html'
+    '/startlists-export.html', '/team-entry.html', '/youth.html'
 ];
 
 app.use(function (req, res, next) {
@@ -218,7 +218,7 @@ function calculateRazaPoints(classCode, discipline, performance, sex, youth) {
 
 
 // ---------- ADMIN AUTHENTICATION ----------
-const ADMIN_PASSWORD = 'Falcon-Stadium-26';
+const ADMIN_PASSWORD = 'admin123';
 
 // Reads one cookie out of the request. Small enough not to need a library.
 function readCookie(req, name) {

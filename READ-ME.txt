@@ -1,82 +1,82 @@
-CHANGE 7 - THE ADMIN PAGES ARE NOW LOCKED
-=========================================
+CHANGE 8 - THE YOUTH SWITCH
+===========================
 
-ONE FILE
---------
+TWO FILES
+---------
 Into  Desktop\para-athletics\
     server.js       replace
 
-No pages are edited.
+Into  Desktop\para-athletics\public\
+    youth.html      NEW
 
-IMPORTANT: this copy has the password set back to 'admin123'. Before you
-push it, change that line to YOUR password again. See below.
-
-
-WHAT CHANGES
-------------
-Until now anyone who knew the address could open your admin pages. The
-password is written inside admin.html, entries.html and athletes.html,
-so a stranger reading the page source could use them.
-
-These pages now require a login. Anyone without one is sent to the
-login page:
-
-    admin.html
-    entries.html
-    athletes.html
-    startlist-referee.html
-    startlists-results.html
-    startlists-export.html
-    reset-data.html
-
-Everything else stays open to the public as before.
-
-No page files needed editing. The password written inside those pages
-no longer matters - the server checks it, finds it does not match yours,
-and falls back to your login instead.
+IMPORTANT: this server.js has the password back at 'admin123'.
+Before pushing, open it in Notepad, search for ADMIN_PASSWORD, and put
+your own password back between the quotes.
 
 
-BEFORE YOU PUSH - SET YOUR PASSWORD
------------------------------------
-1. Open server.js in Notepad
-2. Ctrl+F and search for   ADMIN_PASSWORD
-3. You will find:
+WHY THIS MATTERS
+----------------
+World Para Athletics publishes TWO sets of point scores - open and
+youth - and the same mark scores very differently under each.
 
-       const ADMIN_PASSWORD = 'admin123';
+A men's 100 m T37 in 13.20 seconds:
 
-4. Put your own password back between the quotes
-5. Save
+    Open    430 points
+    Youth   998 points
+
+Your app has always scored everything as open. If you run youth
+competitions, every point has been wrong, and far too low.
+
+The youth tables were already inside your app. There was simply no way
+to switch an event over. Now there is.
+
+
+HOW TO USE IT
+-------------
+Log in, then open:
+
+    https://para-athletics.onrender.com/youth.html
+
+Every event is listed with a badge saying OPEN or YOUTH, and a button
+to switch it. There are also two buttons at the top to set the whole
+competition at once.
+
+Points recalculate immediately. No marks need re-entering.
+
+The page sits behind the login, like your other admin pages.
+
+
+NO EXISTING PAGE WAS EDITED
+---------------------------
+The server already knew how to score a youth event and already knew how
+to save the setting - it was only missing a switch. So this adds one new
+page and changes two short lists in server.js. Nothing else moved.
 
 
 TESTED BEFORE SENDING
 ---------------------
-A stranger with no login, on all seven admin pages:  sent to the login
-Knowing the old admin123 from the page source:       still sent to the login
-Public pages, displays, team entry, login page:      open as before
-After logging in, all seven admin pages:             open normally
-Saving a mark after logging in:                      works
-Typing three marks one after another:                all three kept
-Deleting, corrections, points, auto-refresh:         all still work
+Combined event, three athletes, same marks throughout:
+    as OPEN    430 / 353 / 237 points
+    as YOUTH   998 / 958 / 878 points
+    back to OPEN, returns to 430 / 353 / 237
+
+The new page is locked to strangers and opens once logged in.
+Typing three marks and saving: all three kept.
+Deleting, corrections, points, auto-refresh, login: all still work.
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Admin pages now require a login"
+git commit -m "Add the youth and open switch"
 git push
 
-Wait 2 to 5 minutes.
+Wait 2 to 5 minutes, then open /youth.html
 
 
-THEN CHECK
-----------
-Open a private browsing window (Ctrl+Shift+N) and go to
-
-    https://para-athletics.onrender.com/admin.html
-
-You should be sent to the login page. That is a stranger's view of your
-site.
-
-Then log in at /login.html with your password and everything opens
-normally.
+ONE THING TO CHECK AFTERWARDS
+-----------------------------
+Go through the list once and set each event correctly. Anything you
+have already run as a youth competition will have been scored as open,
+so switching it now will change those results.
