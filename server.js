@@ -143,6 +143,29 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
+// ---------- SELF-REPAIR ----------
+// An entry or mark whose athlete no longer exists shows as "Unknown" on start
+// lists and results, and cannot be removed from any screen. Rather than leave
+// them to be found by eye, clear them at startup and report what went.
+function removeOrphans(reason) {
+    const live = new Set(getAthletes().map(a => a.id));
+    const events = new Set(getEvents().map(e => e.id));
+
+    const entries = getEntries();
+    const marks = getMarks();
+
+    const keptEntries = entries.filter(e => live.has(e.athleteId) && events.has(e.eventId));
+    const keptMarks = marks.filter(m => live.has(m.athleteId) && events.has(m.eventId));
+
+    const removed = (entries.length - keptEntries.length) + (marks.length - keptMarks.length);
+    if (!removed) return 0;
+
+    writeJSON(ENTRIES_FILE, keptEntries);
+    writeJSON(MARKS_FILE, keptMarks);
+    console.log(`[tidy] removed ${removed} orphaned record(s) ${reason}`);
+    return removed;
+}
+
 // ---------- RAZA POINTS SYSTEM ----------
 // The hand-made world-record table that used to live here has been replaced
 // by raza.js, which holds the official World Para Athletics constants
@@ -462,8 +485,19 @@ app.post('/api/athletes/bulk', (req, res) => {
 // FIX: /all MUST be registered before /:id, otherwise Express matches
 // "all" as an :id, filters nothing, and cheerfully reports success.
 app.delete('/api/athletes/all', (req, res) => {
+    // FIX: this used to empty the athlete list and leave every entry and mark
+    // behind. Each orphan then appeared as "Unknown" on start lists and
+    // results, and could not be removed from any screen - the entries page
+    // hides rows whose athlete is missing. Deleting one athlete already
+    // cleaned up after itself; deleting all did not.
+    const entries = getEntries().length;
+    const marks = getMarks().length;
+
     writeJSON(ATHLETES_FILE, []);
-    res.json({ success: true, deleted: 'all' });
+    writeJSON(ENTRIES_FILE, []);
+    writeJSON(MARKS_FILE, []);
+
+    res.json({ success: true, deleted: 'all', alsoRemoved: { entries, marks } });
 });
 
 app.patch('/api/athletes/:id', (req, res) => {
@@ -1083,6 +1117,8 @@ process.on('unhandledRejection', err => console.error('[unhandledRejection]', er
 process.on('uncaughtException', err => console.error('[uncaughtException]', err));
 
 // ---------- SERVER START ----------
+removeOrphans('at startup');
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log('========================================');
     console.log('Para Athletics System');
