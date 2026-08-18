@@ -49,6 +49,8 @@
                 <a href="/admin.html">📊 Admin</a>
                 <a href="/athletes.html">👤 Athletes</a>
                 <a href="/entries.html">📋 Entries</a>
+                <a href="/print-startlists.html">🖨️ Print Start Lists</a>
+                <a href="/age-groups.html">👥 Age Groups</a>
                 <a href="/live.html">📺 Live Results</a>
                 <a href="/mobile.html">📱 Mobile</a>
             </div>
@@ -57,16 +59,47 @@
         <div class="card">
             <h2>📥 Import Athletes with Events</h2>
             <p style="color: #999; font-size: 13px; margin-bottom: 10px;">
-                Paste tab-separated or comma-separated data. 
-                <strong>Columns: Name, Class, Sex, Bib (optional), Club (optional), Events</strong>
+                In Excel select your rows <strong>including the heading row</strong>, copy, and paste below.
+                The columns can be in any order &mdash; the headings are read.
+            </p>
+            <p style="color: #7bc3f5; font-size: 12px; margin-bottom: 6px; font-family: monospace;">
+                Reg Num &nbsp; Name &nbsp; Club/Team &nbsp; Gender &nbsp; Year of Birth &nbsp; Class &nbsp; Event 1 &nbsp; Event 2 &nbsp; Event 3 &nbsp; Event 4
             </p>
             <p style="color: #666; font-size: 12px; margin-bottom: 10px;">
-                💡 Events should be comma-separated (e.g., "100m, 200m, Long Jump")
+                Only <strong>Name</strong> and <strong>Class</strong> are required. Each event goes in its
+                own column, named as a discipline &mdash; "Shot Put", not "Mens Shot Put F32-34".
+                The right event is found from the athlete's class and gender.<br>
+                <strong>Year of Birth</strong> sets the age category on its own: under 20 is Youth.
+                Four digits, such as 2010.
             </p>
-            <textarea id="csvInput" placeholder="Example:&#10;John Doe	T11	M	101	USA	100m, 200m, Long Jump&#10;Jane Smith	F11	F	102	GBR	100m"></textarea>
+            <textarea id="csvInput" placeholder="Reg Num&#9;Name&#9;Club/Team&#9;Gender&#9;Year of Birth&#9;Class&#9;Event 1&#9;Event 2&#9;Event 3&#10;23456&#9;Ali Abbas&#9;Ajman&#9;M&#9;2010&#9;F34&#9;Shot Put&#9;Discus&#9;Javelin"></textarea>
             <button class="success" onclick="importAthletes()">📥 Import Athletes & Entries</button>
             <button class="info" onclick="loadSampleWithEvents()">📥 Load Sample with Events</button>
             <div id="importStatus" class="status-msg"></div>
+        </div>
+
+        <div class="card">
+            <h2>➕ Add One Athlete</h2>
+            <p style="color: #999; font-size: 13px; margin-bottom: 10px;">
+                For a late entry, when a whole spreadsheet would be overkill.
+            </p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="oneName"  placeholder="Name"          style="flex: 2; min-width: 160px;">
+                <input type="text" id="oneClass" placeholder="Class, e.g. T37" style="flex: 1; min-width: 120px;">
+                <select id="oneSex" style="flex: 1; min-width: 100px;">
+                    <option value="M">Men</option>
+                    <option value="F">Women</option>
+                </select>
+                <input type="text" id="oneDob"   placeholder="Year of birth" style="flex: 1; min-width: 120px;">
+                <input type="text" id="oneBib"   placeholder="Bib"           style="flex: 1; min-width: 90px;">
+                <input type="text" id="oneClub"  placeholder="Club"          style="flex: 1; min-width: 120px;">
+            </div>
+            <button class="success" onclick="addOneAthlete()" style="margin-top: 10px;">➕ Add Athlete</button>
+            <div id="oneStatus" class="status-msg"></div>
+            <p style="color: #666; font-size: 12px; margin-top: 8px;">
+                The year of birth decides Youth or Open by itself &mdash; under 20 is Youth.
+                Leave it empty and the athlete counts as Open until you set it.
+            </p>
         </div>
 
         <div class="card">
@@ -153,63 +186,155 @@
             }
         }
 
+        // ---------- reading a pasted spreadsheet ----------
+        // The old version expected the columns in a fixed order and split on
+        // tabs OR commas, which broke as soon as a cell held a comma. This
+        // reads the heading row instead, so the columns can be in any order,
+        // and only splits on tabs when Excel has used them.
+        const COLUMNS = {
+            regNum:  ['reg num','regnum','reg no','registration','id'],
+            name:    ['name','athlete','athlete name','full name'],
+            club:    ['club','club/team','team','club / team'],
+            sex:     ['gender','sex','m/f'],
+            dob:     ['year of birth','yearofbirth','dob','date of birth','birth year','born'],
+            cls:     ['class','sport class','classification'],
+            bib:     ['bib','bib no','bib number','number']
+        };
+
+        function splitRow(line) {
+            return line.indexOf('\t') > -1 ? line.split('\t') : line.split(',');
+        }
+
+        function readPaste(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            if (!lines.length) return { error: 'Nothing pasted.' };
+
+            const heads = splitRow(lines[0]).map(h => h.trim().toLowerCase());
+            const col = {};
+            for (const field in COLUMNS) {
+                const i = heads.findIndex(h => COLUMNS[field].indexOf(h) > -1);
+                if (i > -1) col[field] = i;
+            }
+            // Every "Event 1", "Event 2" ... column, in the order they appear.
+            const eventCols = [];
+            heads.forEach((h, i) => { if (/^event\s*\d*$/.test(h)) eventCols.push(i); });
+
+            // No heading row? Fall back to the order this page used before,
+            // so anything you already have still imports.
+            if (col.name === undefined || col.cls === undefined) {
+                return readOldStyle(lines);
+            }
+
+            const rows = [];
+            const problems = [];
+
+            lines.slice(1).forEach((line, n) => {
+                const cell = splitRow(line).map(c => c.trim());
+                const pick = f => (col[f] === undefined ? '' : (cell[col[f]] || ''));
+
+                const name = pick('name');
+                if (!name) return;
+
+                const events = eventCols.map(i => (cell[i] || '').trim()).filter(Boolean);
+                const cls = pick('cls').toUpperCase();
+                const sexRaw = pick('sex').toUpperCase();
+
+                if (!cls) problems.push('Row ' + (n + 2) + ': ' + name + ' has no class');
+
+                rows.push({
+                    name: name,
+                    class: cls,
+                    sex: (sexRaw.charAt(0) === 'F' || sexRaw.charAt(0) === 'W') ? 'F' : 'M',
+                    bib: pick('bib'),
+                    club: pick('club'),
+                    dateOfBirth: pick('dob'),
+                    regNum: pick('regNum'),
+                    events: events
+                });
+            });
+
+            return rows.length ? { rows: rows, problems: problems }
+                               : { error: 'No athletes found below the heading row.' };
+        }
+
+        // The order this page accepted before: Name, Class, Sex, Bib, Club, Events
+        function readOldStyle(lines) {
+            const rows = [];
+            lines.forEach(line => {
+                const parts = splitRow(line).map(s => s.trim());
+                const name = parts[0] || '';
+                const cls = (parts[1] || '').toUpperCase();
+                if (!name || !cls) return;
+                if (name.toLowerCase() === 'name') return;   // a heading row
+
+                const sexRaw = (parts[2] || 'M').toUpperCase();
+                rows.push({
+                    name: name,
+                    class: cls,
+                    sex: (sexRaw.charAt(0) === 'F' || sexRaw.charAt(0) === 'W') ? 'F' : 'M',
+                    bib: parts[3] || '',
+                    club: parts[4] || '',
+                    dateOfBirth: '',
+                    regNum: '',
+                    events: parts.slice(5).map(e => e.trim()).filter(Boolean)
+                });
+            });
+            return rows.length ? { rows: rows, problems: [] }
+                               : { error: 'Could not read that. Paste the heading row as well.' };
+        }
+
+        // ---------- matching an event ----------
+        // The sheet says "Shot Put"; your event is called "Mens Shot Put F32-34".
+        // So match on the discipline, then on the athlete's class and gender -
+        // team managers should not have to know how the events are named.
+        function findEvent(allEvents, wanted, athlete) {
+            const want = String(wanted).trim().toLowerCase();
+
+            const fits = e => {
+                if (e.sex && athlete.sex && e.sex !== athlete.sex && e.sex !== 'X') return false;
+                const classes = (e.classes && e.classes.length) ? e.classes
+                              : (e.class ? [e.class] : []);
+                if (!classes.length) return true;
+                return classes.map(c => String(c).toUpperCase())
+                              .indexOf(String(athlete.class).toUpperCase()) > -1;
+            };
+
+            // Best: the discipline matches AND the athlete belongs in it.
+            let found = allEvents.find(e =>
+                String(e.discipline || '').toLowerCase() === want && fits(e));
+            if (found) return found;
+
+            // Then: the event's name mentions it, and the athlete belongs.
+            found = allEvents.find(e =>
+                String(e.name || '').toLowerCase().indexOf(want) > -1 && fits(e));
+            if (found) return found;
+
+            // Last: the discipline alone, as this page used to do.
+            return allEvents.find(e =>
+                String(e.discipline || '').toLowerCase() === want ||
+                String(e.name || '').toLowerCase().indexOf(want) > -1);
+        }
+
         async function importAthletes() {
             const text = document.getElementById('csvInput').value.trim();
             if (!text) {
                 showStatus('Please paste some data', 'error');
                 return;
             }
-            
-            const lines = text.split('\n').filter(l => l.trim());
-            
-            // Check if first line is header
-            let startIndex = 0;
-            const firstLine = lines[0].toLowerCase();
-            if (firstLine.includes('name') && firstLine.includes('class')) {
-                startIndex = 1;
-            }
-            
-            const athletes = [];
-            for (let i = startIndex; i < lines.length; i++) {
-                const line = lines[i];
-                const parts = line.split(/[\t,]+/).map(s => s.trim());
-                
-                let name = parts[0] || '';
-                let cls = parts[1] || '';
-                let sex = parts[2] || 'M';
-                let bib = parts[3] || '';
-                let club = parts[4] || '';
-                let events = '';
-                
-                // If there are more than 5 parts, the rest are events
-                if (parts.length > 5) {
-                    events = parts.slice(5).join(', ').replace(/,\s*,/g, ',').replace(/^,\s*/, '');
-                } else if (parts.length === 6) {
-                    events = parts[5] || '';
-                }
-                
-                if (name && cls) {
-                    athletes.push({ name, class: cls, sex, bib, club, events });
-                }
-            }
-            
-            if (athletes.length === 0) {
-                showStatus('No valid athletes found. Need Name and Class.', 'error');
-                return;
-            }
-            
-            showStatus(`Importing ${athletes.length} athletes...`, 'info');
-            
-            let imported = 0;
-            let errors = 0;
-            let eventErrors = 0;
-            
-            // Get all events first
+
+            const parsed = readPaste(text);
+            if (parsed.error) { showStatus(parsed.error, 'error'); return; }
+
+            const athletes = parsed.rows;
+            showStatus('Importing ' + athletes.length + ' athletes...', 'info');
+
             const allEvents = await fetchAPI('/api/events');
-            
+
+            let imported = 0, errors = 0, entered = 0;
+            const missingEvents = [];
+
             for (const athlete of athletes) {
                 try {
-                    // Import athlete
                     const result = await fetchAPI('/api/athletes', {
                         method: 'POST',
                         body: JSON.stringify({
@@ -218,60 +343,91 @@
                             sex: athlete.sex,
                             bib: athlete.bib,
                             club: athlete.club,
-                            events: athlete.events
+                            // The year of birth decides Youth or Open by itself.
+                            dateOfBirth: athlete.dateOfBirth,
+                            regNum: athlete.regNum
                         })
                     });
                     imported++;
-                    
-                    // If athlete has events, register them
-                    if (athlete.events && athlete.events.trim()) {
-                        const eventList = athlete.events.split(',').map(e => e.trim()).filter(e => e);
-                        for (const eventName of eventList) {
-                            try {
-                                // Find matching event by discipline or name
-                                const matchedEvent = allEvents.find(e => {
-                                    return e.discipline === eventName || 
-                                           e.name.includes(eventName) ||
-                                           eventName.includes(e.discipline);
-                                });
-                                
-                                if (matchedEvent) {
-                                    // Add entry
-                                    await fetchAPI('/api/entries', {
-                                        method: 'POST',
-                                        body: JSON.stringify({
-                                            eventId: matchedEvent.id,
-                                            athleteId: result.id
-                                        })
-                                    });
-                                } else {
-                                    eventErrors++;
-                                    console.log(`Event not found: ${eventName} for ${athlete.name}`);
-                                }
-                            } catch (e) {
-                                eventErrors++;
-                                console.error(`Error registering ${athlete.name} for ${eventName}:`, e);
-                            }
+
+                    for (const wanted of athlete.events) {
+                        const match = findEvent(allEvents, wanted, athlete);
+                        if (!match) {
+                            if (missingEvents.indexOf(wanted) === -1) missingEvents.push(wanted);
+                            continue;
                         }
+                        try {
+                            await fetchAPI('/api/entries', {
+                                method: 'POST',
+                                body: JSON.stringify({ eventId: match.id, athleteId: result.id })
+                            });
+                            entered++;
+                        } catch (e) { /* already entered, or the event went away */ }
                     }
-                    
                 } catch (error) {
                     errors++;
                     console.error('Error importing athlete:', athlete.name, error);
                 }
             }
-            
-            let message = `✅ Imported ${imported} athletes!`;
-            if (eventErrors > 0) {
-                message += `\n⚠️ ${eventErrors} event registrations failed (events may not exist yet).`;
+
+            let message = '✅ Imported ' + imported + ' athletes and made ' + entered + ' entries.';
+            if (parsed.problems && parsed.problems.length) {
+                message += '\n⚠️ ' + parsed.problems.join('; ');
             }
-            if (errors > 0) {
-                message += `\n⚠️ ${errors} errors occurred.`;
+            if (missingEvents.length) {
+                message += '\n⚠️ No event found for: ' + missingEvents.join(', ') +
+                           '. Create those events first, then import again.';
             }
-            
-            showStatus(message, errors > 0 ? 'error' : 'success');
+            if (errors) message += '\n⚠️ ' + errors + ' rows could not be imported.';
+
+            showStatus(message, (errors || missingEvents.length) ? 'error' : 'success');
             document.getElementById('csvInput').value = '';
             loadAthletes();
+        }
+
+        async function addOneAthlete() {
+            const name = document.getElementById('oneName').value.trim();
+            const cls  = document.getElementById('oneClass').value.trim().toUpperCase();
+            const dob  = document.getElementById('oneDob').value.trim();
+            const note = document.getElementById('oneStatus');
+
+            if (!name) { note.textContent = '⚠️ Enter a name'; note.className = 'status-msg error'; return; }
+            if (!cls)  { note.textContent = '⚠️ Enter a class, such as T37'; note.className = 'status-msg error'; return; }
+
+            if (dob && !/^\d{4}$/.test(dob)) {
+                note.textContent = '⚠️ Year of birth should be four digits, such as 2010';
+                note.className = 'status-msg error';
+                return;
+            }
+
+            try {
+                await fetchAPI('/api/athletes', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: name,
+                        class: cls,
+                        sex: document.getElementById('oneSex').value,
+                        bib: document.getElementById('oneBib').value.trim(),
+                        club: document.getElementById('oneClub').value.trim(),
+                        dateOfBirth: dob
+                    })
+                });
+
+                const group = dob
+                    ? ((new Date().getFullYear() - parseInt(dob, 10)) < 20 ? ' (Youth)' : ' (Open)')
+                    : '';
+                note.textContent = '✅ ' + name + ' added' + group;
+                note.className = 'status-msg success';
+
+                ['oneName', 'oneBib', 'oneDob'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                document.getElementById('oneName').focus();
+                loadAthletes();
+            } catch (error) {
+                note.textContent = '❌ ' + error.message;
+                note.className = 'status-msg error';
+            }
         }
 
         async function deleteAthlete(id) {

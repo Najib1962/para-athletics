@@ -1,37 +1,79 @@
-LINKS TO THE NEW PAGES
-======================
+IMPORT, ADD ATHLETE, AND THE MISSING BUTTONS
+============================================
 
-ONE FILE
---------
+ONE FILE TO INSTALL
+-------------------
 Into  Desktop\para-athletics\public\
-    entries.html      replace
+    athletes.html      replace
 
-Nothing in the main folder. server.js untouched, so your password is safe.
+Nothing goes in the main folder. server.js untouched, so your password
+is safe this time.
 
-
-WHAT IT ADDS
-------------
-Two buttons in the row along the top of the Entries page:
-
-    🖨️ Print Start Lists     the blank sheets for the referees
-    👥 Age Groups            years of birth and Youth/Open
-
-They were reachable before, but only by typing the address.
+Also in this folder: Athlete_Entry_Template.xlsx - the spreadsheet to
+send to team managers. That is not part of the app; keep it wherever
+suits you.
 
 
-STILL TO DO - I NEED TWO FILES FROM YOU
+1. THE IMPORT NOW READS THE HEADING ROW
 ---------------------------------------
-1. There is no year-of-birth box on the ADD ATHLETE form. A new athlete
-   starts as Open and you set the year afterwards on the Age Groups page.
-   To put it on the form I need:
+Columns can be in any order. These headings are recognised:
 
-       Desktop\para-athletics\public\athletes.html
+    Reg Num | Name | Club/Team | Gender | Year of Birth | Class |
+    Event 1 | Event 2 | Event 3 | Event 4
 
-2. The same buttons should be on the Admin page, which is where you
-   usually start. For that I need:
+Only Name and Class are required.
 
-       Desktop\para-athletics\public\admin.html
+Each event goes in its OWN column and is named as a plain discipline -
+"Shot Put", not "Mens Shot Put F32-34". The app finds the right event
+from the athlete's class and gender, so team managers never need to know
+how you have named things.
 
-Send me those two and I will do both properly. I am asking rather than
-patching an older copy, because doing that once before is what broke
-your mark entry.
+Tested: a sheet saying "Shot Put" found "Mens Shot Put F32-34", and a
+woman's "100m" found "Womens 100m T37" rather than the men's race.
+
+Year of Birth sets the age category on its own - under 20 is Youth.
+
+Your OLD format still imports, so anything you already have keeps
+working: Name, Class, Sex, Bib, Club, Events.
+
+
+2. ADD ONE ATHLETE
+------------------
+A new box on the same page: Name, Class, Gender, Year of birth, Bib,
+Club. For a late entry, where a whole spreadsheet would be overkill.
+It tells you whether the athlete came out Youth or Open.
+
+This answers your question about where to enter the age group - there
+was no add-athlete form at all before, only the import.
+
+
+3. THE MISSING BUTTONS
+----------------------
+Two links added at the top of the page:
+
+    🖨️ Print Start Lists
+    👥 Age Groups
+
+
+TESTED BEFORE SENDING
+---------------------
+Pasted a sheet in the new shape: 4 athletes, 5 entries, years of birth
+recorded, and each athlete put in the right event by class and gender.
+An athlete with no year given still imported, counting as Open.
+The old column order still imports.
+The add form works, and refuses 12/3/2010 with a message asking for
+four digits.
+
+
+INSTALL
+-------
+cd Desktop\para-athletics
+git add .
+git commit -m "Import reads headings, add athlete form, missing links"
+git push
+
+
+STILL OUTSTANDING
+-----------------
+The same two buttons should be on admin.html, which is where you
+usually start. Send me that file and I will add them.
