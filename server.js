@@ -242,7 +242,7 @@ function calculateRazaPoints(classCode, discipline, performance, sex, youth) {
 
 
 // ---------- ADMIN AUTHENTICATION ----------
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_PASSWORD = 'Falcon-stadium-26';
 
 // Reads one cookie out of the request. Small enough not to need a library.
 function readCookie(req, name) {
