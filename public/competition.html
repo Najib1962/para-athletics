@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competition Details - Para Athletics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a; color: #fff; min-height: 100vh; padding: 20px;
+        }
+        .container { max-width: 760px; margin: 0 auto; }
+        h1 { color: #e94560; font-size: 26px; margin-bottom: 6px; }
+        .lead { color: #999; font-size: 14px; margin-bottom: 20px; line-height: 1.55; }
+        .card {
+            background: #1a1a2e; border: 1px solid #2a2a4e; border-radius: 12px;
+            padding: 22px; margin-bottom: 16px;
+        }
+        .card h2 { font-size: 17px; margin-bottom: 4px; }
+        .card .hint { color: #888; font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
+        label { display: block; font-size: 13px; color: #bbb; margin-bottom: 5px; font-weight: 600; }
+        input, textarea {
+            width: 100%; padding: 11px 13px; background: #0a0a1a;
+            border: 1px solid #2a2a4e; border-radius: 8px; color: #fff;
+            font-size: 15px; font-family: inherit; margin-bottom: 14px;
+        }
+        input:focus, textarea:focus { outline: none; border-color: #e94560; }
+        textarea { min-height: 80px; resize: vertical; }
+        .row { display: flex; gap: 14px; flex-wrap: wrap; }
+        .row > div { flex: 1; min-width: 180px; }
+        button {
+            padding: 12px 24px; border: none; border-radius: 8px; color: #fff;
+            font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+            background: #4CAF50;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { opacity: .6; cursor: not-allowed; }
+        .status { margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 14px; display: none; }
+        .status.good { background: rgba(76,175,80,.15); color: #7ddc82; display: block; }
+        .status.bad  { background: rgba(220,53,69,.15); color: #ff8b8b; display: block; }
+        .preview {
+            background: #fff; color: #000; border-radius: 8px; padding: 16px;
+            text-align: center; margin-top: 4px;
+        }
+        .preview .name { font-size: 17px; font-weight: bold; }
+        .preview .meta { font-size: 12px; color: #444; margin-top: 3px; }
+        .back { display: inline-block; margin-top: 16px; color: #666;
+                text-decoration: none; font-size: 13px; }
+        .back:hover { color: #e94560; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>🏟️ Competition Details</h1>
+    <p class="lead">
+        The name, venue and dates of this competition. They appear at the top of every
+        public page, on every printed start list, and on the result booklet.<br>
+        Set them once before the competition and you need not come back.
+    </p>
+
+    <div class="card">
+        <h2>Name and place</h2>
+        <p class="hint">The name is what spectators and team managers see first.</p>
+
+        <label>Competition name</label>
+        <input type="text" id="name" placeholder="e.g. Sharjah Para Athletics Open 2026">
+
+        <label>Venue</label>
+        <input type="text" id="venue" placeholder="e.g. Sharjah Sports Stadium">
+
+        <div class="row">
+            <div>
+                <label>City</label>
+                <input type="text" id="city" placeholder="e.g. Sharjah">
+            </div>
+            <div>
+                <label>Country</label>
+                <input type="text" id="country" placeholder="e.g. UAE">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Dates and organiser</h2>
+        <p class="hint">The first day is the date printed on start lists and results.</p>
+
+        <div class="row">
+            <div>
+                <label>First day</label>
+                <input type="date" id="date">
+            </div>
+            <div>
+                <label>Last day (optional)</label>
+                <input type="date" id="endDate">
+            </div>
+        </div>
+
+        <label>Organiser (optional)</label>
+        <input type="text" id="organiser" placeholder="e.g. Sharjah Club for the Disabled">
+
+        <label>Contact (optional)</label>
+        <input type="text" id="contact" placeholder="Email or phone for enquiries">
+
+        <label>Notes (optional)</label>
+        <textarea id="notes" placeholder="Anything teams should know — warm-up times, technical rules"></textarea>
+    </div>
+
+    <div class="card">
+        <h2>How it will look on a printed sheet</h2>
+        <p class="hint">This is the heading referees and team managers will see.</p>
+        <div class="preview">
+            <div class="name" id="pvName">—</div>
+            <div class="meta" id="pvMeta"></div>
+        </div>
+    </div>
+
+    <button id="saveBtn" onclick="save()">💾 Save Competition Details</button>
+    <div id="status" class="status"></div>
+
+    <a href="/admin.html" class="back">← Back to Admin</a>
+</div>
+
+<script>
+    // The password comes from the address if it is there; otherwise the login
+    // you already have carries it.
+    var password = new URLSearchParams(location.search).get('password') || '';
+    var FIELDS = ['name','venue','city','country','date','endDate','organiser','contact','notes'];
+
+    function api(url, options) {
+        options = options || {};
+        var join = url.indexOf('?') > -1 ? '&' : '?';
+        var full = password ? url + join + 'password=' + encodeURIComponent(password) : url;
+        return fetch(full, {
+            method: options.method || 'GET',
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json' },
+            body: options.body
+        }).then(function (r) {
+            if (r.status === 401) throw new Error('Please log in first.');
+            if (!r.ok) throw new Error('Something went wrong (' + r.status + ')');
+            return r.json();
+        });
+    }
+
+    function say(text, kind) {
+        var el = document.getElementById('status');
+        el.className = 'status ' + kind;
+        el.textContent = text;
+    }
+
+    function preview() {
+        var v = function (id) { return document.getElementById(id).value.trim(); };
+        document.getElementById('pvName').textContent = v('name') || '—';
+
+        var where = [v('venue'), v('city'), v('country')].filter(Boolean).join(', ');
+        var when = [v('date'), v('endDate')].filter(Boolean).join(' to ');
+        document.getElementById('pvMeta').textContent =
+            [where, when].filter(Boolean).join('   ·   ');
+    }
+
+    FIELDS.forEach(function (f) {
+        document.getElementById(f).addEventListener('input', preview);
+    });
+
+    function load() {
+        api('/api/meet').then(function (meet) {
+            FIELDS.forEach(function (f) {
+                document.getElementById(f).value = meet[f] || '';
+            });
+            preview();
+        }).catch(function (err) { say(err.message, 'bad'); });
+    }
+
+    function save() {
+        var name = document.getElementById('name').value.trim();
+        if (!name) {
+            say('Give the competition a name — it appears on every printed sheet.', 'bad');
+            document.getElementById('name').focus();
+            return;
+        }
+
+        var btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+
+        // Everything is sent together, because saving replaces the whole
+        // record. Sending only the changed fields would wipe the rest.
+        var body = {};
+        FIELDS.forEach(function (f) { body[f] = document.getElementById(f).value.trim(); });
+
+        api('/api/meet', { method: 'POST', body: JSON.stringify(body) })
+            .then(function () {
+                say('Saved. It now appears on every page and printout.', 'good');
+                btn.disabled = false;
+            })
+            .catch(function (err) {
+                say(err.message, 'bad');
+                btn.disabled = false;
+            });
+    }
+
+    load();
+</script>
+</body>
+</html>

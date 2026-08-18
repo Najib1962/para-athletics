@@ -1,73 +1,69 @@
-ADDING AN EVENT - THE FORM REBUILT
-==================================
+COMPETITION DETAILS - THE MISSING PAGE
+======================================
 
-ONE FILE
---------
+THREE FILES
+-----------
+Into  Desktop\para-athletics\
+    server.js             replace
+
 Into  Desktop\para-athletics\public\
-    admin.html      replace
+    competition.html      NEW
+    admin.html            replace  (adds the link to it)
 
-Nothing in the main folder. server.js untouched, so your password is safe.
-
-
-WHERE THE FORM WAS
-------------------
-It was always there - the second card down on the Admin page, called
-"Add Event". What made it hard to recognise is the class picker: a tall
-scrolling list needing Ctrl+click to choose more than one. That does not
-look like a set of choices, so the form did not read as a form.
+IMPORTANT: this server.js has the password back at 'admin123'. Before
+pushing, open it in Notepad, search for ADMIN_PASSWORD, and put yours back.
 
 
-WHAT IT LOOKS LIKE NOW
-----------------------
-The classes are tick boxes. Click the ones you want. A line underneath
-tells you what you have built:
+WHAT WAS MISSING
+----------------
+Nineteen pages in your app DISPLAY the competition name - the public
+schedule, the live results, the medal table, the printed start lists,
+the booklet, all five display screens. But no page could SET it.
 
-    one class    -> ranked on the performance itself
-    two or more  -> combined, ranked on official Raza points
-
-Classes with no points published for the discipline you have chosen are
-greyed out. Choose Shot Put and T11, T45, T47, F31 and F51 fade, because
-World Para Athletics publishes no shot put scores for them. You can no
-longer build an event whose athletes would score nothing.
-
-The class list is corrected too: F45 is gone - it is not in the WPA
-tables - and T71, which was missing, is back. 55 classes in all.
+So the name has been whatever it was first created as, and there was no
+way to change it. My guide told you to enter it on the Admin page. That
+was wrong; I described the app from how it behaves rather than checking.
 
 
-HOW TO ADD AN EVENT
--------------------
-1. Log in, open Admin
-2. Second card down: Add Event
-3. Event Name - write it as you would on paper, "Mens Shot Put F32-34"
-4. Discipline, Gender, Day
-5. Tick the classes
-6. Press Add Event
+THE NEW PAGE
+------------
+Log in, then open:
 
-The name is yours to choose. The import finds events by discipline and
-class, not by name, so team managers never have to match your wording.
+    https://para-athletics.onrender.com/competition.html
+
+There is also a link in the row along the top of the Admin page:
+Competition Details.
+
+    Competition name        appears everywhere
+    Venue, City, Country    printed on start lists and results
+    First day, Last day     printed on start lists and results
+    Organiser, Contact      shown in the booklet
+    Notes                   anything teams should know
+
+At the foot of the page a white box shows exactly how the heading will
+look on a printed sheet, before you save.
 
 
-ALSO ADDED
-----------
-Two links in the navigation at the top:
-
-    Print Start Lists
-    Age Groups
+WHEN TO USE IT
+--------------
+Once, before each competition. Set it and forget it.
 
 
 TESTED BEFORE SENDING
 ---------------------
-55 tick boxes shown, F45 absent, T71 present.
-Choosing Shot Put greys out T45 T47 T51 T71 T72 F31 F51.
-Ticked F32, F33, F34 and pressed Add Event: created as a combined event
-with all three classes.
-The page is still locked to strangers.
-Typing marks, points, deleting entries: all still work.
+Saved a full set of details from the page, then opened a printed start
+list. The heading read:
+
+    Sharjah Para Athletics Open 2026
+    Venue  = Sharjah Sports Stadium, Sharjah
+    Date   = 2026-11-05
+
+The page is locked to strangers and opens once logged in.
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Rebuild the event form with tick-box classes"
+git commit -m "Add the competition details page"
 git push

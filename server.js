@@ -22,7 +22,7 @@ const ADMIN_PAGES = [
     '/admin.html', '/entries.html', '/athletes.html',
     '/startlist-referee.html', '/startlists-results.html',
     '/startlists-export.html', '/reset-data.html', '/youth.html',
-    '/age-groups.html', '/print-startlists.html'
+    '/age-groups.html', '/print-startlists.html', '/competition.html'
 ];
 
 app.use(function (req, res, next) {
@@ -88,7 +88,7 @@ const NO_REFRESH = [
     '/admin.html', '/entries.html', '/athletes.html', '/login.html',
     '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
     '/startlists-export.html', '/team-entry.html', '/youth.html',
-    '/age-groups.html', '/print-startlists.html'
+    '/age-groups.html', '/print-startlists.html', '/competition.html'
 ];
 
 app.use(function (req, res, next) {
@@ -242,7 +242,7 @@ function calculateRazaPoints(classCode, discipline, performance, sex, youth) {
 
 
 // ---------- ADMIN AUTHENTICATION ----------
-const ADMIN_PASSWORD = 'Falcon-Stadium-26';
+const ADMIN_PASSWORD = 'admin123';
 
 // Reads one cookie out of the request. Small enough not to need a library.
 function readCookie(req, name) {
@@ -805,6 +805,11 @@ app.post('/api/team-entry', async (req, res) => {
                     sex: athlete.sex || 'M',
                     bib: athlete.bib || '',
                     club: club,
+                    // Year or date of birth, so the imported athlete lands in
+                    // the right age category without anyone setting it by hand.
+                    // Accepts a few spellings of the column heading.
+                    dateOfBirth: athlete.dateOfBirth || athlete.dob ||
+                                 athlete.yearOfBirth || athlete.birthYear || '',
                     createdAt: new Date().toISOString()
                 };
                 existingAthletes.push(newAthlete);
