@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Printable Start Lists - Para Athletics</title>
+<style>
+    /* Tahoma is used because it renders Arabic on Windows without any font
+       needing to be installed. */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: Tahoma, 'Segoe UI', Arial, sans-serif;
+        background: #0a0a1a; color: #fff; padding: 20px;
+    }
+    .screen-only { max-width: 1000px; margin: 0 auto 24px; }
+    h1 { color: #e94560; font-size: 24px; margin-bottom: 6px; }
+    .lead { color: #999; font-size: 14px; margin-bottom: 18px; line-height: 1.5; }
+    .card {
+        background: #1a1a2e; border: 1px solid #2a2a4e; border-radius: 12px;
+        padding: 20px; margin-bottom: 16px;
+    }
+    .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    select, input[type=text] {
+        padding: 10px 14px; background: #0a0a1a; border: 1px solid #2a2a4e;
+        border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit;
+    }
+    select { min-width: 260px; }
+    button {
+        padding: 10px 18px; border: none; border-radius: 8px; color: #fff;
+        font-size: 14px; cursor: pointer; font-family: inherit; background: #2a2a4e;
+    }
+    button:hover { background: #3a3a5e; }
+    button.print { background: #e94560; font-weight: 600; }
+    button.print:hover { background: #c73e54; }
+    .note { color: #888; font-size: 13px; margin-top: 12px; line-height: 1.55; }
+    .count { color: #888; font-size: 13px; margin-top: 10px; }
+
+    /* ---------------- the sheets themselves ---------------- */
+    #sheets { background: #fff; color: #000; }
+    .sheet {
+        background: #fff; color: #000; padding: 12mm 10mm;
+        margin: 0 auto 20px; max-width: 297mm;
+    }
+    .sheet + .sheet { border-top: 3px dashed #bbb; }
+
+    .sheet .title {
+        text-align: center; font-size: 15pt; font-weight: bold;
+        border: 1.5pt solid #000; padding: 5pt; margin-bottom: 8pt;
+    }
+    .sheet .meet { text-align: center; font-size: 10pt; margin-bottom: 8pt; }
+
+    .headgrid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0 10mm;
+        margin-bottom: 8pt;
+    }
+    .headgrid .row {
+        display: flex; align-items: stretch; border: 1pt solid #000;
+        margin-bottom: -1pt; font-size: 9.5pt;
+    }
+    .headgrid .lbl {
+        width: 48%; padding: 3pt 5pt; background: #eee;
+        border-right: 1pt solid #000; font-weight: bold;
+    }
+    .headgrid .val { flex: 1; padding: 3pt 5pt; }
+    .ar { font-size: 9pt; }
+
+    table.sheet-table { width: 100%; border-collapse: collapse; }
+    table.sheet-table th, table.sheet-table td {
+        border: 1pt solid #000; padding: 3pt 4pt; font-size: 9pt;
+        text-align: center; vertical-align: middle;
+    }
+    table.sheet-table thead th { background: #eee; font-weight: bold; }
+    table.sheet-table thead th .ar { display: block; font-size: 8.5pt; font-weight: normal; }
+    table.sheet-table td.name { text-align: left; font-size: 9.5pt; }
+    table.sheet-table td.blank { height: 22pt; }
+    table.sheet-table tr.spare td { color: #999; }
+
+    .signrow {
+        display: flex; gap: 12mm; margin-top: 10pt; font-size: 9.5pt;
+    }
+    .signrow div { flex: 1; border-top: 1pt solid #000; padding-top: 3pt; }
+
+    /* ---------------- printing ---------------- */
+    @media print {
+        @page { size: A4 landscape; margin: 8mm; }
+        body { background: #fff; color: #000; padding: 0; }
+        .screen-only { display: none !important; }
+        #sheets { background: none; }
+        .sheet { padding: 0; margin: 0; max-width: none; break-after: page; }
+        .sheet:last-child { break-after: auto; }
+        .sheet + .sheet { border-top: 0; }
+    }
+</style>
+</head>
+<body>
+
+<div class="screen-only">
+    <h1>🖨️ Printable Start Lists</h1>
+    <p class="lead">
+        Blank sheets for the referees, filled in with the athletes already entered
+        in the app. Track and field events each use their own layout.<br>
+        Results are left empty to be written in by hand.
+    </p>
+
+    <div class="card">
+        <div class="tools">
+            <select id="eventSelect" onchange="loadData()">
+                <option value="">All events</option>
+            </select>
+            <input type="text" id="sector" placeholder="Sector المقطع (optional)" oninput="loadData()">
+            <button class="print" onclick="window.print()">🖨️ Print</button>
+        </div>
+        <div class="count" id="count"></div>
+        <p class="note">
+            Printing is set to A4 landscape, one event per page. In the print box choose
+            <strong>Save as PDF</strong> if you want a file rather than paper.<br>
+            Every sheet carries a few extra blank lines for late entries.
+        </p>
+    </div>
+</div>
+
+<div id="sheets"><div class="sheet">Loading…</div></div>
+
+<script>
+    // Which disciplines are run on the track. Everything else uses the field
+    // sheet, with its six attempts.
+    var TRACK = ['100m','200m','400m','800m','1500m','5000m','10000m','Marathon',
+                 '4x100m Relay','4x400m Relay'];
+
+    var SPARE_ROWS = 3;      // blank lines for late entries
+    var MIN_TRACK_ROWS = 8;  // as on your printed sheet
+    var MIN_FIELD_ROWS = 12;
+
+    var meet = {};
+
+    // Entries need the admin password on this server, so this page sits behind
+    // the login like the other admin pages. The password comes from the address
+    // if it is there; otherwise the login you already have carries it.
+    var password = new URLSearchParams(location.search).get('password') || '';
+
+    function get(url) {
+        var join = url.indexOf('?') > -1 ? '&' : '?';
+        var full = password ? url + join + 'password=' + encodeURIComponent(password) : url;
+        return fetch(full, { cache: 'no-store' }).then(function (r) {
+            if (r.status === 401) throw new Error('Please log in first.');
+            if (!r.ok) throw new Error('Could not load ' + url);
+            return r.json();
+        });
+    }
+
+    function esc(v) {
+        return String(v === null || v === undefined ? '' : v)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function isTrack(discipline) { return TRACK.indexOf(discipline) > -1; }
+
+    function ageLabel(a) {
+        // The Arabic column heading is "age category". If a date of birth has
+        // been recorded, show that instead - it is more specific.
+        if (a.dateOfBirth) return a.dateOfBirth;
+        return a.ageGroup === 'youth' ? 'Youth' : 'Open';
+    }
+
+    function headerBlock(event, fieldSheet) {
+        var classes = (event.classes && event.classes.length)
+            ? event.classes.join(', ') : (event.class || '');
+        var sector = document.getElementById('sector').value.trim();
+        var gender = event.sex === 'F' ? 'Women نساء' : event.sex === 'M' ? 'Men رجال' : 'Mixed';
+        var venue = [meet.venue, meet.city].filter(Boolean).join(', ');
+
+        function row(arabic, english, value) {
+            return '<div class="row"><div class="lbl"><span class="ar">' + arabic +
+                   '</span> ' + english + '</div><div class="val">' + esc(value) + '</div></div>';
+        }
+
+        return '<div class="headgrid">' +
+            '<div>' +
+              row('قائمة عدد', 'Event No', event.eventNo || '') +
+              row('الفئة', 'Class/Classes', classes) +
+              row('الجنس', 'Gender', gender) +
+              (fieldSheet ? row('المقطع', 'Sector', sector) : '') +
+            '</div>' +
+            '<div>' +
+              row('الملعب', 'Venue', venue) +
+              row('التاريخ', 'Date', meet.date || meet.startDate || '') +
+              row('التوقيت', 'Time', event.time || '') +
+              (fieldSheet ? row('اليوم', 'Day', event.day || 1) : '') +
+            '</div>' +
+        '</div>';
+    }
+
+    function th(arabic, english) {
+        return '<th><span class="ar">' + arabic + '</span>' + english + '</th>';
+    }
+
+    function trackSheet(event, rows) {
+        var body = '';
+        var total = Math.max(rows.length + SPARE_ROWS, MIN_TRACK_ROWS);
+
+        for (var i = 0; i < total; i++) {
+            var a = rows[i];
+            var spare = !a;
+            body += '<tr' + (spare ? ' class="spare"' : '') + '>' +
+                '<td>' + (i + 1) + '</td>' +
+                '<td class="name">' + (a ? esc(a.name) : '') + '</td>' +
+                '<td>' + (a ? esc(a.bib) : '') + '</td>' +
+                '<td>' + (a ? esc(a.club) : '') + '</td>' +
+                '<td>' + (a ? esc(ageLabel(a)) : '') + '</td>' +
+                '<td>' + (a ? esc(a.class) : '') + '</td>' +
+                '<td class="blank"></td>' +   // lane, written in by hand
+                '<td class="blank"></td>' +   // 1/100
+                '<td class="blank"></td>' +   // seconds
+                '<td class="blank"></td>' +   // minutes
+                '<td class="blank"></td>' +   // time in seconds
+                '<td class="blank"></td>' +   // points
+                '<td class="blank"></td>' +   // rank
+            '</tr>';
+        }
+
+        return '<table class="sheet-table"><thead><tr>' +
+            th('م','No') + th('الاسم','Name') + th('رقم الصدر','Bib') + th('النادي','Club') +
+            th('الفئة العمرية','Age / D.O.B') + th('التصنيف الرياضي','Class') +
+            th('رقم الحارة','Lane') +
+            th('1/100','1/100') + th('ث','ss') + th('د','mm') +
+            th('الزمن','Time (s)') + th('النقاط','Points') + th('الترتيب','Rank') +
+        '</tr></thead><tbody>' + body + '</tbody></table>';
+    }
+
+    function fieldSheet(event, rows) {
+        var body = '';
+        var total = Math.max(rows.length + SPARE_ROWS, MIN_FIELD_ROWS);
+
+        for (var i = 0; i < total; i++) {
+            var a = rows[i];
+            var spare = !a;
+            body += '<tr' + (spare ? ' class="spare"' : '') + '>' +
+                '<td>' + (i + 1) + '</td>' +
+                '<td class="name">' + (a ? esc(a.name) : '') + '</td>' +
+                '<td>' + (a ? esc(a.bib) : '') + '</td>' +
+                '<td>' + (a ? esc(a.club) : '') + '</td>' +
+                '<td>' + (a ? esc(ageLabel(a)) : '') + '</td>' +
+                '<td>' + (a ? esc(a.class) : '') + '</td>' +
+                '<td class="blank"></td>' +   // implement weight
+                '<td class="blank"></td><td class="blank"></td><td class="blank"></td>' +
+                '<td class="blank"></td><td class="blank"></td><td class="blank"></td>' +
+                '<td class="blank"></td>' +   // best
+                '<td class="blank"></td>' +   // points
+                '<td class="blank"></td>' +   // rank
+            '</tr>';
+        }
+
+        return '<table class="sheet-table"><thead><tr>' +
+            th('م','No') + th('الاسم','Name') + th('رقم الصدر','Bib') + th('النادي','Club') +
+            th('الفئة العمرية','Age / D.O.B') + th('التصنيف الرياضي','Class') +
+            th('وزن الأداة','Weight') +
+            th('م.1','Att 1') + th('م.2','Att 2') + th('م.3','Att 3') +
+            th('م.4','Att 4') + th('م.5','Att 5') + th('م.6','Att 6') +
+            th('أفضل نتيجة','Best') + th('النقاط','Points') + th('الترتيب','Rank') +
+        '</tr></thead><tbody>' + body + '</tbody></table>';
+    }
+
+    function sheetFor(event, rows) {
+        var field = !isTrack(event.discipline);
+        return '<div class="sheet">' +
+            '<div class="title"><span class="ar">المسابقة</span> Event &nbsp;&mdash;&nbsp; ' +
+                esc(event.name) + '</div>' +
+            '<div class="meet">' + esc(meet.name || '') + '</div>' +
+            headerBlock(event, field) +
+            (field ? fieldSheet(event, rows) : trackSheet(event, rows)) +
+            '<div class="signrow">' +
+                '<div><span class="ar">الحكم</span> Referee</div>' +
+                '<div><span class="ar">المسجل</span> Recorder</div>' +
+                '<div><span class="ar">التوقيع</span> Signature</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    // Named loadData so the site's automatic refresh redraws these sheets
+    // rather than reloading the whole page.
+    async function loadData() {
+        var box = document.getElementById('sheets');
+        try {
+            var wanted = document.getElementById('eventSelect').value;
+
+            var results = await Promise.all([
+                get('/api/meet'), get('/api/events'), get('/api/athletes')
+            ]);
+            meet = results[0] || {};
+            var events = results[1] || [];
+            var athletes = results[2] || [];
+
+            var select = document.getElementById('eventSelect');
+            if (select.options.length <= 1) {
+                events.forEach(function (e) {
+                    var opt = document.createElement('option');
+                    opt.value = e.id;
+                    opt.textContent = 'Day ' + (e.day || 1) + ' — ' + e.name;
+                    select.appendChild(opt);
+                });
+                select.value = wanted;
+            }
+
+            var chosen = wanted ? events.filter(function (e) { return e.id === wanted; }) : events;
+            if (!chosen.length) {
+                box.innerHTML = '<div class="sheet">No events yet.</div>';
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < chosen.length; i++) {
+                var event = chosen[i];
+                var entries = await get('/api/entries?eventId=' + event.id);
+
+                var rows = entries.map(function (entry) {
+                    return athletes.find(function (a) { return a.id === entry.athleteId; });
+                }).filter(Boolean);
+
+                rows.sort(function (a, b) {
+                    return String(a.club || '').localeCompare(String(b.club || '')) ||
+                           String(a.name || '').localeCompare(String(b.name || ''));
+                });
+
+                html += sheetFor(event, rows);
+            }
+            box.innerHTML = html;
+
+            document.getElementById('count').textContent =
+                chosen.length + ' sheet' + (chosen.length === 1 ? '' : 's') + ' ready to print.';
+        } catch (err) {
+            box.innerHTML = '<div class="sheet">Could not build the sheets: ' + esc(err.message) + '</div>';
+        }
+    }
+
+    loadData();
+</script>
+</body>
+</html>

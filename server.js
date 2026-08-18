@@ -22,7 +22,7 @@ const ADMIN_PAGES = [
     '/admin.html', '/entries.html', '/athletes.html',
     '/startlist-referee.html', '/startlists-results.html',
     '/startlists-export.html', '/reset-data.html', '/youth.html',
-    '/age-groups.html'
+    '/age-groups.html', '/print-startlists.html'
 ];
 
 app.use(function (req, res, next) {
@@ -88,7 +88,7 @@ const NO_REFRESH = [
     '/admin.html', '/entries.html', '/athletes.html', '/login.html',
     '/reset-data.html', '/startlist-referee.html', '/startlists-results.html',
     '/startlists-export.html', '/team-entry.html', '/youth.html',
-    '/age-groups.html'
+    '/age-groups.html', '/print-startlists.html'
 ];
 
 app.use(function (req, res, next) {
