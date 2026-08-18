@@ -155,11 +155,27 @@
 
     function isTrack(discipline) { return TRACK.indexOf(discipline) > -1; }
 
-    function ageLabel(a) {
-        // The Arabic column heading is "age category". If a date of birth has
-        // been recorded, show that instead - it is more specific.
-        if (a.dateOfBirth) return a.dateOfBirth;
-        return a.ageGroup === 'youth' ? 'Youth' : 'Open';
+    // Same rule as the server: Youth is under 20, by year of birth.
+    var YOUTH_UNDER = 20;
+
+    function groupOf(a) {
+        if (a && a.dateOfBirth) {
+            var year = parseInt(String(a.dateOfBirth).slice(0, 4), 10);
+            if (year > 1900) {
+                return (new Date().getFullYear() - year) < YOUTH_UNDER ? 'youth' : 'open';
+            }
+        }
+        return (a && a.ageGroup === 'youth') ? 'youth' : 'open';
+    }
+
+    // Your sheet heads this column "age category" in Arabic and "D.O.B" in
+    // English, so it carries both: the date on top, the category beneath.
+    function ageCell(a) {
+        var group = groupOf(a) === 'youth' ? 'Youth' : 'Open';
+        if (a.dateOfBirth) {
+            return esc(a.dateOfBirth) + '<br><span style="font-size:8pt">' + group + '</span>';
+        }
+        return group;
     }
 
     function headerBlock(event, fieldSheet) {
@@ -206,7 +222,7 @@
                 '<td class="name">' + (a ? esc(a.name) : '') + '</td>' +
                 '<td>' + (a ? esc(a.bib) : '') + '</td>' +
                 '<td>' + (a ? esc(a.club) : '') + '</td>' +
-                '<td>' + (a ? esc(ageLabel(a)) : '') + '</td>' +
+                '<td>' + (a ? ageCell(a) : '') + '</td>' +
                 '<td>' + (a ? esc(a.class) : '') + '</td>' +
                 '<td class="blank"></td>' +   // lane, written in by hand
                 '<td class="blank"></td>' +   // 1/100
@@ -239,7 +255,7 @@
                 '<td class="name">' + (a ? esc(a.name) : '') + '</td>' +
                 '<td>' + (a ? esc(a.bib) : '') + '</td>' +
                 '<td>' + (a ? esc(a.club) : '') + '</td>' +
-                '<td>' + (a ? esc(ageLabel(a)) : '') + '</td>' +
+                '<td>' + (a ? ageCell(a) : '') + '</td>' +
                 '<td>' + (a ? esc(a.class) : '') + '</td>' +
                 '<td class="blank"></td>' +   // implement weight
                 '<td class="blank"></td><td class="blank"></td><td class="blank"></td>' +

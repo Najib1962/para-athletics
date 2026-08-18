@@ -192,6 +192,28 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
+// ---------- AGE CATEGORY ----------
+// Youth means under 20. As is normal in athletics, it goes by the YEAR of
+// birth rather than the exact date - so through the whole of 2026, anyone
+// born in 2007 or later is Youth, whatever month their birthday falls in.
+const YOUTH_UNDER = 20;
+
+function ageGroupOf(athlete, event) {
+    // A recorded date of birth decides it, so nobody has to remember to tick
+    // a box. Anything set by hand is only used when there is no date.
+    if (athlete && athlete.dateOfBirth) {
+        const year = parseInt(String(athlete.dateOfBirth).slice(0, 4), 10);
+        if (year > 1900) {
+            const age = new Date().getFullYear() - year;
+            return age < YOUTH_UNDER ? 'youth' : 'open';
+        }
+    }
+    if (athlete && athlete.ageGroup) {
+        return athlete.ageGroup === 'youth' ? 'youth' : 'open';
+    }
+    return (event && event.youth) ? 'youth' : 'open';
+}
+
 // ---------- RAZA POINTS SYSTEM ----------
 // FIX: the table that used to sit here listed F11 to F64 THREE times over -
 // once for women's track, once for men's field, once for women's field.
@@ -612,9 +634,7 @@ app.get('/api/events/:id/results', (req, res) => {
                 // Each athlete is scored on their OWN age group. If they have
                 // none set, the event's setting is used, so nothing changes for
                 // competitions that are all one age.
-                const youthAthlete = athlete.ageGroup
-                    ? athlete.ageGroup === 'youth'
-                    : !!event.youth;
+                const youthAthlete = ageGroupOf(athlete, event) === 'youth';
                 points = calculateRazaPoints(athlete.class, event.discipline, perf, athlete.sex, youthAthlete);
             }
         }
@@ -629,8 +649,8 @@ app.get('/api/events/:id/results', (req, res) => {
             club: athlete ? athlete.club : '',
             mark: performance,
             points: points,
-            ageGroup: (athlete && athlete.ageGroup) ? athlete.ageGroup
-                    : (event.youth ? 'youth' : 'open'),
+            ageGroup: ageGroupOf(athlete, event),
+            dateOfBirth: (athlete && athlete.dateOfBirth) || '',
             hasGuide: athlete ? guideClasses.includes(athlete.class) : false,
             guide: athlete && guideClasses.includes(athlete.class) ? 'Yes' : ''
         };

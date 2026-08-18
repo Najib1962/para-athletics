@@ -77,8 +77,10 @@
                     <button class="success" onclick="addEntry()">➕ Add Athlete</button>
                 </div>
                 <div style="color:#888;font-size:12px;margin-top:6px">
-                    The age group belongs to the athlete, so it applies in every event they enter.
-                    Where one event holds both, the two are ranked separately.
+                    Youth is under 20, worked out from the athlete's date of birth. Where no date
+                    is on record you can set it here by hand. Either way it belongs to the athlete,
+                    so it applies in every event they enter, and where one event holds both groups
+                    the two are ranked separately.
                 </div>
                 <div id="entryMessage"></div>
             </div>
@@ -113,6 +115,19 @@
         let currentEventId = null;
         let currentEvent = null;
         let allAthletes = [];   // kept so the age group can be shown as you choose
+
+        // Same rule as the server: Youth is under 20, by year of birth.
+        const YOUTH_UNDER = 20;
+
+        function groupOf(a) {
+            if (a && a.dateOfBirth) {
+                const year = parseInt(String(a.dateOfBirth).slice(0, 4), 10);
+                if (year > 1900) {
+                    return (new Date().getFullYear() - year) < YOUTH_UNDER ? 'youth' : 'open';
+                }
+            }
+            return (a && a.ageGroup === 'youth') ? 'youth' : 'open';
+        }
 
         // ---------- FIXED fetchAPI with password ----------
         async function fetchAPI(url, options = {}) {
@@ -249,11 +264,13 @@
                                     </div>
                                     <div class="detail">Bib: ${athlete.bib || 'N/A'} • ${athlete.club || 'No club'}</div>
                                     <div class="detail" style="margin-top:4px">
-                                        <span style="background:${athlete.ageGroup === 'youth' ? '#4CAF50' : '#2a2a4e'};
+                                        <span style="background:${groupOf(athlete) === 'youth' ? '#4CAF50' : '#2a2a4e'};
                                                      padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#fff">
-                                            ${athlete.ageGroup === 'youth' ? 'YOUTH' : 'OPEN'}</span>
-                                        <a href="#" onclick="switchAgeGroup('${athlete.id}');return false;"
-                                           style="color:#e94560;font-size:11px;margin-left:8px;text-decoration:none">change</a>
+                                            ${groupOf(athlete) === 'youth' ? 'YOUTH' : 'OPEN'}</span>
+                                        ${athlete.dateOfBirth
+                                            ? `<span style="color:#666;font-size:11px;margin-left:8px">born ${athlete.dateOfBirth}</span>`
+                                            : `<a href="#" onclick="switchAgeGroup('${athlete.id}');return false;"
+                                                 style="color:#e94560;font-size:11px;margin-left:8px;text-decoration:none">change</a>`}
                                     </div>
                                 </div>
                                 <div class="flex" style="gap: 10px; align-items: center;">
@@ -345,7 +362,7 @@
                     available.forEach(a => {
                         const opt = document.createElement('option');
                         opt.value = a.id;
-                        const group = a.ageGroup === 'youth' ? ' · Youth' : '';
+                        const group = groupOf(a) === 'youth' ? ' · Youth' : '';
                         opt.textContent = `${a.name} (${a.class})${group}`;
                         select.appendChild(opt);
                     });
@@ -360,8 +377,17 @@
         function showAgeGroup() {
             const id = document.getElementById('athleteSelect').value;
             const athlete = allAthletes.find(a => a.id === id);
-            document.getElementById('ageGroupSelect').value =
-                (athlete && athlete.ageGroup === 'youth') ? 'youth' : 'open';
+            const box = document.getElementById('ageGroupSelect');
+
+            box.value = groupOf(athlete);
+
+            // When a date of birth is on record it decides the category, so
+            // there is nothing to choose - the box just shows the answer.
+            const decided = !!(athlete && athlete.dateOfBirth);
+            box.disabled = decided;
+            box.title = decided
+                ? 'Worked out from the date of birth (' + athlete.dateOfBirth + ')'
+                : 'No date of birth on record - choose the category';
         }
 
         async function addEntry() {
@@ -390,9 +416,10 @@
                 // World Para Athletics table.
                 const wanted = document.getElementById('ageGroupSelect').value;
                 const athlete = allAthletes.find(a => a.id === athleteId);
-                const current = (athlete && athlete.ageGroup === 'youth') ? 'youth' : 'open';
+                const current = groupOf(athlete);
+                const decided = !!(athlete && athlete.dateOfBirth);
 
-                if (wanted !== current) {
+                if (!decided && wanted !== current) {
                     await fetch(`/api/athletes/${athleteId}?password=admin123`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
@@ -417,7 +444,7 @@
         // re-adding them. Their points change straight away.
         async function switchAgeGroup(athleteId) {
             const athlete = allAthletes.find(a => a.id === athleteId);
-            const now = (athlete && athlete.ageGroup === 'youth') ? 'youth' : 'open';
+            const now = groupOf(athlete);
             const wanted = now === 'youth' ? 'open' : 'youth';
 
             if (!confirm('Score ' + (athlete ? athlete.name : 'this athlete') +

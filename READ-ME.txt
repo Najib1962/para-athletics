@@ -1,78 +1,77 @@
-CHANGE 11 - PRINTABLE BLANK START LISTS
-=======================================
+CHANGE 12 - DATE OF BIRTH, AND THE CATEGORY WORKS ITSELF OUT
+============================================================
 
-TWO FILES
----------
+FOUR FILES
+----------
 Into  Desktop\para-athletics\
     server.js                 replace
 
 Into  Desktop\para-athletics\public\
-    print-startlists.html     NEW
+    age-groups.html           replace
+    entries.html              replace
+    print-startlists.html     replace
 
 IMPORTANT: this server.js has the password back at 'admin123'.
 Before pushing, open it in Notepad, search for ADMIN_PASSWORD, and put
 your own password back between the quotes.
 
 
-WHAT IT IS
-----------
-Blank sheets for the referees, in the layout of the ones you sent -
-Arabic and English headings, one design for track and another for field.
+THE RULE
+--------
+Youth is UNDER 20. As is normal in athletics it goes by the YEAR of
+birth, not the exact date - so through the whole of 2026 that means
+born 2007 or later, whatever month the birthday falls in.
 
-The names, bib numbers, clubs, age categories and classes are filled in
-from the entries already in the app. Everything the referee writes by
-hand is left empty.
+    born 2007-12-31   Youth
+    born 2006-01-01   Open
 
-Log in, then open:
-
-    https://para-athletics.onrender.com/print-startlists.html
-
-
-THE TWO LAYOUTS
----------------
-TRACK   No | Name | Bib | Club | Age/D.O.B | Class | Lane |
-        1/100 | ss | mm | Time (s) | Points | Rank
-
-FIELD   No | Name | Bib | Club | Age/D.O.B | Class | Weight |
-        Att 1 to Att 6 | Best | Points | Rank
-
-The right layout is chosen automatically from the discipline.
-
-Above each table: Event, Event No, Class/Classes, Gender, Venue, Date,
-Time - and Sector for field events, as on your sheet. At the foot there
-are lines for the referee, the recorder and a signature.
+Enter a date of birth once and you never tick a box again. In January
+the boundary moves on by itself.
 
 
-HOW TO USE IT
--------------
-Choose one event from the box, or leave it on "All events" to print the
-whole competition at once. There is also a Sector box, since that is
-written per session rather than stored with the event.
+WHERE TO ENTER IT
+-----------------
+Log in and open:
 
-Press Print. It is set up as A4 landscape, one event per page. Choose
-Save as PDF in the print box if you want a file.
+    https://para-athletics.onrender.com/age-groups.html
 
-Each sheet carries three spare blank lines for late entries - eight rows
-minimum on a track sheet, twelve on a field sheet, matching yours.
+Every athlete now has a date box. Fill it in and the badge changes at
+once, with a line underneath saying the category came from the date.
+
+An athlete with no date on record keeps the Youth/Open button, so you
+can still set them by hand - nothing you have already set is lost.
 
 
-A NOTE ON THE AGE COLUMN
-------------------------
-Your sheet heads that column "الفئة العمرية" (age category) in Arabic and
-"D.O.B" in English. It shows the athlete's age category - Youth or Open -
-which is what the app holds. If you later record dates of birth on
-athletes, it will show those instead.
+ON THE ENTRIES PAGE
+-------------------
+The Open/Youth box now shows the answer rather than asking for it: when
+the athlete has a date of birth it is filled in and greyed out, because
+there is nothing to decide. Athletes without a date still get the
+choice, exactly as before.
+
+Each entry shows "born 2007-12-31" beside the badge, or a "change" link
+where no date is on record.
+
+
+ON THE PRINTED START LISTS
+--------------------------
+Your sheet heads that column "الفئة العمرية" in Arabic and "D.O.B" in
+English, so it now carries both - the date on the top line and Youth or
+Open beneath it.
 
 
 TESTED BEFORE SENDING
 ---------------------
-Built from real entries: a track event and a field event, each with the
-correct columns, the athletes listed with bib, club, age category and
-class, and blank spaces for everything the referee writes.
-The page is locked to strangers and opens once you are logged in.
-It does not auto-refresh, so a sheet cannot redraw while you are
-printing it.
-Typing marks, the age selector, points, deleting, the live pages: all
+Four athletes, the SAME mark of 13.20 in a men's 100 m T37:
+
+    born 2010-05-05   Youth   998 points
+    born 2007-12-31   Youth   998 points     <- last day of Youth
+    born 2006-01-01   Open    430 points     <- first day of Open
+    born 1995-06-06   Open    430 points
+
+An athlete with no date, set to Youth by hand: still 998 points.
+The printed sheet shows the date with the category beneath it.
+Typing marks, points, deleting, the live pages, the locked pages: all
 still work.
 
 
@@ -80,7 +79,16 @@ INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Printable blank start lists"
+git commit -m "Date of birth decides the age category"
 git push
 
-Wait 2 to 5 minutes, then log in and open /print-startlists.html
+Wait 2 to 5 minutes.
+
+
+ONE THING NOT INCLUDED
+----------------------
+There is no date box on the ADD ATHLETE form yet, because I do not have
+your current athletes.html and I would rather not patch a copy that
+might be out of date. Send me that file and I will add it, so a date of
+birth can be entered when the athlete is first created rather than
+afterwards.

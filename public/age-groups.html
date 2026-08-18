@@ -44,6 +44,13 @@
         .badge.youth { background: #4CAF50; }
         .badge.open  { background: #2a2a4e; color: #bbb; }
         .toggle { padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; }
+        .dob {
+            padding: 7px 10px; background: #0a0a1a; border: 1px solid #2a2a4e;
+            border-radius: 6px; color: #fff; font-size: 13px; font-family: inherit;
+            width: 150px;
+        }
+        .auto { font-size: 11px; color: #4CAF50; }
+        .manual { font-size: 11px; color: #888; }
         .toggle.on  { background: #4CAF50; }
         .toggle.off { background: #2a2a4e; }
         .status { margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 14px; display: none; }
@@ -59,11 +66,13 @@
 
     <h1>👥 Age Categories</h1>
     <p class="lead">
-        Mark each athlete as <strong>Youth</strong> or <strong>Open</strong>. Their points are
-        then worked out from the matching World Para Athletics table.<br>
-        Where an event contains both, the two are ranked separately &mdash; each with its own
-        first, second and third place, and its own medals. Names show
-        <em>(Youth)</em> or <em>(Open)</em> on results so the two placings are never confused.
+        Enter a <strong>date of birth</strong> and the category looks after itself:
+        under 20 is Youth, anyone older is Open. As is normal in athletics it goes by the
+        year of birth, so through the whole of <span id="thisYear"></span> that means born
+        <span id="cutoffYear"></span> or later.<br>
+        Points then come from the matching World Para Athletics table. Where one event holds
+        both, the two are ranked separately &mdash; each with its own first, second and third,
+        and its own medals.
     </p>
 
     <div class="card">
@@ -118,7 +127,35 @@
         el.textContent = text;
     }
 
-    function groupOf(a) { return a.ageGroup === 'youth' ? 'youth' : 'open'; }
+    // Same rule as the server: under 20 by year of birth.
+    var YOUTH_UNDER = 20;
+
+    function groupOf(a) {
+        if (a.dateOfBirth) {
+            var year = parseInt(String(a.dateOfBirth).slice(0, 4), 10);
+            if (year > 1900) {
+                return (new Date().getFullYear() - year) < YOUTH_UNDER ? 'youth' : 'open';
+            }
+        }
+        return a.ageGroup === 'youth' ? 'youth' : 'open';
+    }
+
+    function saveDob(id, value) {
+        api('/api/athletes/' + id, {
+            method: 'PATCH',
+            body: JSON.stringify({ dateOfBirth: value })
+        }).then(function () {
+            var a = athletes.find(function (x) { return x.id === id; });
+            var name = a ? a.name : 'Athlete';
+            if (!value) { say(name + ' has no date of birth now — set the category by hand.', 'good'); }
+            else {
+                var year = parseInt(String(value).slice(0, 4), 10);
+                var group = (new Date().getFullYear() - year) < YOUTH_UNDER ? 'YOUTH' : 'OPEN';
+                say(name + ' was born in ' + year + ', so counts as ' + group + '.', 'good');
+            }
+            return load();
+        }).catch(function (err) { say(err.message, 'bad'); });
+    }
 
     function shown() {
         var q = document.getElementById('search').value.toLowerCase().trim();
@@ -154,11 +191,20 @@
                          (a.bib ? ' &middot; bib ' + a.bib : '') +
                          (a.club ? ' &middot; ' + a.club : '') + '</div>' +
                      '</div>' +
+                     '<div style="text-align:center">' +
+                       '<input type="date" class="dob" value="' + (a.dateOfBirth || '') + '" ' +
+                         'onchange="saveDob(\'' + a.id + '\', this.value)" ' +
+                         'title="Date of birth">' +
+                       '<div class="' + (a.dateOfBirth ? 'auto' : 'manual') + '">' +
+                         (a.dateOfBirth ? 'set from date of birth' : 'no date &mdash; set by hand') +
+                       '</div>' +
+                     '</div>' +
                      '<span class="badge ' + (isYouth ? 'youth' : 'open') + '">' +
                        (isYouth ? 'YOUTH' : 'OPEN') + '</span>' +
-                     '<button class="toggle ' + (isYouth ? 'on' : 'off') + '" ' +
-                       'onclick="toggle(\'' + a.id + '\')">' +
-                       (isYouth ? 'Make Open' : 'Make Youth') + '</button>' +
+                     (a.dateOfBirth ? '' :
+                       '<button class="toggle ' + (isYouth ? 'on' : 'off') + '" ' +
+                         'onclick="toggle(\'' + a.id + '\')">' +
+                         (isYouth ? 'Make Open' : 'Make Youth') + '</button>') +
                    '</div>';
         }).join('');
     }
@@ -210,6 +256,9 @@
         }
         next();
     }
+
+    document.getElementById('thisYear').textContent = new Date().getFullYear();
+    document.getElementById('cutoffYear').textContent = new Date().getFullYear() - 19;
 
     load();
 </script>
