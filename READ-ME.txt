@@ -1,79 +1,73 @@
-IMPORT, ADD ATHLETE, AND THE MISSING BUTTONS
-============================================
+ADDING AN EVENT - THE FORM REBUILT
+==================================
 
-ONE FILE TO INSTALL
--------------------
+ONE FILE
+--------
 Into  Desktop\para-athletics\public\
-    athletes.html      replace
+    admin.html      replace
 
-Nothing goes in the main folder. server.js untouched, so your password
-is safe this time.
-
-Also in this folder: Athlete_Entry_Template.xlsx - the spreadsheet to
-send to team managers. That is not part of the app; keep it wherever
-suits you.
+Nothing in the main folder. server.js untouched, so your password is safe.
 
 
-1. THE IMPORT NOW READS THE HEADING ROW
----------------------------------------
-Columns can be in any order. These headings are recognised:
-
-    Reg Num | Name | Club/Team | Gender | Year of Birth | Class |
-    Event 1 | Event 2 | Event 3 | Event 4
-
-Only Name and Class are required.
-
-Each event goes in its OWN column and is named as a plain discipline -
-"Shot Put", not "Mens Shot Put F32-34". The app finds the right event
-from the athlete's class and gender, so team managers never need to know
-how you have named things.
-
-Tested: a sheet saying "Shot Put" found "Mens Shot Put F32-34", and a
-woman's "100m" found "Womens 100m T37" rather than the men's race.
-
-Year of Birth sets the age category on its own - under 20 is Youth.
-
-Your OLD format still imports, so anything you already have keeps
-working: Name, Class, Sex, Bib, Club, Events.
-
-
-2. ADD ONE ATHLETE
+WHERE THE FORM WAS
 ------------------
-A new box on the same page: Name, Class, Gender, Year of birth, Bib,
-Club. For a late entry, where a whole spreadsheet would be overkill.
-It tells you whether the athlete came out Youth or Open.
-
-This answers your question about where to enter the age group - there
-was no add-athlete form at all before, only the import.
+It was always there - the second card down on the Admin page, called
+"Add Event". What made it hard to recognise is the class picker: a tall
+scrolling list needing Ctrl+click to choose more than one. That does not
+look like a set of choices, so the form did not read as a form.
 
 
-3. THE MISSING BUTTONS
+WHAT IT LOOKS LIKE NOW
 ----------------------
-Two links added at the top of the page:
+The classes are tick boxes. Click the ones you want. A line underneath
+tells you what you have built:
 
-    🖨️ Print Start Lists
-    👥 Age Groups
+    one class    -> ranked on the performance itself
+    two or more  -> combined, ranked on official Raza points
+
+Classes with no points published for the discipline you have chosen are
+greyed out. Choose Shot Put and T11, T45, T47, F31 and F51 fade, because
+World Para Athletics publishes no shot put scores for them. You can no
+longer build an event whose athletes would score nothing.
+
+The class list is corrected too: F45 is gone - it is not in the WPA
+tables - and T71, which was missing, is back. 55 classes in all.
+
+
+HOW TO ADD AN EVENT
+-------------------
+1. Log in, open Admin
+2. Second card down: Add Event
+3. Event Name - write it as you would on paper, "Mens Shot Put F32-34"
+4. Discipline, Gender, Day
+5. Tick the classes
+6. Press Add Event
+
+The name is yours to choose. The import finds events by discipline and
+class, not by name, so team managers never have to match your wording.
+
+
+ALSO ADDED
+----------
+Two links in the navigation at the top:
+
+    Print Start Lists
+    Age Groups
 
 
 TESTED BEFORE SENDING
 ---------------------
-Pasted a sheet in the new shape: 4 athletes, 5 entries, years of birth
-recorded, and each athlete put in the right event by class and gender.
-An athlete with no year given still imported, counting as Open.
-The old column order still imports.
-The add form works, and refuses 12/3/2010 with a message asking for
-four digits.
+55 tick boxes shown, F45 absent, T71 present.
+Choosing Shot Put greys out T45 T47 T51 T71 T72 F31 F51.
+Ticked F32, F33, F34 and pressed Add Event: created as a combined event
+with all three classes.
+The page is still locked to strangers.
+Typing marks, points, deleting entries: all still work.
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Import reads headings, add athlete form, missing links"
+git commit -m "Rebuild the event form with tick-box classes"
 git push
-
-
-STILL OUTSTANDING
------------------
-The same two buttons should be on admin.html, which is where you
-usually start. Send me that file and I will add them.

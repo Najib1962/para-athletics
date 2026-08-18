@@ -167,6 +167,18 @@
         .quick-btn.referee:hover { border-color: #e94560; box-shadow: 0 8px 25px rgba(233, 69, 96, 0.2); }
         .quick-btn.team { border-color: #00BCD4; }
         .quick-btn.team:hover { border-color: #00BCD4; box-shadow: 0 8px 25px rgba(0, 188, 212, 0.2); }
+    .class-picker { display: flex; flex-wrap: wrap; gap: 7px; }
+        .class-picker label {
+            display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+            background: #0a0a1a; border: 1px solid #2a2a4e; border-radius: 8px;
+            padding: 7px 11px; font-size: 13px; font-weight: 600; margin: 0;
+            font-family: monospace; user-select: none;
+        }
+        .class-picker label:hover { border-color: #e94560; }
+        .class-picker label.on { background: #e94560; border-color: #e94560; }
+        .class-picker label.none { opacity: .35; cursor: not-allowed; }
+        .class-picker label.none:hover { border-color: #2a2a4e; }
+        .class-picker input { width: auto; margin: 0; }
     </style>
 </head>
 <body>
@@ -190,6 +202,14 @@
                 <a href="/entries.html" class="nav-item">
                     <span class="icon">📋</span>
                     <span class="label">Entries</span>
+                </a>
+                <a href="/print-startlists.html" class="nav-item startlist">
+                    <span class="icon">🖨️</span>
+                    <span class="label">Print Start Lists</span>
+                </a>
+                <a href="/age-groups.html" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span class="label">Age Groups</span>
                 </a>
                 <a href="/startlists-export.html" class="nav-item startlist">
                     <span class="icon">📋</span>
@@ -318,72 +338,14 @@
                 <option value="X">Mixed</option>
             </select>
 
-            <label>Classes (hold Ctrl/Cmd to select multiple)</label>
-            <select id="classSelect" multiple>
-                <optgroup label="T Classes (Track)">
-                    <option value="T11">T11</option>
-                    <option value="T12">T12</option>
-                    <option value="T13">T13</option>
-                    <option value="T20">T20</option>
-                    <option value="T32">T32</option>
-                    <option value="T33">T33</option>
-                    <option value="T34">T34</option>
-                    <option value="T35">T35</option>
-                    <option value="T36">T36</option>
-                    <option value="T37">T37</option>
-                    <option value="T38">T38</option>
-                    <option value="T40">T40</option>
-                    <option value="T41">T41</option>
-                    <option value="T42">T42</option>
-                    <option value="T43">T43</option>
-                    <option value="T44">T44</option>
-                    <option value="T45">T45</option>
-                    <option value="T46">T46</option>
-                    <option value="T47">T47</option>
-                    <option value="T51">T51</option>
-                    <option value="T52">T52</option>
-                    <option value="T53">T53</option>
-                    <option value="T54">T54</option>
-                    <option value="T61">T61</option>
-                    <option value="T62">T62</option>
-                    <option value="T63">T63</option>
-                    <option value="T64">T64</option>
-                    <option value="T72">T72</option>
-                </optgroup>
-                <optgroup label="F Classes (Field)">
-                    <option value="F11">F11</option>
-                    <option value="F12">F12</option>
-                    <option value="F13">F13</option>
-                    <option value="F20">F20</option>
-                    <option value="F31">F31</option>
-                    <option value="F32">F32</option>
-                    <option value="F33">F33</option>
-                    <option value="F34">F34</option>
-                    <option value="F35">F35</option>
-                    <option value="F36">F36</option>
-                    <option value="F37">F37</option>
-                    <option value="F38">F38</option>
-                    <option value="F40">F40</option>
-                    <option value="F41">F41</option>
-                    <option value="F42">F42</option>
-                    <option value="F43">F43</option>
-                    <option value="F44">F44</option>
-                    <option value="F45">F45</option>
-                    <option value="F46">F46</option>
-                    <option value="F51">F51</option>
-                    <option value="F52">F52</option>
-                    <option value="F53">F53</option>
-                    <option value="F54">F54</option>
-                    <option value="F55">F55</option>
-                    <option value="F56">F56</option>
-                    <option value="F57">F57</option>
-                    <option value="F61">F61</option>
-                    <option value="F62">F62</option>
-                    <option value="F63">F63</option>
-                    <option value="F64">F64</option>
-                </optgroup>
-            </select>
-            <div class="hint">Hold Ctrl (Windows) or Cmd (Mac) to select multiple classes</div>
+            <label>Classes</label>
+            <div class="hint" style="margin-bottom:8px">
+                Tick every class that competes together in this event.
+                One class ranks on the performance itself; two or more become a
+                combined event ranked on official Raza points.
+            </div>
+            <div id="classPicker" class="class-picker"></div>
+            <div class="hint" id="classSummary" style="margin-top:6px"></div>
 
             <label>Day</label>
             <input type="number" id="day" value="1" min="1" max="7">
@@ -464,6 +426,7 @@
         </div>
     </div>
 
+    <script src="/raza-browser.js"></script>
     <script>
         async function fetchAPI(url, options = {}) {
             const password = 'admin123';
@@ -506,12 +469,70 @@
             }).join('');
         }
 
+// Only classes that appear in the official World Para Athletics tables.
+        // The old list offered F45, which is not one of them - an athlete
+        // entered in it would score no points at all - and was missing T71.
+        const OFFICIAL_CLASSES = [
+            'T11','T12','T13','T20','T33','T34','T35','T36','T37','T38',
+            'T42','T43','T44','T45','T46','T47','T51','T52','T53','T54',
+            'T61','T62','T63','T64','T71','T72',
+            'F11','F12','F13','F20','F31','F32','F33','F34','F35','F36',
+            'F37','F38','F40','F41','F42','F43','F44','F46','F51','F52',
+            'F53','F54','F55','F56','F57','F61','F62','F63','F64'
+        ];
+
+        function chosenClasses() {
+            return Array.from(document.querySelectorAll('#classPicker input:checked'))
+                        .map(function (c) { return c.value; });
+        }
+
+        // Grey out any class that has no points published for this discipline
+        // and gender, so an event cannot be built that scores nothing.
+        function classHasPoints(cls, discipline, sex) {
+            if (!window.RAZA) return true;
+            var probe = window.RAZA.detail({
+                discipline: discipline, classCode: cls, sex: sex, mark: 10
+            });
+            return probe.points !== null || probe.reason === 'no valid performance';
+        }
+
+        function renderClassPicker() {
+            var keep = chosenClasses();
+            var discipline = document.getElementById('discipline').value;
+            var sex = document.getElementById('sex').value;
+            var picker = document.getElementById('classPicker');
+
+            picker.innerHTML = OFFICIAL_CLASSES.map(function (c) {
+                var ok = classHasPoints(c, discipline, sex);
+                var on = keep.indexOf(c) > -1;
+                return '<label class="' + (on ? 'on ' : '') + (ok ? '' : 'none') + '" ' +
+                       (ok ? '' : 'title="No points published for this class in ' + discipline + '"') +
+                       '><input type="checkbox" value="' + c + '"' +
+                       (on ? ' checked' : '') + (ok ? '' : ' disabled') + '>' + c + '</label>';
+            }).join('');
+
+            picker.querySelectorAll('input').forEach(function (box) {
+                box.addEventListener('change', function () {
+                    box.parentElement.classList.toggle('on', box.checked);
+                    updateClassSummary();
+                });
+            });
+            updateClassSummary();
+        }
+
+        function updateClassSummary() {
+            var n = chosenClasses().length;
+            var note = document.getElementById('classSummary');
+            if (!n) note.textContent = 'Tick at least one class.';
+            else if (n === 1) note.textContent = 'One class \u2014 ranked on the performance.';
+            else note.textContent = n + ' classes combined \u2014 ranked on official Raza points.';
+        }
+
         async function addEvent() {
             const name = document.getElementById('eventName').value.trim();
             const discipline = document.getElementById('discipline').value;
             const sex = document.getElementById('sex').value;
-            const classSelect = document.getElementById('classSelect');
-            const selectedClasses = Array.from(classSelect.selectedOptions).map(opt => opt.value);
+            const selectedClasses = chosenClasses();
             const day = parseInt(document.getElementById('day').value);
 
             if (!name) {
@@ -544,6 +565,13 @@
             document.getElementById('addMessage').innerHTML = `<span class="success">✅ Event added with ${selectedClasses.length} classes!</span>`;
             document.getElementById('eventName').value = '';
             loadEvents();
+
+            // clear the ticks, ready for the next event
+            document.querySelectorAll('#classPicker input:checked').forEach(function (box) {
+                box.checked = false;
+                box.parentElement.classList.remove('on');
+            });
+            updateClassSummary();
         }
 
         async function deleteEvent(id) {
@@ -644,6 +672,12 @@
         }
 
         loadEvents();
+
+        // draw the class tick boxes, and redraw them when the discipline or
+        // gender changes so only classes with published points are offered
+        renderClassPicker();
+        document.getElementById('discipline').addEventListener('change', renderClassPicker);
+        document.getElementById('sex').addEventListener('change', renderClassPicker);
     </script>
 </body>
 </html>
