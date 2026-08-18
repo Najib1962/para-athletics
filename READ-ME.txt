@@ -1,66 +1,37 @@
-FIX - TYPING THE YEAR OF BIRTH
-==============================
+LINKS TO THE NEW PAGES
+======================
 
 ONE FILE
 --------
 Into  Desktop\para-athletics\public\
-    age-groups.html      replace
+    entries.html      replace
 
-Nothing goes in the main folder. server.js is unchanged, so your
-password is safe this time.
-
-
-WHAT WAS WRONG
---------------
-My mistake. The box was saving on every keystroke. Typing 2010 was read
-as the year 2, then 20, then 201 - each one a complete date as far as
-the browser was concerned - and the row redrew underneath you while you
-were still typing.
-
-It was the same error I made with the marks, and I am sorry for
-repeating it.
+Nothing in the main folder. server.js untouched, so your password is safe.
 
 
-WHAT IT DOES NOW
-----------------
-Nothing is saved until you leave the box, or press Enter. Type all four
-digits in peace.
+WHAT IT ADDS
+------------
+Two buttons in the row along the top of the Entries page:
 
-Just the YEAR is enough:
+    🖨️ Print Start Lists     the blank sheets for the referees
+    👥 Age Groups            years of birth and Youth/Open
 
-    2010            <- easiest, and all the rule needs
-    15/03/2010      <- a full date, if you want it on the start lists
-    2010-03-15      <- also accepted
-
-Anything it cannot read is refused with a message, and the box goes
-back to what it held before, so a mistyped entry never gets saved.
-A year outside 1920 to this year is refused as well.
+They were reachable before, but only by typing the address.
 
 
-TESTED BEFORE SENDING
----------------------
-Typed 2010 one digit at a time:
+STILL TO DO - I NEED TWO FILES FROM YOU
+---------------------------------------
+1. There is no year-of-birth box on the ADD ATHLETE form. A new athlete
+   starts as Open and you set the year afterwards on the Age Groups page.
+   To put it on the form I need:
 
-    box shows "2"      server holds nothing
-    box shows "20"     server holds nothing
-    box shows "201"    server holds nothing
-    box shows "2010"   server holds nothing
-    left the box  ->   server holds 2010, badge turned YOUTH
+       Desktop\para-athletics\public\athletes.html
 
-A bare year and a full date score identically:
-    born 2010        Youth   998 points
-    born 2007-12-31  Youth   998 points
-    born 2006        Open    430 points
+2. The same buttons should be on the Admin page, which is where you
+   usually start. For that I need:
 
-The printed start lists show whichever you entered, with Youth or Open
-beneath it.
+       Desktop\para-athletics\public\admin.html
 
-
-INSTALL
--------
-cd Desktop\para-athletics
-git add .
-git commit -m "Fix typing the year of birth"
-git push
-
-Wait 2 to 5 minutes, then open /age-groups.html and type a year.
+Send me those two and I will do both properly. I am asking rather than
+patching an older copy, because doing that once before is what broke
+your mark entry.
