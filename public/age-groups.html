@@ -66,10 +66,12 @@
 
     <h1>👥 Age Categories</h1>
     <p class="lead">
-        Enter a <strong>date of birth</strong> and the category looks after itself:
+        Enter a <strong>year of birth</strong> and the category looks after itself:
         under 20 is Youth, anyone older is Open. As is normal in athletics it goes by the
         year of birth, so through the whole of <span id="thisYear"></span> that means born
         <span id="cutoffYear"></span> or later.<br>
+        Just the year is enough &mdash; type <strong>2010</strong> and press Enter. A full date
+        such as 15/03/2010 works too, if you want it on the printed start lists.<br>
         Points then come from the matching World Para Athletics table. Where one event holds
         both, the two are ranked separately &mdash; each with its own first, second and third,
         and its own medals.
@@ -140,21 +142,69 @@
         return a.ageGroup === 'youth' ? 'youth' : 'open';
     }
 
-    function saveDob(id, value) {
+    // Accepts just the year (2010), or a full date written the way you would
+    // on paper (15/03/2010), or the computer's own form (2010-03-15).
+    // Returns what should be stored, or null if it makes no sense.
+    function readDate(text) {
+        var t = String(text || '').trim();
+        if (!t) return '';
+
+        if (/^\d{4}$/.test(t)) return t;                       // year only
+
+        var m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);   // 15/03/2010
+        if (m) {
+            return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+        }
+
+        m = t.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);       // 2010-03-15
+        if (m) {
+            return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
+        }
+        return null;
+    }
+
+    // Saved only when you leave the box, never while you are still typing.
+    // An earlier version saved on every keystroke, so typing 2010 was read as
+    // the year 2, then 20, then 201 - and the row redrew underneath you.
+    function saveDob(id, box) {
+        var athlete = athletes.find(function (x) { return x.id === id; });
+        var name = athlete ? athlete.name : 'Athlete';
+        var was = (athlete && athlete.dateOfBirth) || '';
+        var value = readDate(box.value);
+
+        if (value === null) {
+            say('Could not read "' + box.value + '". Type the year, such as 2010, ' +
+                'or a full date such as 15/03/2010.', 'bad');
+            box.value = was;
+            return;
+        }
+        if (value === was) return;            // nothing changed
+
+        var year = parseInt(String(value).slice(0, 4), 10);
+        if (value && (year < 1920 || year > new Date().getFullYear())) {
+            say(year + ' does not look like a year of birth. Please check it.', 'bad');
+            box.value = was;
+            return;
+        }
+
         api('/api/athletes/' + id, {
             method: 'PATCH',
             body: JSON.stringify({ dateOfBirth: value })
         }).then(function () {
-            var a = athletes.find(function (x) { return x.id === id; });
-            var name = a ? a.name : 'Athlete';
-            if (!value) { say(name + ' has no date of birth now — set the category by hand.', 'good'); }
-            else {
-                var year = parseInt(String(value).slice(0, 4), 10);
+            if (athlete) athlete.dateOfBirth = value;
+            box.value = value;
+
+            if (!value) {
+                say(name + ' has no year of birth now — set the category by hand.', 'good');
+            } else {
                 var group = (new Date().getFullYear() - year) < YOUTH_UNDER ? 'YOUTH' : 'OPEN';
                 say(name + ' was born in ' + year + ', so counts as ' + group + '.', 'good');
             }
-            return load();
-        }).catch(function (err) { say(err.message, 'bad'); });
+            render();      // redraw the list now that you have finished typing
+        }).catch(function (err) {
+            say(err.message, 'bad');
+            box.value = was;
+        });
     }
 
     function shown() {
@@ -192,11 +242,13 @@
                          (a.club ? ' &middot; ' + a.club : '') + '</div>' +
                      '</div>' +
                      '<div style="text-align:center">' +
-                       '<input type="date" class="dob" value="' + (a.dateOfBirth || '') + '" ' +
-                         'onchange="saveDob(\'' + a.id + '\', this.value)" ' +
-                         'title="Date of birth">' +
-                       '<div class="' + (a.dateOfBirth ? 'auto' : 'manual') + '">' +
-                         (a.dateOfBirth ? 'set from date of birth' : 'no date &mdash; set by hand') +
+                       '<input type="text" class="dob" value="' + (a.dateOfBirth || '') + '" ' +
+                         'placeholder="2010 or 15/03/2010" maxlength="10" ' +
+                         'onblur="saveDob(\'' + a.id + '\', this)" ' +
+                         'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
+                         'title="Year of birth is enough. A full date is fine too.">' +
+                       '<div class="' + (a.dateOfBirth ? 'auto' : 'manual') + '" id="dobnote-' + a.id + '">' +
+                         (a.dateOfBirth ? 'set from year of birth' : 'no year &mdash; set by hand') +
                        '</div>' +
                      '</div>' +
                      '<span class="badge ' + (isYouth ? 'youth' : 'open') + '">' +

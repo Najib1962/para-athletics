@@ -1,94 +1,66 @@
-CHANGE 12 - DATE OF BIRTH, AND THE CATEGORY WORKS ITSELF OUT
-============================================================
+FIX - TYPING THE YEAR OF BIRTH
+==============================
 
-FOUR FILES
-----------
-Into  Desktop\para-athletics\
-    server.js                 replace
-
-Into  Desktop\para-athletics\public\
-    age-groups.html           replace
-    entries.html              replace
-    print-startlists.html     replace
-
-IMPORTANT: this server.js has the password back at 'admin123'.
-Before pushing, open it in Notepad, search for ADMIN_PASSWORD, and put
-your own password back between the quotes.
-
-
-THE RULE
+ONE FILE
 --------
-Youth is UNDER 20. As is normal in athletics it goes by the YEAR of
-birth, not the exact date - so through the whole of 2026 that means
-born 2007 or later, whatever month the birthday falls in.
+Into  Desktop\para-athletics\public\
+    age-groups.html      replace
 
-    born 2007-12-31   Youth
-    born 2006-01-01   Open
-
-Enter a date of birth once and you never tick a box again. In January
-the boundary moves on by itself.
+Nothing goes in the main folder. server.js is unchanged, so your
+password is safe this time.
 
 
-WHERE TO ENTER IT
------------------
-Log in and open:
+WHAT WAS WRONG
+--------------
+My mistake. The box was saving on every keystroke. Typing 2010 was read
+as the year 2, then 20, then 201 - each one a complete date as far as
+the browser was concerned - and the row redrew underneath you while you
+were still typing.
 
-    https://para-athletics.onrender.com/age-groups.html
-
-Every athlete now has a date box. Fill it in and the badge changes at
-once, with a line underneath saying the category came from the date.
-
-An athlete with no date on record keeps the Youth/Open button, so you
-can still set them by hand - nothing you have already set is lost.
+It was the same error I made with the marks, and I am sorry for
+repeating it.
 
 
-ON THE ENTRIES PAGE
--------------------
-The Open/Youth box now shows the answer rather than asking for it: when
-the athlete has a date of birth it is filled in and greyed out, because
-there is nothing to decide. Athletes without a date still get the
-choice, exactly as before.
+WHAT IT DOES NOW
+----------------
+Nothing is saved until you leave the box, or press Enter. Type all four
+digits in peace.
 
-Each entry shows "born 2007-12-31" beside the badge, or a "change" link
-where no date is on record.
+Just the YEAR is enough:
 
+    2010            <- easiest, and all the rule needs
+    15/03/2010      <- a full date, if you want it on the start lists
+    2010-03-15      <- also accepted
 
-ON THE PRINTED START LISTS
---------------------------
-Your sheet heads that column "الفئة العمرية" in Arabic and "D.O.B" in
-English, so it now carries both - the date on the top line and Youth or
-Open beneath it.
+Anything it cannot read is refused with a message, and the box goes
+back to what it held before, so a mistyped entry never gets saved.
+A year outside 1920 to this year is refused as well.
 
 
 TESTED BEFORE SENDING
 ---------------------
-Four athletes, the SAME mark of 13.20 in a men's 100 m T37:
+Typed 2010 one digit at a time:
 
-    born 2010-05-05   Youth   998 points
-    born 2007-12-31   Youth   998 points     <- last day of Youth
-    born 2006-01-01   Open    430 points     <- first day of Open
-    born 1995-06-06   Open    430 points
+    box shows "2"      server holds nothing
+    box shows "20"     server holds nothing
+    box shows "201"    server holds nothing
+    box shows "2010"   server holds nothing
+    left the box  ->   server holds 2010, badge turned YOUTH
 
-An athlete with no date, set to Youth by hand: still 998 points.
-The printed sheet shows the date with the category beneath it.
-Typing marks, points, deleting, the live pages, the locked pages: all
-still work.
+A bare year and a full date score identically:
+    born 2010        Youth   998 points
+    born 2007-12-31  Youth   998 points
+    born 2006        Open    430 points
+
+The printed start lists show whichever you entered, with Youth or Open
+beneath it.
 
 
 INSTALL
 -------
 cd Desktop\para-athletics
 git add .
-git commit -m "Date of birth decides the age category"
+git commit -m "Fix typing the year of birth"
 git push
 
-Wait 2 to 5 minutes.
-
-
-ONE THING NOT INCLUDED
-----------------------
-There is no date box on the ADD ATHLETE form yet, because I do not have
-your current athletes.html and I would rather not patch a copy that
-might be out of date. Send me that file and I will add it, so a date of
-birth can be entered when the athlete is first created rather than
-afterwards.
+Wait 2 to 5 minutes, then open /age-groups.html and type a year.
